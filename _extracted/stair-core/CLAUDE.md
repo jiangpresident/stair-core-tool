@@ -496,6 +496,15 @@
 - 12 个 section 的改写不是手改的：`scratchpad/codemod-panels.mjs` 按"紧跟着 `<H2>` 的 `<section className=… style={{ background: C.panel … }}>`"匹配，把开头两行换成 `<Panel id title sub>`、按同样缩进找到对应的 `</section>` 换成 `</Panel>`；没有标题的那块（"确认并计算"的黄色提示 section）不动。id：global / batch / floors / summary / stairs / perFloor / drawings / doors / model3d / coreSize / code / planLink。词典 +2。
 - **验证**：浏览器里数到 12 个 `section[data-panel]` 和 12 个 `panel-toggle`；点"每部楼梯"的按钮 → `data-open=0`、内容 `display:none`、面板高度只剩 67px、按钮变 ▸、提示"展开本面板"；点"楼梯三维模型"的标题行 → 也收起且 canvas 仍在 DOM 里；localStorage 里是 `{"stairs":false,"model3d":false}`；刷新 → 这两块仍收起、其它展开；再点三维面板的按钮展开 → canvas 宽度跟容器一致；`__i18nMissing()` 为空。截图核对收起态只剩一行标题。测完把 `stair-core:calc-panels` 清掉恢复全部展开。小瑕疵：面板滚到页面最顶时，右上角固定定位的 EN/中 切换按钮会盖住第一块面板的折叠按钮，往下滚一点就错开了，没有专门处理。
 
+**2026-10-02 第四十轮：Rhino 面板的图层选择器改成 Rhino 图层面板那样的多级树（`npm run test:rhino` 8 项全过，`test:calc`/`build` 过，词典 0 缺；真机 Rhino 8.24 + 浏览器验证了子图层展开/折叠、颜色块、当前图层打勾、隐藏图层灰字、选子图层后读取）：**
+
+- 用户诉求（附 Rhino 图层面板截图）："这个连接 Rhino 读取图层的界面，能否做的跟 Rhino 是个多级折叠菜单？"此前是原生 `<select>`，子图层显示成 "Core::Core 1" 这样的扁平全路径。
+- **桥接脚本** `list_layers()` 每层多返回 `color`（#RRGGBB）、`visible`、`current`（Rhino 里打勾的当前图层）。
+- **网页端**：`rhinoBridge.js` 新增纯函数 `buildLayerTree(layers)`——按 `::` 分级成树，保持 Rhino 给的顺序，每个节点算 `childObjects`（子孙图层上的对象数，读核心筒时含子图层所以要单独标出来），父层不在列表里的子层当根节点。新文件 `src/rhino/LayerTree.jsx`：`LayerTreePicker({layers, value, onChange, C})`——一个显示当前图层（色块 + 路径 + 对象数）的按钮，点开下面一个绝对定位的树：子图层每级缩进 16px、有子层的行左边 ▸/▾（点它只展开折叠、不选中）、色块、名字、当前图层 ✓ 加粗、隐藏图层灰字 + "隐藏"、右边对象数和 "+n"（子图层对象）；选中行浅蓝底加粗；点行选中并关闭；Esc / 点外面关闭；选中项变化时自动展开它的祖先。`RhinoPanel` 用它替换 `<select>`。词典 +5。
+- **踩坑**：第一版把选择器放在原来的 `<label>` 里，点树里的 ▸ 时菜单会自己关掉——`<label>` 的激活行为：点它内部任何非交互元素都会给第一个可标记的后代（这里是选择器的按钮）补一次点击，等于又按了一下开关。换成 `<span>` 包就好了。以后带弹出层的自定义控件别放 `<label>` 里。
+- **验证**：Node 测 `buildLayerTree`（分级、顺序、子孙对象数、父层缺失、空输入）。真机：Rhino 里给 Core 加子图层 "Core 1"（橙色）放一个 6.6×5.9 m 盒子、把 Layer 05 隐藏；`/layers` 带 color/visible/current。浏览器：连接 → 按钮显示 "Core (1)" → 点开：8 行（Core 折叠、有 ▸、右侧 "1 +1"），Default 加粗带 ✓，Layer 05 灰字 "隐藏"，色块颜色与 Rhino 一致；点 Core 的 ▸ → 菜单仍开着、多出 "Core 1" 一行、缩进 22px（根 6px）；点 "Core 1" → 菜单关闭、按钮变 "Core::Core 1 (1)" → 读取 → 一行 "Core C (sub-layer) 6,600 × 5,900"；重新点开时 Core::Core 1 高亮且 Core 已展开；Esc 关闭、点外面关闭；`__i18nMissing()` 为空。截图核对样式接近 Rhino 图层面板。
+- 没做的：Rhino 面板里的锁定图标、图层开关（灯泡）不能在这里点——这里只是选择器，不改 Rhino 的图层状态；图层很多时没有搜索框。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

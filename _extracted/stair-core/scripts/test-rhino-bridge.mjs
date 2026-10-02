@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -163,6 +163,29 @@ await test("listRecentFiles / openRhinoFile / openRhinoFileDialog：走选中的
   assert.equal(dlg.cancelled, true);
   assert.equal(calls.at(-1).u, base + "/open-dialog");
   await assert.rejects(openRhinoFileDialog({ fetch: async () => { throw new TypeError("x"); } }), (e) => e.message === RHINO_NOT_RUNNING_HINT);
+});
+
+await test("buildLayerTree：按 :: 分级成树、保持顺序、子孙对象数汇总、父层缺失的当根", () => {
+  const tree = buildLayerTree([
+    { path: "Default", objects: 0 },
+    { path: "Core", objects: 1, color: "#2B5C8A" },
+    { path: "Core::Core 1", objects: 2 },
+    { path: "Core::Core 1::Deep", objects: 3 },
+    { path: "Core::Core 2", objects: 0 },
+    { path: "Columns", objects: 1 },
+    { path: "Gone::Orphan", objects: 4 },
+  ]);
+  assert.deepEqual(tree.map((n) => n.name), ["Default", "Core", "Columns", "Orphan"]);
+  const core = tree[1];
+  assert.equal(core.color, "#2B5C8A");
+  assert.deepEqual(core.children.map((c) => c.name), ["Core 1", "Core 2"]);
+  assert.equal(core.children[0].children[0].path, "Core::Core 1::Deep");
+  assert.equal(core.childObjects, 5, "Core 1(2) + Deep(3)");
+  assert.equal(core.children[0].childObjects, 3);
+  assert.equal(core.children[1].childObjects, 0);
+  assert.equal(tree[3].path, "Gone::Orphan", "父层不在列表里：保留完整路径当根节点");
+  assert.deepEqual(buildLayerTree([]), []);
+  assert.deepEqual(buildLayerTree(null), []);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

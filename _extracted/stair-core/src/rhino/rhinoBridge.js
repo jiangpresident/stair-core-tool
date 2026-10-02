@@ -129,6 +129,31 @@ export async function listRhinoLayers({ fetch: fetchImpl, baseUrl = RHINO_URL } 
   return j.layers || [];
 }
 
+/* 把 /layers 的扁平列表（path 用 "::" 分级，Rhino 的 FullPath）整理成树，给图层选择器画成 Rhino 图层面板那样的多级菜单。
+   每个节点：{...原字段, name: 最后一级名字, children: [], childObjects: 所有子孙图层上的对象数}（读核心筒时含子图层，所以这个数有用）。
+   父图层不在列表里（被删了等）的子图层当作根节点，顺序保持 Rhino 给的顺序。 */
+export function buildLayerTree(layers) {
+  const byPath = new Map();
+  for (const l of layers || []) {
+    const path = String(l.path || "");
+    const parts = path.split("::");
+    byPath.set(path, { ...l, path, name: parts[parts.length - 1], children: [], childObjects: 0 });
+  }
+  const roots = [];
+  for (const node of byPath.values()) {
+    const parts = node.path.split("::");
+    const parent = parts.length > 1 ? byPath.get(parts.slice(0, -1).join("::")) : null;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+  const total = (n) => {
+    n.childObjects = n.children.reduce((sum, c) => sum + total(c), 0);
+    return n.childObjects + (Number(n.objects) || 0);
+  };
+  roots.forEach(total);
+  return roots;
+}
+
 /* 读某个图层上的长方体：返回 [{id,name,layer,type,centerX,centerY,length,width,angleDeg,zBottom,height}]，全部毫米。 */
 export async function readRhinoCores(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
   const f = fetchImpl || globalThis.fetch;

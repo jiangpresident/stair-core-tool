@@ -248,11 +248,19 @@ def read_cores(layer_path):
 def list_layers():
     doc = Rhino.RhinoDoc.ActiveDoc
     names = []
+    current = doc.Layers.CurrentLayerIndex
     for layer in doc.Layers:
         if layer.IsDeleted:
             continue
         count = len(list(doc.Objects.FindByLayer(layer)))
-        names.append({"path": layer.FullPath, "objects": count})
+        col = layer.Color
+        names.append({
+            "path": layer.FullPath,
+            "objects": count,
+            "color": "#%02X%02X%02X" % (col.R, col.G, col.B),  # 网页端画成 Rhino 图层面板那样的色块
+            "visible": bool(layer.IsVisible),
+            "current": layer.Index == current,  # Rhino 里打勾的"当前图层"
+        })
     return {"ok": True, "layers": names}
 
 

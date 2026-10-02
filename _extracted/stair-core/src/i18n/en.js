@@ -724,4 +724,9 @@ export const EN = {
   "最近文件…": "Recent files…",
   "收起本面板": "Collapse this panel",
   "展开本面板": "Expand this panel",
+  "对象": "Objects",
+  "没有图层": "No layers",
+  "选择图层…": "Choose a layer…",
+  "子图层上的对象（读取时一并计入）": "Objects on sub-layers (included when reading)",
+  "Rhino 当前图层": "Current layer in Rhino",
 };

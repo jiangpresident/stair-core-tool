@@ -6,6 +6,7 @@
 // Rhino 那边跑的是 rhino/StairCoreBridge.py（127.0.0.1:8790，被占就顺延）。
 import { useState } from "react";
 import { t } from "../i18n.js";
+import LayerTreePicker from "./LayerTree.jsx";
 import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
@@ -261,18 +262,11 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
         <div className="mt-3" data-testid="rhino-read">
           <div className="flex flex-wrap items-center gap-2">
             <span style={{ fontWeight: 600 }}>{t("从 Rhino 读取核心筒长方体")}</span>
-            <label className="flex items-center gap-1">
+            {/* 不能用 <label> 包：点树里的 ▸ 会触发 label 的激活行为、顺带点一下按钮把菜单关掉 */}
+            <span className="flex items-center gap-1">
               {t("图层")}
-              <select value={layer} onChange={(e) => setLayer(e.target.value)} className="rounded px-2 py-0.5" style={{ border: `1px solid ${C.rule}`, background: C.panel, maxWidth: 260 }} aria-label="Rhino layer">
-                {!layers.some((l) => l.path === layer) && <option value={layer}>{layer}</option>}
-                {layers.map((l) => (
-                  <option key={l.path} value={l.path}>
-                    {l.path}
-                    {l.objects ? ` (${l.objects})` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <LayerTreePicker layers={layers} value={layer} onChange={setLayer} C={C} />
+            </span>
             <button type="button" onClick={read} disabled={reading} className="rounded px-3 py-1" style={{ background: reading ? C.rule : C.accent, color: reading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-read-btn">
               {reading ? t("读取中…") : t("读取并校核")}
             </button>
