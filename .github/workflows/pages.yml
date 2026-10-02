@@ -1,12 +1,13 @@
 # 把平面图工具 + 计算器的静态构建发布到 GitHub Pages（https://jiangpresident.github.io/stair-core-tool/）。
-# 只从 release/1.0 分支部署（线上演示冻结在 1.0；main 上继续开发不影响线上）。要更新线上版就把新版本合并进 release/1.0。Pages 上没有开发服务器，所以本机 Marker 识图、系统保存对话框、example 面板不可用
+# 线上演示冻结在 1.0：工作流由 main 触发（Pages 环境默认只允许 main 部署），但检出的内容固定为 release/1.0 分支，
+# 所以 main 上继续开发不会改变线上版。要更新线上版：把新版本合并进 release/1.0，再推一次 main（或手动 Run workflow）。Pages 上没有开发服务器，所以本机 Marker 识图、系统保存对话框、example 面板不可用
 # （界面会自动退回：Marker 显示"服务未启动"，保存走浏览器自己的方式）；其余功能（计算器、上传/标定、
 # 矢量/图像/AI 识图、画墙画门、最短路径、热力图、工程文件下载/打开）都能用。
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [release/1.0]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,8 @@ jobs:
         working-directory: _extracted/stair-core
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: release/1.0 # 线上版内容来自这个分支，不是 main
       - uses: actions/setup-node@v4
         with:
           node-version: 20
