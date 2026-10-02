@@ -467,6 +467,8 @@
 - **测试踩坑**：词典填满后 `test:plan-file` / `test:ai` / `test:marker` 失败——它们断言中文报错文案，而 Node 里没有 localStorage，`getLang()` 落到默认英文。修法：`getLang()` 在没有 `localStorage` 的环境返回 `"zh"`（源语言），浏览器默认仍英文。教训：之前"全过"是因为当时词典为空、t() 回退到中文，掩盖了问题。
 - 线上版没有开发服务器：Marker 识图、系统另存为对话框不可用（界面自动退化），README 和 Pages 工作流注释都写明了。
 
+**2026-10-02 版本冻结：v1.0.0 + release/1.0**——演示当天用户要求把当前版本定为 1.0 并冻结线上演示。标签 `v1.0.0`（提交 `fee2fdb`，`package.json` 1.0.0）；分支 `release/1.0` 从该标签拉出。GitHub Pages 工作流由 `main` 触发（`github-pages` 环境默认只允许 main 部署，直接从 release 分支触发会在 deploy 步失败），但 `actions/checkout` 固定 `ref: release/1.0`，所以线上永远是 1.0 的内容；main 继续开发不影响线上。**要更新线上版**：把新版本合并进 `release/1.0`，再推一次 main（或在 Actions 页手动 Run workflow）。要发新版本：`git tag -a v1.x.0` + `git push origin v1.x.0`，在 GitHub Releases 页从标签建 Release。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）
