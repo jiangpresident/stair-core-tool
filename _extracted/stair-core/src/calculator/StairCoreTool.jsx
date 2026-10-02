@@ -5,6 +5,7 @@ import { AI_PROVIDERS, readAiSettingsFromBrowser, writeAiSettingsToBrowser } fro
 import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample } from "../plan/planFile.js";
 import { t } from "../i18n.js";
 import LangToggle from "../LangToggle.jsx";
+import RhinoPanel from "../rhino/RhinoPanel.jsx";
 
 /* ------------------------------------------------------------------ */
 /*  规范层级：VBBL 2025 (温哥华) → BCBC 2024 (BC省) → NBC 2020 (国家)     */
@@ -5639,6 +5640,12 @@ export default function StairCoreTool() {
                 </label>
               </div>
               <Stair3D res={res} inp={inp} shaftIdx={shaftIdx} fromLevel={clamp(v3.from, 1, Math.max(1, inp.nFloors - 1))} nLevels={v3.count} />
+              {/* 1.1：Rhino 连接——把当前梯井整栋高度的实体（跟上面三维模型同一份 buildSolids 数据）发到本机 Rhino 里烘焙 */}
+              <RhinoPanel
+                C={C}
+                buildModel={() => buildSolids(res, inp, shaftIdx, 1, 999)}
+                shaftLabel={inp.stairType === "dogleg" ? t("楼梯 #{0}", [shaft.stairs[0].k]) : t("梯井 {0}", [shaftIdx + 1])}
+              />
             </section>
 
             {/* 核心筒尺寸 */}

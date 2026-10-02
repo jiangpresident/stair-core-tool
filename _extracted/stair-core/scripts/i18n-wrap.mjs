@@ -22,7 +22,7 @@ const DEFAULT_FILES = [
   "src/plan/aiSettings.js",
   "src/plan/pdfWalls.js",
   "src/plan/marker.js",
-  "src/plan/aiVision.js",
+  "src/plan/aiVision.js", "src/rhino/rhinoBridge.js", "src/rhino/RhinoPanel.jsx",
 ];
 const args = process.argv.slice(2);
 const dry = args.includes("--dry");

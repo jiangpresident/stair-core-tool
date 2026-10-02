@@ -75,12 +75,20 @@ Clauses implemented (identical across the three levels unless tagged otherwise i
 - Not covered: smoke control (3.2.6), accessibility beyond the door-clearance notes, fire-separation ratings, exterior exits, ramps, and room-to-corridor travel-distance segments.
 - Occupancies are simplified to the groups in Table 3.1.17.1; design occupant loads must be posted (3.1.17.1.(2)).
 
+## Rhino connection (1.1, local version only)
+
+The calculator page has a **Rhino** panel under the 3D model that bakes the current stair core (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, coloured by stair number, on separate layers) straight into Rhino running on the same computer.
+
+1. In Rhino, run `rhino/StairCoreBridge.py` once (Rhino 8: `ScriptEditor`, open the file, run; Rhino 7: `EditPythonScript`). It starts a tiny server on `127.0.0.1:8790` that only accepts requests from this tool.
+2. In the calculator, click **Connect Rhino** (shows Rhino version, document and units), then **Send to Rhino**. Millimetres are converted to the document's units automatically; resending replaces the previous batch under the same layer name.
+
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `_extracted/stair-core/` | The web app (React + Vite + three.js). Own `README.md` (scripts, routes) and `CLAUDE.md` (development log). |
 | `floorplan-marker/` | Local Python + OpenCV floor-plan recognition service, with its own README. |
+| `rhino/` | `StairCoreBridge.py` — run inside Rhino to receive stair-core solids from the calculator (see "Rhino connection"). |
 | `Saved Plans/` | Example plan projects (`.stairplan.json`). |
 | `Test Plans/` | Sample floor-plan PDFs / PNGs. |
 | `docs/screenshots/` | Images used in this README. |

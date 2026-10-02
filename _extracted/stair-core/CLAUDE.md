@@ -469,6 +469,14 @@
 
 **2026-10-02 版本冻结：v1.0.0 + release/1.0**——演示当天用户要求把当前版本定为 1.0 并冻结线上演示。标签 `v1.0.0`（提交 `fee2fdb`，`package.json` 1.0.0）；分支 `release/1.0` 从该标签拉出。GitHub Pages 工作流由 `main` 触发（`github-pages` 环境默认只允许 main 部署，直接从 release 分支触发会在 deploy 步失败），但 `actions/checkout` 固定 `ref: release/1.0`，所以线上永远是 1.0 的内容；main 继续开发不影响线上。**要更新线上版**：把新版本合并进 `release/1.0`，再推一次 main（或在 Actions 页手动 Run workflow）。要发新版本：`git tag -a v1.x.0` + `git push origin v1.x.0`，在 GitHub Releases 页从标签建 Release。
 
+**2026-10-02 第三十七轮（1.1 开始）：Rhino 连接——计算器页新增 "Rhino" 面板，把当前梯井整栋楼梯实体烘焙进本机 Rhino（`npm run test:rhino` 新增 3 项全过，`test:calc`/`build` 过；真机：Rhino 8.24、文档单位米，网页点「发送」→ Rhino 里出现 157 个 Brep、5 个图层，包围盒 5.52×3.15×22.9 m，毫米→米换算正确）：**
+
+- 用户决定 1.1 引入 Rhino 插件功能，第一步"在计算核心筒界面来一个链接 Rhino 的按钮"。
+- **架构**：Rhino 里跑一个脚本 `rhino/StairCoreBridge.py`（项目根目录；Rhino 8 CPython 3 / Rhino 7 IronPython 2.7 都兼容，HTTP 模块按版本导入、不用 f-string）：在 127.0.0.1:8790 起 `ThreadingMixIn + HTTPServer`（守护线程，`scriptcontext.sticky` 存句柄防重复启动）；`GET /health` 返回 Rhino 版本/文档名/单位；`POST /bake` 收盒子列表 → `Rhino.RhinoApp.InvokeOnUiThread` 切到主线程 → `RhinoMath.UnitScale(Millimeters, doc.ModelUnitSystem)` 换算 → `Box.ToBrep()` → 图层 `StairCore::<名字>::<step #k | landing #k | slab | wall | centerWall | door>`，按楼梯编号上色（跟网页同一组 `STAIR_COLORS`），一批一个 Group；`replace` 为真时先删同名下所有子图层的旧对象。CORS 只放行本机来源和项目的 GitHub Pages 域名，带 `Access-Control-Allow-Private-Network`。
+- **网页端**：`src/rhino/rhinoBridge.js`（纯逻辑：`buildRhinoPayload(model,{name,kinds,origin,replace})` 把 `buildSolids()` 的盒子整理成 payload；`checkRhino`/`sendToRhino`；连不上时的中文提示写明脚本路径和 Rhino 8/7 各自怎么运行）；`src/rhino/RhinoPanel.jsx`：三维模型区下方的面板——「连接 Rhino」→ 状态行（Rhino 版本 · 文档 · 单位），连上后出现图层名输入、构件类别复选（踏步/平台/楼板/梯间墙/剪刀梯隔墙/门）、"替换上一批"、「发送到 Rhino：楼梯 #k（整栋）」（`buildSolids(res, inp, shaftIdx, 1, 999)`，跟三维模型同一份数据）。几何全部在网页端算好，Rhino 只做盒子→Brep。词典补了 22 条英文。
+- **验证**：Node 测试（假 fetch）覆盖 payload 过滤/原点/计数、health 在线/离线/异常、bake 请求形状与错误翻译。真机：通过 Rhino MCP 把脚本在 Rhino 8.24 里 `exec` 后 `start()`；命令行 `/health` 返回单位 Meters、本机来源预检 204、外部来源 403；网页「连接」显示 "Connected to Rhino 8.24 · document Untitled · units Meters"，「发送」返回 157 个实体/5 图层；Rhino 里按图层数：step #1 118、landing #1 20、slab 10、wall 4、door 5，包围盒 [-0.3,-0.3,-0.3]–[5.52,3.15,22.9] m；视口截图核对（墙不透明，踏步在墙内，关 wall 图层可见）。
+- 已知与后续：①`RHINO_NOT_RUNNING_HINT` 在模块加载时就 `t()` 求值（跟其它模块级常量一样，靠切换语言时整页刷新）；②目前一次只发当前梯井，剪刀梯两部楼梯同在一个梯井里会一起发；多梯井并列、按核心筒在平面图里的位置摆放、从 Rhino 读平面图回来，都是 1.1 后续；③Rhino 里墙是实体不透明，可考虑给 wall 图层设透明材质或默认不勾选墙。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

@@ -17,6 +17,7 @@ npm run test:room    # 图像识别"按房间分隔关系过滤噪点"回归测�
 npm run test:ai      # AI 识图路线回归测试（假 fetch 冒充 Claude/OpenAI 接口，不联网不花钱，见 scripts/test-ai-vision.mjs）
 npm run test:marker  # 本机 Floorplan Marker 路线回归测试（假 fetch 冒充本机服务，见 scripts/test-marker.mjs）
 npm run test:plan-file # 平面图工程文件保存/打开的序列化与校验测试（见 scripts/test-plan-file.mjs）
+npm run test:rhino   # Rhino 桥客户端测试（假 fetch 冒充 rhino/StairCoreBridge.py，见 scripts/test-rhino-bridge.mjs）
 npm run build        # 生产构建 → dist/
 npm run build:single # 三个双击打开的 HTML → dist-single/：
                       #   stair-core-launcher.html    启动页（配色仿 Claude），点卡片分别打开另外两个

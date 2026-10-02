@@ -18,7 +18,8 @@
     "test:plan-file": "node scripts/test-plan-file.mjs",
     "test:plan-bridge": "node scripts/test-plan-bridge.mjs",
     "test:marker-service": "node scripts/test-marker-service.mjs",
-    "i18n:keys": "node scripts/i18n-keys.mjs"
+    "i18n:keys": "node scripts/i18n-keys.mjs",
+    "test:rhino": "node scripts/test-rhino-bridge.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

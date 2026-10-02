@@ -9,7 +9,7 @@ import { parse } from "@babel/parser";
 import traverseModule from "@babel/traverse";
 
 const traverse = traverseModule.default || traverseModule;
-const FILES = ["src/calculator/StairCoreTool.jsx", "src/plan/PlanApp.jsx", "src/plan/planFile.js", "src/plan/markerDetect.js", "src/plan/aiVisionDetect.js", "src/plan/aiSettings.js", "src/plan/pdfWalls.js", "src/plan/marker.js", "src/plan/aiVision.js", "src/LangToggle.jsx", "src/App.jsx"];
+const FILES = ["src/calculator/StairCoreTool.jsx", "src/plan/PlanApp.jsx", "src/plan/planFile.js", "src/plan/markerDetect.js", "src/plan/aiVisionDetect.js", "src/plan/aiSettings.js", "src/plan/pdfWalls.js", "src/plan/marker.js", "src/plan/aiVision.js", "src/rhino/rhinoBridge.js", "src/rhino/RhinoPanel.jsx", "src/LangToggle.jsx", "src/App.jsx"];
 const keys = new Map();
 for (const file of FILES) {
   let code;
