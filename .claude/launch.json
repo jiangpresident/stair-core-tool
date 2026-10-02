@@ -1,0 +1,45 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stair-core-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8532"
+      ],
+      "port": 8532
+    },
+    {
+      "name": "stair-core-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "_extracted/stair-core"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "floorplan-marker",
+      "runtimeExecutable": "floorplan-marker/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "floorplan-marker/server.py",
+        "--port",
+        "8765"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "test-plans-cors",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-c",
+        "import os;from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer;os.chdir('C:/Users/13957/OneDrive/Desktop/arch HW/Year 3/ARCH 540/Stair core Tool/Test Plans');H=type('H',(SimpleHTTPRequestHandler,),{'end_headers':lambda s:(s.send_header('Access-Control-Allow-Origin','*'),SimpleHTTPRequestHandler.end_headers(s))});ThreadingHTTPServer(('127.0.0.1',8533),H).serve_forever()"
+      ],
+      "port": 8533
+    }
+  ]
+}

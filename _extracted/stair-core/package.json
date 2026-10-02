@@ -1,0 +1,39 @@
+{
+  "name": "stair-core",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:single": "node scripts/build-standalone.mjs",
+    "test:calc": "node scripts/run-tests.mjs",
+    "test:pdf": "node scripts/test-pdf-walls.mjs",
+    "test:raster": "node scripts/test-raster-walls.mjs",
+    "test:dimension": "node scripts/test-dimension-detect.mjs",
+    "test:room": "node scripts/test-room-filter.mjs",
+    "test:ai": "node scripts/test-ai-vision.mjs",
+    "test:marker": "node scripts/test-marker.mjs",
+    "test:plan-file": "node scripts/test-plan-file.mjs",
+    "test:plan-bridge": "node scripts/test-plan-bridge.mjs",
+    "test:marker-service": "node scripts/test-marker-service.mjs",
+    "i18n:keys": "node scripts/i18n-keys.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
+    "pdfjs-dist": "^6.3.289",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tesseract.js": "^7.0.0",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "esbuild": "^0.24.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.11"
+  }
+}

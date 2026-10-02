@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>平面图标注 · Floorplan Marker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">⌗</span><div><h1>平面图标注<span>Floorplan Marker</span></h1><p>本地识别 · 原图叠加 · 可编辑导出</p></div></div>
+    <div class="header-actions"><span class="connection" id="connection">正在连接本地服务</span><button id="help-button" class="quiet">使用说明</button></div>
+  </header>
+  <main class="app-layout">
+    <aside class="panel controls" aria-label="识别设置">
+      <section><p class="eyebrow">01 / 原始图纸</p><h2>导入平面图</h2><button id="upload-button" class="primary wide">＋ 上传图片</button><input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden><div class="button-row"><button id="example-button">打开示例</button><button id="import-button">导入工程</button></div><input id="project-input" type="file" accept="application/json,.json" hidden><p id="image-info" class="hint">PNG、JPG、WebP、BMP<br>也可以将图片拖入画布。</p></section>
+      <section><p class="eyebrow">02 / 自动初识别</p><h2>识别参数</h2><p class="hint">基于图像特征的候选识别。结果需要核对，可直接在画布上修正。</p>
+        <label class="slider-label" for="threshold">黑白阈值 <output id="threshold-value">180</output></label><input id="threshold" type="range" min="70" max="245" value="180" step="5">
+        <label class="slider-label" for="min-wall-length">最短墙线 <output id="min-wall-length-value">35 px</output></label><input id="min-wall-length" type="range" min="10" max="200" value="35" step="5">
+        <label class="slider-label" for="bridge-gap">窗口连接间距 <output id="bridge-gap-value">12 px</output></label><input id="bridge-gap" type="range" min="0" max="80" value="12" step="2">
+        <label class="slider-label" for="sensitivity">识别敏感度 <output id="sensitivity-value">0.50</output></label><input id="sensitivity" type="range" min="0" max="1" value="0.5" step="0.05">
+        <button id="detect-button" class="primary wide" disabled>开始自动识别</button><p class="hint small">重复识别替换自动结果，保留手动添加或调整的标注。</p>
+      </section>
+      <section class="legend"><p class="eyebrow">03 / 标注图层</p><label><input id="show-walls" type="checkbox" checked><i class="swatch wall"></i><span>墙体 / 跨窗连接</span><strong id="wall-count">0</strong></label><label><input id="show-doors" type="checkbox" checked><i class="swatch door"></i><span>门洞 / 闭合位置</span><strong id="door-count">0</strong></label><label><input id="show-stairs" type="checkbox" checked><i class="swatch stairs"></i><span>楼梯间 / 50% 透明</span><strong id="stair-count">0</strong></label><p class="hint small">取消勾选的图层不会显示或导出到 PNG / SVG；工程仍保留全部标注。</p></section>
+    </aside>
+    <section class="workspace" aria-label="平面图编辑画布">
+      <div class="toolbar"><div class="tools" role="group" aria-label="绘图工具"><button class="tool active" data-tool="select" title="选择与移动 (V)" aria-pressed="true">↖ <span>选择</span><kbd>V</kbd></button><button class="tool" data-tool="wall" title="绘制墙线 (W)" aria-pressed="false"><i class="tool-line red"></i><span>墙</span><kbd>W</kbd></button><button class="tool" data-tool="door" title="绘制门洞 (D)" aria-pressed="false"><i class="tool-line yellow"></i><span>门</span><kbd>D</kbd></button><button class="tool" data-tool="stairs" title="绘制楼梯间 (S)" aria-pressed="false"><i class="tool-box"></i><span>楼梯间</span><kbd>S</kbd></button></div><div class="history-tools"><button id="undo-button" title="撤销 (Ctrl/Cmd+Z)" aria-label="撤销" disabled>↶</button><button id="redo-button" title="重做 (Ctrl/Cmd+Shift+Z)" aria-label="重做" disabled>↷</button><button id="delete-button" title="删除选中标注 (Delete)" aria-label="删除选中标注" disabled>⌫</button></div></div>
+      <div id="canvas-container" class="canvas-container"><canvas id="canvas" tabindex="0" aria-label="平面图标注画布。使用鼠标绘制，快捷键详见使用说明。"></canvas><div id="empty-state" class="empty-state"><div class="plan-symbol" aria-hidden="true"><span></span><span></span><span></span></div><h2>从一张平面图开始</h2><p>上传图纸，识别墙、门与楼梯间<br>在原图上检查、调整并导出标注</p><button id="empty-upload" class="primary">选择图片</button></div><div id="drop-overlay" class="drop-overlay" hidden>松开鼠标，导入平面图</div><div class="zoom-controls"><button id="zoom-out" aria-label="缩小">−</button><span id="zoom-level">100%</span><button id="zoom-in" aria-label="放大">＋</button><button id="fit-button">适应画布</button></div></div>
+      <div class="canvas-footer"><span id="tool-hint">选择图形可移动，拖动控制点调整边界。</span><span>滚轮缩放 · 空格＋拖动平移</span></div>
+    </section>
+    <aside class="panel export-panel" aria-label="标注检查和导出"><section><p class="eyebrow">检查 / INSPECT</p><h2>当前选择</h2><div id="selection-info" class="selection-info">点击画布上的标注，<br>查看类型与坐标。</div><p class="hint">墙线沿窗户连续；门洞使用黄色短线。楼梯间范围包括梯段和平台，可用多边形调整。</p></section><section><p class="eyebrow">保存 / EXPORT</p><h2>导出标注</h2><button id="export-png" class="wide" disabled>↓ PNG 标注图</button><p class="hint small">原图像素尺寸，保留原始底图。</p><button id="export-svg" class="wide" disabled>↓ SVG 矢量标注</button><label class="check-label"><input type="checkbox" id="svg-background" checked> SVG 包含原图</label><button id="export-project" class="wide" disabled>↓ JSON 可编辑工程</button><p class="hint small">包含原图和所有标注。保存后可以重新导入，或交给 Claude Code 继续开发。</p></section><section class="notice"><strong>本地运行，无需 API 密钥</strong><p>初版使用几何启发式方法，不是通用建筑识别模型。小门、斜墙、复杂符号可能漏识别；请逐项检查。</p></section></aside>
+  </main>
+  <footer class="statusbar"><span id="status" role="status" aria-live="polite">就绪。上传一张清晰的平面图开始。</span><span id="annotation-total">0 个标注</span></footer>
+  <dialog id="help-dialog"><div class="dialog-title"><h2>使用说明</h2><button id="close-help" aria-label="关闭使用说明">×</button></div><ol><li><strong>导入图纸：</strong>上传图片或打开示例。只会叠加标注，底图不会被生成或改写。</li><li><strong>自动初识别：</strong>调整参数后开始识别，再核对候选墙、门及楼梯间。重新识别会替换未修改的自动结果。</li><li><strong>补画：</strong>墙和门点击起点、终点；楼梯间依次点击边界顶点，按 Enter、双击或点击首点完成。按住 Shift 绘制水平或竖直线。</li><li><strong>修改：</strong>选择模式下点击图形；拖动控制点修改端点或顶点，拖动图形移动整个标注。修改后自动标注转为手动标注。</li><li><strong>保存：</strong>PNG 为原图尺寸；SVG 可选是否嵌入底图；JSON 包含底图和完整坐标，适合继续编辑。页面关闭前请保存工程。</li></ol><div class="shortcuts"><span><kbd>V</kbd> 选择</span><span><kbd>W</kbd> 墙</span><span><kbd>D</kbd> 门</span><span><kbd>S</kbd> 楼梯间</span><span><kbd>Esc</kbd> 取消绘制</span><span><kbd>Delete</kbd> 删除</span><span><kbd>Ctrl/⌘ Z</kbd> 撤销</span><span><kbd>Ctrl/⌘ Shift Z</kbd> 重做</span></div><p class="hint">所有坐标均以原图左上角为原点，单位为像素。识别请求发送到你启动的本地服务，不调用外部 AI API。</p></dialog>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

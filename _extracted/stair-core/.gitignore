@@ -1,0 +1,5 @@
+node_modules
+dist
+dist-single
+dist-tests
+.DS_Store

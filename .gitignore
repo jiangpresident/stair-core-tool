@@ -1,0 +1,24 @@
+# 依赖与构建产物（别人 clone 后自己 npm install / 建 .venv）
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+dist/
+dist-single/
+dist-tests/
+
+# 旧版本与压缩包（内容已被源码覆盖）
+*.zip
+stair-core-calculator V1.html
+stair-core-calculator V1.jsx
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 本机日志
+*.log
+npm-debug.log*

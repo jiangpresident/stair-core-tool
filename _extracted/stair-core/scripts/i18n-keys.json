@@ -1,0 +1,2095 @@
+{
+ " / 最小 {0} mm {1}": [
+  "StairCoreTool.jsx:4885"
+ ],
+ " 且 ≤{0} 级 ": [
+  "StairCoreTool.jsx:5283"
+ ],
+ "——这份工程没有底图": [
+  "StairCoreTool.jsx:3017"
+ ],
+ "，": [
+  "StairCoreTool.jsx:1886",
+  "StairCoreTool.jsx:5300"
+ ],
+ "，并与文件“{0}”断开关联（文件本身不会被改）": [
+  "StairCoreTool.jsx:4910"
+ ],
+ "，疏散距离满足": [
+  "StairCoreTool.jsx:5670"
+ ],
+ "，外包": [
+  "StairCoreTool.jsx:5393"
+ ],
+ "；{0} 个门候选附近没有墙，已跳过（可手动\"添加门\"）": [
+  "StairCoreTool.jsx:3256"
+ ],
+ "；本工具仍按 2 部楼梯计算。": [
+  "StairCoreTool.jsx:5331"
+ ],
+ "；扶手 865–1 070": [
+  "StairCoreTool.jsx:5537"
+ ],
+ "；扶手凸出 ≤100 不计入净宽": [
+  "StairCoreTool.jsx:5531"
+ ],
+ "；护栏 ≥1 070": [
+  "StairCoreTool.jsx:5537"
+ ],
+ "；仅全住宅 ≤6 层且建筑面积 ≤600 m² 可放宽至 4.5 m": [
+  "StairCoreTool.jsx:5409"
+ ],
+ "；楼梯间墙耐火极限 ≥ 楼板（45 min – 2 h）": [
+  "StairCoreTool.jsx:5537"
+ ],
+ "；门前缘距踢面 ≥300": [
+  "StairCoreTool.jsx:5531"
+ ],
+ "；门扇摆动后平台保留 ≥750": [
+  "StairCoreTool.jsx:5531"
+ ],
+ "；踢面 125–180、踏面 ≥280": [
+  "StairCoreTool.jsx:5537"
+ ],
+ "：": [
+  "StairCoreTool.jsx:4884",
+  "StairCoreTool.jsx:5393",
+  "aiVisionDetect.js:163",
+  "aiVisionDetect.js:213"
+ ],
+ "：内净": [
+  "StairCoreTool.jsx:5661"
+ ],
+ "。": [
+  "StairCoreTool.jsx:5315",
+  "StairCoreTool.jsx:5409",
+  "StairCoreTool.jsx:5412",
+  "StairCoreTool.jsx:5531",
+  "StairCoreTool.jsx:5537",
+  "StairCoreTool.jsx:5670"
+ ],
+ "。门闩朝中央同时为楼层号牌": [
+  "StairCoreTool.jsx:5604"
+ ],
+ "。清空后可按 Ctrl+Z 撤销。": [
+  "StairCoreTool.jsx:4910"
+ ],
+ "。这是示例文件：保存时会先确认，避免误覆盖": [
+  "StairCoreTool.jsx:3017"
+ ],
+ "· 不累加": [
+  "StairCoreTool.jsx:5265"
+ ],
+ "· 超过单梯上限则增加": [
+  "StairCoreTool.jsx:5256"
+ ],
+ "· 单位 mm": [
+  "StairCoreTool.jsx:1210"
+ ],
+ "· 路径": [
+  "StairCoreTool.jsx:4570"
+ ],
+ "· 门": [
+  "StairCoreTool.jsx:4570"
+ ],
+ "· 墙": [
+  "StairCoreTool.jsx:4570"
+ ],
+ "· 中间隔墙": [
+  "StairCoreTool.jsx:5397"
+ ],
+ "· 中间平台 = 跑数 − 1": [
+  "StairCoreTool.jsx:5283"
+ ],
+ "· 走不到门": [
+  "StairCoreTool.jsx:4776"
+ ],
+ "” 是 Saved Plans 里的示例文件，确定要用当前画布覆盖它吗？": [
+  "StairCoreTool.jsx:3771"
+ ],
+ "\"自动最短路径\"：点一下起点，工具沿已画的墙体/门自动算出到核心筒门的最短路径；整层的达标情况看工具栏的\"行走距离热力图\"": [
+  "StairCoreTool.jsx:4785"
+ ],
+ "“Saved Plans” 文件夹不存在": [
+  "StairCoreTool.jsx:4599"
+ ],
+ "（{0} 跑，L{1} 平台换到{2}端）": [
+  "StairCoreTool.jsx:1128"
+ ],
+ "（保存于 {0}）": [
+  "StairCoreTool.jsx:3017"
+ ],
+ "（本方案 {0}，若改为居中开启则需 ≥ {1}）": [
+  "StairCoreTool.jsx:5603"
+ ],
+ "（不变）": [
+  "StairCoreTool.jsx:5177"
+ ],
+ "（控制层）": [
+  "StairCoreTool.jsx:5511"
+ ],
+ "（默认）": [
+  "StairCoreTool.jsx:3891"
+ ],
+ "（裙房梯）": [
+  "StairCoreTool.jsx:5359"
+ ],
+ "（温哥华 2026-01-20 新增条款）。": [
+  "StairCoreTool.jsx:5405"
+ ],
+ "（只支持 PDF）": [
+  "StairCoreTool.jsx:3892"
+ ],
+ "）": [
+  "StairCoreTool.jsx:4589",
+  "StairCoreTool.jsx:4624",
+  "StairCoreTool.jsx:4678",
+  "StairCoreTool.jsx:4707",
+  "StairCoreTool.jsx:5615"
+ ],
+ ")，": [
+  "StairCoreTool.jsx:4695"
+ ],
+ "{0} 部": [
+  "StairCoreTool.jsx:5449"
+ ],
+ "{0} 部贯通": [
+  "StairCoreTool.jsx:5449"
+ ],
+ "{0} 个梯井": [
+  "StairCoreTool.jsx:5303"
+ ],
+ "{0} 与 {1} 的外框重叠": [
+  "StairCoreTool.jsx:3723"
+ ],
+ "{0} API 密钥 {1}": [
+  "StairCoreTool.jsx:3980"
+ ],
+ "{0}：有角点落在已绘制的楼层边界之外": [
+  "StairCoreTool.jsx:3719"
+ ],
+ "{0}（单梯道）× {1}": [
+  "StairCoreTool.jsx:5380"
+ ],
+ "{0}跑": [
+  "StairCoreTool.jsx:5280"
+ ],
+ "← 在新标签页打开核心筒计算器": [
+  "PlanApp.jsx:58"
+ ],
+ "→ 合计外包": [
+  "StairCoreTool.jsx:5303"
+ ],
+ "→ 内净": [
+  "StairCoreTool.jsx:5393"
+ ],
+ "↶ 撤销": [
+  "StairCoreTool.jsx:4210"
+ ],
+ "↷ 重做": [
+  "StairCoreTool.jsx:4220"
+ ],
+ "＋": [
+  "StairCoreTool.jsx:4172"
+ ],
+ "<div style=\"padding:16px;font-size:12.5px;color:#5B6B7B\">当前浏览器无法创建 WebGL 上下文，三维模型不可用。</div>": [
+  "StairCoreTool.jsx:1699"
+ ],
+ "▦ 网格吸附": [
+  "StairCoreTool.jsx:4200"
+ ],
+ "△ 视适用性": [
+  "StairCoreTool.jsx:5595"
+ ],
+ "◀ 展开面板 · 核心筒": [
+  "StairCoreTool.jsx:4570"
+ ],
+ "● 服务未启动": [
+  "StairCoreTool.jsx:3901"
+ ],
+ "● 服务未启动：双击 floorplan-marker/start_windows.bat": [
+  "StairCoreTool.jsx:3901"
+ ],
+ "● 服务在线": [
+  "StairCoreTool.jsx:3901"
+ ],
+ "● 检查服务…": [
+  "StairCoreTool.jsx:3901"
+ ],
+ "✋ 平移": [
+  "StairCoreTool.jsx:4191"
+ ],
+ "1.8 m 人体比例": [
+  "StairCoreTool.jsx:1897"
+ ],
+ "3 层": [
+  "StairCoreTool.jsx:5630"
+ ],
+ "3.1.17.1.(1) 及 Table 3.1.17.1": [
+  "StairCoreTool.jsx:68"
+ ],
+ "3.1.17.1.(1)(b) 2 人/卧室": [
+  "StairCoreTool.jsx:746"
+ ],
+ "3.1.17.1.(1)(c)(i) 设计人数": [
+  "StairCoreTool.jsx:743"
+ ],
+ "3.8.3.6.(2)(11)（VBBL 编号）": [
+  "StairCoreTool.jsx:79"
+ ],
+ "5–6 层木结构剪刀梯禁令已取消": [
+  "StairCoreTool.jsx:98"
+ ],
+ "6 层": [
+  "StairCoreTool.jsx:5631"
+ ],
+ "按标注数字自动标定比例": [
+  "StairCoreTool.jsx:3847"
+ ],
+ "按房间分隔关系过滤噪点（实验性）": [
+  "StairCoreTool.jsx:3964"
+ ],
+ "按各区段楼梯数量，梯间并列共用墙体": [
+  "StairCoreTool.jsx:5644"
+ ],
+ "按每层面积、用途、层高确定楼梯数量、净宽、跑数与楼梯间尺寸。条文按温哥华 VBBL 2025（2026-01-20 修订）优先，其次 BCBC 2024，再次 NBC 2020；三者对本页所用条款绝大多数一致，标签会注明来源层级。": [
+  "StairCoreTool.jsx:5079"
+ ],
+ "按上方计算结果自动生成的实体模型，颜色区分楼梯编号": [
+  "StairCoreTool.jsx:5613"
+ ],
+ "把底图、比例、边界、核心筒、墙、门、路径全部清掉，回到空白画布（会先让你确认）": [
+  "StairCoreTool.jsx:4925"
+ ],
+ "把右侧四个面板一起收到右边，让平面图占满整行": [
+  "StairCoreTool.jsx:4578"
+ ],
+ "把整张图交给多模态模型读，需联网 + 自己的 API 密钥（只存本机浏览器，请求直连官方接口），一张图约几分到几毛钱。": [
+  "StairCoreTool.jsx:3875"
+ ],
+ "板厚": [
+  "StairCoreTool.jsx:1505",
+  "StairCoreTool.jsx:5202"
+ ],
+ "办公 / 个人服务店铺 Office & personal service": [
+  "StairCoreTool.jsx:249"
+ ],
+ "办公 Offices (D)": [
+  "StairCoreTool.jsx:37"
+ ],
+ "保存": [
+  "StairCoreTool.jsx:3747"
+ ],
+ "保存平面图工程到文件（会弹系统对话框让你选位置；Ctrl+S）": [
+  "StairCoreTool.jsx:3746"
+ ],
+ "保存失败：": [
+  "StairCoreTool.jsx:2997"
+ ],
+ "本层有公共走道连接各出口": [
+  "StairCoreTool.jsx:4874"
+ ],
+ "本方案": [
+  "StairCoreTool.jsx:5579"
+ ],
+ "本工具为方案阶段估算，不替代注册专业人员的规范审查。人员荷载、疏散距离、出口间距、防烟（3.2.6 高层）与无障碍要求需结合平面图复核；温哥华项目请以 VBBL 2025 最新合订本及 Chief Building Official 解释为准。": [
+  "StairCoreTool.jsx:5693"
+ ],
+ "本工具用途：": [
+  "StairCoreTool.jsx:5686"
+ ],
+ "本机 Marker 识图": [
+  "StairCoreTool.jsx:3872"
+ ],
+ "本机 Python + OpenCV 服务（127.0.0.1:8765），不联网不用密钥；只识别横平竖直的墙，柱子不会被当成墙。需先双击 floorplan-marker/start_windows.bat 启动它。": [
+  "StairCoreTool.jsx:3872"
+ ],
+ "本机识别（Floorplan Marker，阈值 {0}）：识别到 {1} 段可能的墙、{2} 个门、{3} 处楼梯": [
+  "StairCoreTool.jsx:3379"
+ ],
+ "本节为示意性校核：底图比例、边界、墙体与手动路径均为绘制得到；\"自动最短路径\"把墙体/门/核心筒栅格化（格宽约": [
+  "StairCoreTool.jsx:4932"
+ ],
+ "本项目为全住宅、≤6 层、建筑面积 ≤600 m²：两出口门间距不必超过 4.5 m，梯道间设连续气密屏障": [
+  "StairCoreTool.jsx:5405"
+ ],
+ "标定比例": [
+  "StairCoreTool.jsx:3811"
+ ],
+ "标定比例：依次点击两个已知实际距离的点": [
+  "StairCoreTool.jsx:3729"
+ ],
+ "标注识别失败（需要联网下载 OCR 语言包）：": [
+  "StairCoreTool.jsx:3526"
+ ],
+ "表值": [
+  "StairCoreTool.jsx:5229"
+ ],
+ "不限": [
+  "StairCoreTool.jsx:3957"
+ ],
+ "布置提示": [
+  "StairCoreTool.jsx:95"
+ ],
+ "步": [
+  "StairCoreTool.jsx:1499"
+ ],
+ "部": [
+  "StairCoreTool.jsx:5253"
+ ],
+ "部楼梯": [
+  "StairCoreTool.jsx:5297",
+  "StairCoreTool.jsx:5650"
+ ],
+ "参数": [
+  "StairCoreTool.jsx:3919"
+ ],
+ "餐饮 / 酒吧 / 食堂 Dining, beverage, cafeteria (A2)": [
+  "StairCoreTool.jsx:41"
+ ],
+ "仓储 Storage spaces, warehouse (F)": [
+  "StairCoreTool.jsx:52"
+ ],
+ "层": [
+  "StairCoreTool.jsx:5115",
+  "StairCoreTool.jsx:5198",
+  "StairCoreTool.jsx:5425"
+ ],
+ "层高": [
+  "StairCoreTool.jsx:5186",
+  "StairCoreTool.jsx:5201"
+ ],
+ "层高 {0}": [
+  "StairCoreTool.jsx:1497"
+ ],
+ "层数（含首层）": [
+  "StairCoreTool.jsx:5115"
+ ],
+ "超标": [
+  "StairCoreTool.jsx:4775"
+ ],
+ "超过即加折返休息平台；规范仅限每跑 ≤3.7 m": [
+  "StairCoreTool.jsx:5129"
+ ],
+ "超过则增加楼梯数量": [
+  "StairCoreTool.jsx:5117"
+ ],
+ "撤销 (Ctrl+Z)": [
+  "StairCoreTool.jsx:4206"
+ ],
+ "撤销上一点": [
+  "StairCoreTool.jsx:4062",
+  "StairCoreTool.jsx:4084",
+  "StairCoreTool.jsx:4119"
+ ],
+ "出口层 L1；计入楼梯疏散的楼层 L{0}–L{1}": [
+  "StairCoreTool.jsx:5243"
+ ],
+ "出口穿越大堂": [
+  "StairCoreTool.jsx:82"
+ ],
+ "出口的防火分隔": [
+  "StairCoreTool.jsx:81"
+ ],
+ "出口间距校核": [
+  "StairCoreTool.jsx:4871"
+ ],
+ "出口净宽范围内净高不小于 2 050 mm（楼梯自踏步前缘连线量至上方最低构件）；门洞净高 ≥2 030 mm。": [
+  "StairCoreTool.jsx:80"
+ ],
+ "出口宽度 — 每人毫米数": [
+  "StairCoreTool.jsx:71"
+ ],
+ "出口宽度不得被侵占": [
+  "StairCoreTool.jsx:76"
+ ],
+ "出口宽度基于人员荷载": [
+  "StairCoreTool.jsx:70"
+ ],
+ "出口楼梯、坡道及其平台的护栏高度不小于 1 070 mm。": [
+  "StairCoreTool.jsx:89"
+ ],
+ "出口门": [
+  "StairCoreTool.jsx:1894"
+ ],
+ "出口门间距按 3.4.2.3.(1)：≥ 楼层最大对角线的 1/2（有公共走道时不必超过 9 m）": [
+  "StairCoreTool.jsx:5409"
+ ],
+ "出口门扇宽": [
+  "StairCoreTool.jsx:5145"
+ ],
+ "出口门位置核查": [
+  "StairCoreTool.jsx:5545"
+ ],
+ "出口门须沿疏散方向开启（开向楼梯间内）。": [
+  "StairCoreTool.jsx:92"
+ ],
+ "出口须以防火分隔与建筑其余部分隔开，耐火极限不低于 3.2.2 要求的楼板耐火极限，且不低于 45 min，不需超过 2 h。": [
+  "StairCoreTool.jsx:81"
+ ],
+ "出口之间的距离": [
+  "StairCoreTool.jsx:93"
+ ],
+ "出口总宽度按 3.1.17 的人员荷载确定；两个或以上出口汇合时宽度累加（3.4.3.2.(4) 另有规定除外）。": [
+  "StairCoreTool.jsx:70"
+ ],
+ "出口最小宽度": [
+  "StairCoreTool.jsx:75"
+ ],
+ "除被门洞打断处外至少一侧扶手在平台处连续；扶手端部不得阻碍行走；至少一侧扶手在梯段顶部和底部水平延伸不少于 300 mm。": [
+  "StairCoreTool.jsx:77"
+ ],
+ "厨房 Kitchens": [
+  "StairCoreTool.jsx:54"
+ ],
+ "从 L": [
+  "StairCoreTool.jsx:5171"
+ ],
+ "从起点走不到目标核心筒的门（被墙体挡住，检查沿途是否漏开门）": [
+  "StairCoreTool.jsx:4854"
+ ],
+ "从上方选择楼梯并\"添加到平面图\"": [
+  "StairCoreTool.jsx:4673"
+ ],
+ "达标": [
+  "StairCoreTool.jsx:4773"
+ ],
+ "打开 {0}": [
+  "StairCoreTool.jsx:4609"
+ ],
+ "打开…": [
+  "StairCoreTool.jsx:3755"
+ ],
+ "打开失败：": [
+  "StairCoreTool.jsx:3024"
+ ],
+ "打开示例 {0} 失败：": [
+  "StairCoreTool.jsx:3047"
+ ],
+ "打开之前保存的平面图工程（.stairplan.json），会替换当前画布内容": [
+  "StairCoreTool.jsx:3754"
+ ],
+ "单部楼梯最大净宽": [
+  "StairCoreTool.jsx:5117"
+ ],
+ "单个出口最多计入一半": [
+  "StairCoreTool.jsx:74"
+ ],
+ "到 L": [
+  "StairCoreTool.jsx:5172"
+ ],
+ "到最近核心筒门 {0} m / 限值 {1} m {2}": [
+  "StairCoreTool.jsx:4252"
+ ],
+ "道（宽向）、× 2 道（长向）": [
+  "StairCoreTool.jsx:5664"
+ ],
+ "底部区段楼梯间核心筒外包": [
+  "StairCoreTool.jsx:5269"
+ ],
+ "底部区段楼梯数量": [
+  "StairCoreTool.jsx:5251"
+ ],
+ "底图解码失败": [
+  "marker.js:13",
+  "aiVision.js:15"
+ ],
+ "点\"绘制走廊墙体\"画出走廊/房间隔墙，构成可行走的走廊通道": [
+  "StairCoreTool.jsx:4680"
+ ],
+ "点画布上的墙身或下方列表可选中（红框），选中后 Delete / Backspace 删除，Ctrl+C / Ctrl+V 复制粘贴（连同墙上的门，粘贴后错开 600 mm 并自动选中新墙）": [
+  "StairCoreTool.jsx:4679"
+ ],
+ "点选（画布或下方列表均可，红框为选中）后 Ctrl+C / Ctrl+V 复制粘贴，或用\"复制\"按钮": [
+  "StairCoreTool.jsx:4625"
+ ],
+ "读 PDF 内容流里的矢量线段：粗线直接当墙，细线两两配对；扫描件没有矢量数据会识别到 0 段。": [
+  "StairCoreTool.jsx:3873"
+ ],
+ "读取中…": [
+  "StairCoreTool.jsx:4594"
+ ],
+ "端墙上的做法": [
+  "StairCoreTool.jsx:5152"
+ ],
+ "段可能的墙（蓝色虚线，点选中后双击接受，或按 Delete/Backspace 单独丢弃）": [
+  "StairCoreTool.jsx:4037"
+ ],
+ "对渲染出的图做边缘检测再配对，适合扫描件；噪点较多，可用线宽范围过滤。": [
+  "StairCoreTool.jsx:3874"
+ ],
+ "二值化阈值：灰度 ≤ 这个值的像素算墨迹。pdf.js 渲染的细线是抗锯齿的，230 左右才能把门弧、踏步都保住；图太脏（阴影、底色）时调低。改完再点一次识别。": [
+  "StairCoreTool.jsx:3925"
+ ],
+ "扶手": [
+  "StairCoreTool.jsx:88"
+ ],
+ "扶手的连续与延伸": [
+  "StairCoreTool.jsx:77"
+ ],
+ "服务楼层": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "服务器返回 {0}": [
+  "StairCoreTool.jsx:2698",
+  "planFile.js:135",
+  "planFile.js:146"
+ ],
+ "复制": [
+  "StairCoreTool.jsx:4647"
+ ],
+ "覆盖保存到 {0}（Ctrl+S）": [
+  "StairCoreTool.jsx:3746"
+ ],
+ "高危工业 High-hazard industrial (F1)": [
+  "StairCoreTool.jsx:248"
+ ],
+ "格": [
+  "StairCoreTool.jsx:4773",
+  "StairCoreTool.jsx:4775"
+ ],
+ "格（灰色）": [
+  "StairCoreTool.jsx:4776"
+ ],
+ "格子": [
+  "StairCoreTool.jsx:4762"
+ ],
+ "隔墙 {0}": [
+  "StairCoreTool.jsx:1152"
+ ],
+ "个点（选一段已知长度的线，比如一个尺寸标注的两端）": [
+  "StairCoreTool.jsx:3818"
+ ],
+ "个核心筒、": [
+  "StairCoreTool.jsx:4909"
+ ],
+ "个可能的尺寸标注（紫色标记，点选其一按它的比例标定）": [
+  "StairCoreTool.jsx:3861"
+ ],
+ "个门和所有路径都会被清掉": [
+  "StairCoreTool.jsx:4909"
+ ],
+ "个人服务店铺 Personal service shops (D)": [
+  "StairCoreTool.jsx:38"
+ ],
+ "个踏步实体": [
+  "StairCoreTool.jsx:1886"
+ ],
+ "个梯间并列共墙，": [
+  "StairCoreTool.jsx:5274"
+ ],
+ "各楼梯按其服务楼层中最大需求取宽": [
+  "StairCoreTool.jsx:73"
+ ],
+ "固定座位按座位数；住宅单元或套房按每个卧室（睡眠区）2 人；其他按 Table 3.1.17.1 的每人面积（m²/人）。设计人数不同于表值时须张贴人数标识 (3.1.17.1.(2))。": [
+  "StairCoreTool.jsx:68"
+ ],
+ "规范本身没有以级数计的上限，只规定每跑高差 ≤3.7 m (3.4.6.3.(1)) 且每跑 ≥3 级 (3.4.6.2.(1))；按 180 mm 踢面折算约 20 级。这里的 X 级为设计 / 事务所习惯设定，超过即增加一跑并设折返休息平台。": [
+  "StairCoreTool.jsx:84"
+ ],
+ "滚轮缩放 · 空白处直接拖动平移；放大后核心筒等图形挡住空白处时，点\"平移\"再拖动 · Ctrl+Z 撤销 / Ctrl+Y 重做 · \"网格吸附\"开启后拖动一律落在 10 cm 网格上": [
+  "StairCoreTool.jsx:4222"
+ ],
+ "国家建筑规范": [
+  "StairCoreTool.jsx:5086"
+ ],
+ "还没标定比例——核心筒的尺寸之后不会随标定缩放，建议先“标定比例”再添加": [
+  "StairCoreTool.jsx:4027"
+ ],
+ "还没有填 {0} 的 API 密钥": [
+  "aiVisionDetect.js:235"
+ ],
+ "还没有填 {0} 的 API 密钥——在下面的输入框里粘贴自己的密钥（只存在这台电脑的浏览器里）": [
+  "StairCoreTool.jsx:3325"
+ ],
+ "还没有在核心筒计算器里\"确认并计算\"过，当前用的是默认参数（5 层、折返梯）。去核心筒计算器确认一次后，这里会自动换成你的实际计算结果。": [
+  "PlanApp.jsx:63"
+ ],
+ "和门扇弧线距踢面 ≥300": [
+  "StairCoreTool.jsx:5602"
+ ],
+ "和门闩侧净空": [
+  "StairCoreTool.jsx:5604"
+ ],
+ "核心筒 / 楼梯间墙厚": [
+  "StairCoreTool.jsx:5116"
+ ],
+ "核心筒（": [
+  "StairCoreTool.jsx:4624"
+ ],
+ "核心筒摆放、走廊墙体、门、楼层边界与疏散路径校核 —— 独立页面，可单独打开/收藏": [
+  "StairCoreTool.jsx:5704"
+ ],
+ "核心筒摆放、走廊墙体、门、楼层边界与疏散路径校核。楼梯计算结果来自核心筒计算器，两边通过浏览器本地存储自动同步。": [
+  "PlanApp.jsx:48"
+ ],
+ "核心筒内楼梯间布置提示（本工具不计算平面对角线）": [
+  "StairCoreTool.jsx:93"
+ ],
+ "核心筒疏散楼梯计算器": [
+  "StairCoreTool.jsx:5077"
+ ],
+ "黑白阈值": [
+  "StairCoreTool.jsx:3926"
+ ],
+ "厚": [
+  "StairCoreTool.jsx:4697"
+ ],
+ "护栏": [
+  "StairCoreTool.jsx:89"
+ ],
+ "护理/治疗/拘留用途宽度": [
+  "StairCoreTool.jsx:72"
+ ],
+ "绘制楼层边界": [
+  "StairCoreTool.jsx:4057"
+ ],
+ "绘制楼层边界：依次点击轮廓顶点": [
+  "StairCoreTool.jsx:3730"
+ ],
+ "绘制墙体：依次点击墙的折点，完成后点“完成墙体”": [
+  "StairCoreTool.jsx:3731"
+ ],
+ "绘制疏散路径（手动折线）：依次点击路径转折点": [
+  "StairCoreTool.jsx:3733"
+ ],
+ "绘制走廊墙体": [
+  "StairCoreTool.jsx:4103"
+ ],
+ "机房 / 储藏 Storage & service": [
+  "StairCoreTool.jsx:55"
+ ],
+ "级": [
+  "StairCoreTool.jsx:5129"
+ ],
+ "级数上限": [
+  "StairCoreTool.jsx:5459"
+ ],
+ "集会—非固定座位 Assembly, non-fixed seats (A)": [
+  "StairCoreTool.jsx:42"
+ ],
+ "集会—非固定座位加桌 Assembly, seats & tables (A)": [
+  "StairCoreTool.jsx:43"
+ ],
+ "计算基础": [
+  "StairCoreTool.jsx:70"
+ ],
+ "间": [
+  "StairCoreTool.jsx:5188"
+ ],
+ "剪刀梯 · L{0}–L{1} 纵剖面（实线：近侧梯道，虚线：隔墙后梯道）": [
+  "StairCoreTool.jsx:1436"
+ ],
+ "剪刀梯（{0}+{1}）· L{2}": [
+  "StairCoreTool.jsx:1989"
+ ],
+ "剪刀梯（楼梯 {0} + {1}）· L{2} 平面": [
+  "StairCoreTool.jsx:1153"
+ ],
+ "剪刀梯（一井两梯）": [
+  "StairCoreTool.jsx:5123"
+ ],
+ "剪刀梯及其他相邻出口楼梯之间须以烟密封防火分隔隔开，耐火极限不低于所穿越楼板；分隔墙上不得开门洞、风管、管道等。": [
+  "StairCoreTool.jsx:83"
+ ],
+ "剪刀梯模式说明": [
+  "StairCoreTool.jsx:98"
+ ],
+ "剪刀梯模式下符合条件时提示": [
+  "StairCoreTool.jsx:94"
+ ],
+ "剪刀梯之间的分隔": [
+  "StairCoreTool.jsx:83"
+ ],
+ "剪刀梯中间隔墙": [
+  "StairCoreTool.jsx:83"
+ ],
+ "剪刀梯中间隔墙厚": [
+  "StairCoreTool.jsx:5143"
+ ],
+ "见梯井": [
+  "StairCoreTool.jsx:5382"
+ ],
+ "建筑面积（最大楼层外包面积）": [
+  "StairCoreTool.jsx:5132"
+ ],
+ "建筑与核心筒": [
+  "StairCoreTool.jsx:5114"
+ ],
+ "教室 Classrooms (A)": [
+  "StairCoreTool.jsx:45"
+ ],
+ "接受选中的这一段": [
+  "StairCoreTool.jsx:4040"
+ ],
+ "结果": [
+  "StairCoreTool.jsx:5579"
+ ],
+ "结果概要": [
+  "StairCoreTool.jsx:5243"
+ ],
+ "结果已是最新": [
+  "StairCoreTool.jsx:5109"
+ ],
+ "仅作说明": [
+  "StairCoreTool.jsx:96",
+  "StairCoreTool.jsx:97"
+ ],
+ "净高": [
+  "StairCoreTool.jsx:80",
+  "StairCoreTool.jsx:5425",
+  "StairCoreTool.jsx:5486"
+ ],
+ "净高 {0}": [
+  "StairCoreTool.jsx:1364",
+  "StairCoreTool.jsx:1393"
+ ],
+ "净高检查：层高 − 上层板厚 ≥ 2 050": [
+  "StairCoreTool.jsx:80"
+ ],
+ "净高检查用": [
+  "StairCoreTool.jsx:5162"
+ ],
+ "净宽 {0}": [
+  "StairCoreTool.jsx:1125",
+  "StairCoreTool.jsx:1127",
+  "StairCoreTool.jsx:1152",
+  "StairCoreTool.jsx:1152",
+  "StairCoreTool.jsx:1155"
+ ],
+ "居中·开启后垂直端墙": [
+  "StairCoreTool.jsx:5153"
+ ],
+ "开启后，拖动核心筒 / 墙 / 门 / 边界顶点都会吸附到 10 cm 网格上": [
+  "StairCoreTool.jsx:4196"
+ ],
+ "开启后贴侧墙，横向剩余 {0}": [
+  "StairCoreTool.jsx:5562"
+ ],
+ "控制楼层需求": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "宽": [
+  "StairCoreTool.jsx:4723"
+ ],
+ "宽度 >1 500 mm 时提示中间扶手": [
+  "StairCoreTool.jsx:88"
+ ],
+ "宽度 ≥1 100 mm 的楼梯两侧均设扶手；所需出口宽度内任一点距扶手不得超过 750 mm，否则加设中间扶手；扶手高度 865–1 070 mm。": [
+  "StairCoreTool.jsx:88"
+ ],
+ "宽度方向：Σ 梯间内净宽 + (梯间数 + 1) × 墙厚；长度方向：最长梯间内净长 + 2 × 墙厚。若梯间分设于核心筒两侧，请分别取单个梯间外包尺寸。两个出口的间距还需满足": [
+  "StairCoreTool.jsx:5670"
+ ],
+ "宽度取各服务楼层最大值，尺寸按最不利楼层": [
+  "StairCoreTool.jsx:5338"
+ ],
+ "宽度取整": [
+  "StairCoreTool.jsx:5163"
+ ],
+ "来自项目根目录的 \"Saved Plans\" 文件夹，点一下直接打开（会替换当前画布，可 Ctrl+Z 撤销）": [
+  "StairCoreTool.jsx:4592"
+ ],
+ "连不上 Claude 接口：检查网络（这个功能需要能直连 api.anthropic.com）": [
+  "aiVisionDetect.js:175"
+ ],
+ "连不上 OpenAI 接口：检查网络（这个功能需要能直连 api.openai.com）——": [
+  "aiVisionDetect.js:207"
+ ],
+ "两点实际距离（mm）": [
+  "StairCoreTool.jsx:3832"
+ ],
+ "两个出口的最小距离为楼层区域最大对角线的一半，有公共走道的楼层不必超过 9 m，其他楼层不小于 9 m；两个楼梯的室外出口间距 ≥9 m（喷淋且距街道 ≤15 m 时 ≥6 m）。": [
+  "StairCoreTool.jsx:93"
+ ],
+ "两跑之间梯井 / 栏板宽": [
+  "StairCoreTool.jsx:5141"
+ ],
+ "另存到别的位置 / 别的文件名": [
+  "StairCoreTool.jsx:3750"
+ ],
+ "另存为…": [
+  "StairCoreTool.jsx:3751",
+  "StairCoreTool.jsx:3777"
+ ],
+ "浏览 / 拖动核心筒、门标记、墙端点": [
+  "StairCoreTool.jsx:3728"
+ ],
+ "留出墙面；居中布置时两侧都只有": [
+  "StairCoreTool.jsx:5604"
+ ],
+ "留空按 Table 3.1.17.1 自动计算；填写则按设计人数": [
+  "StairCoreTool.jsx:5229"
+ ],
+ "留空不变": [
+  "StairCoreTool.jsx:5185"
+ ],
+ "楼板厚": [
+  "StairCoreTool.jsx:5187"
+ ],
+ "楼层号牌": [
+  "StairCoreTool.jsx:78"
+ ],
+ "楼层平台 {0}": [
+  "StairCoreTool.jsx:1123",
+  "StairCoreTool.jsx:1124"
+ ],
+ "楼层平台 L{0}": [
+  "StairCoreTool.jsx:1106"
+ ],
+ "楼层平台深": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "楼层平台深度 ≥ 门扇宽 + 门框 + 300（摆动弧线最远处到首级踢面）": [
+  "StairCoreTool.jsx:91"
+ ],
+ "楼层数字须固定在楼梯间一侧、门的门闩侧墙上，距门不超过 300 mm，高 1 500 mm。": [
+  "StairCoreTool.jsx:78"
+ ],
+ "楼梯": [
+  "StairCoreTool.jsx:5343",
+  "StairCoreTool.jsx:5425"
+ ],
+ "楼梯 {0} · 折返梯 · L{1}": [
+  "StairCoreTool.jsx:1966"
+ ],
+ "楼梯 {0} · 折返梯 · L{1} 平面{2}": [
+  "StairCoreTool.jsx:1128"
+ ],
+ "楼梯 {0} · 折返梯 · L{1}–L{2} 纵剖面": [
+  "StairCoreTool.jsx:1436"
+ ],
+ "楼梯 {0} · 直跑梯 · L{1}": [
+  "StairCoreTool.jsx:1991"
+ ],
+ "楼梯 {0} · 直跑梯 · L{1} 平面": [
+  "StairCoreTool.jsx:1156"
+ ],
+ "楼梯 {0} 上 UP · {1} 步": [
+  "StairCoreTool.jsx:1136",
+  "StairCoreTool.jsx:1145"
+ ],
+ "楼梯 {0}: 最小宽度 {1} mm 超过设定的单梯最大宽度 {2} mm": [
+  "StairCoreTool.jsx:842"
+ ],
+ "楼梯 #": [
+  "StairCoreTool.jsx:1890"
+ ],
+ "楼梯 #{0}": [
+  "StairCoreTool.jsx:5615",
+  "StairCoreTool.jsx:5661"
+ ],
+ "楼梯 #{0}（L{1}–L{2}）": [
+  "StairCoreTool.jsx:2844",
+  "StairCoreTool.jsx:5500"
+ ],
+ "楼梯：踢面 ≤180 mm 且踏面 ≥280 mm 时 8 mm/人；否则 9.2 mm/人。坡道 ≤1:8、门、走道 6.1 mm/人。": [
+  "StairCoreTool.jsx:71"
+ ],
+ "楼梯间核心筒尺寸": [
+  "StairCoreTool.jsx:5644"
+ ],
+ "楼梯间平面与剖面": [
+  "StairCoreTool.jsx:5493"
+ ],
+ "楼梯间墙体耐火极限（核心筒墙厚由用户输入）": [
+  "StairCoreTool.jsx:81"
+ ],
+ "楼梯净宽": [
+  "StairCoreTool.jsx:5260"
+ ],
+ "楼梯三维模型": [
+  "StairCoreTool.jsx:5613"
+ ],
+ "楼梯形式": [
+  "StairCoreTool.jsx:5119"
+ ],
+ "楼梯最少数量 = 2": [
+  "StairCoreTool.jsx:69"
+ ],
+ "路径 {0}": [
+  "StairCoreTool.jsx:3681"
+ ],
+ "没检测到本机 Floorplan Marker 服务（127.0.0.1:8765）——双击项目里 floorplan-marker/start_windows.bat 启动它，保持那个终端窗口开着，再点一次": [
+  "markerDetect.js:21"
+ ],
+ "每部楼梯": [
+  "StairCoreTool.jsx:5338"
+ ],
+ "每部楼梯最小净宽": [
+  "StairCoreTool.jsx:75"
+ ],
+ "每层面积": [
+  "StairCoreTool.jsx:5185"
+ ],
+ "每层跑数 / 中间平台": [
+  "StairCoreTool.jsx:5278"
+ ],
+ "每层人数 OL": [
+  "StairCoreTool.jsx:68"
+ ],
+ "每个供使用的楼层区域至少设 2 个出口。仅当建筑不超过 2 层、出口服务人数 ≤60、面积与疏散距离不超过 Table 3.4.2.1.-A/-B（喷淋时疏散距离 ≤25 m）时允许 1 个出口。": [
+  "StairCoreTool.jsx:69"
+ ],
+ "每间 {0} × {1}": [
+  "StairCoreTool.jsx:5303"
+ ],
+ "每跑 ≤3.7 m": [
+  "StairCoreTool.jsx:5283"
+ ],
+ "每跑垂直高度 ≤3 700": [
+  "StairCoreTool.jsx:5537"
+ ],
+ "每跑室内楼梯不少于 3 个踢面。": [
+  "StairCoreTool.jsx:85"
+ ],
+ "每跑踢面 ≥3 检查": [
+  "StairCoreTool.jsx:85"
+ ],
+ "每跑最大垂直高度与平台": [
+  "StairCoreTool.jsx:86"
+ ],
+ "每跑最多踢面数": [
+  "StairCoreTool.jsx:84"
+ ],
+ "每跑最多踢面数（0 = 不限）": [
+  "StairCoreTool.jsx:5129"
+ ],
+ "门": [
+  "StairCoreTool.jsx:4847",
+  "StairCoreTool.jsx:4859"
+ ],
+ "门 · 墙#": [
+  "StairCoreTool.jsx:4722"
+ ],
+ "门 2100": [
+  "StairCoreTool.jsx:1456"
+ ],
+ "门（": [
+  "StairCoreTool.jsx:4707"
+ ],
+ "门的开启方向": [
+  "StairCoreTool.jsx:92"
+ ],
+ "门的位置": [
+  "StairCoreTool.jsx:5147"
+ ],
+ "门洞净宽 ≥850 mm；门开向的一侧须有 1 500 mm 深、门闩侧 ≥600 mm 的净空，另一侧 1 200 mm 深、门闩侧 ≥300 mm。是否把楼梯间出口门视为无障碍通路上的门由项目与审图确定。": [
+  "StairCoreTool.jsx:79"
+ ],
+ "门居中、开启后垂直端墙：平台深度 ≥ 门扇 + 750；门贴侧墙、开启后贴墙：门扇不占平台净深，平台深度按 3.4.6.4 与 3.4.6.11 控制": [
+  "StairCoreTool.jsx:76"
+ ],
+ "门开启后不削减平台所需宽度、任意位置剩余 ≥750": [
+  "StairCoreTool.jsx:5562"
+ ],
+ "门开向楼梯处须有平台，深度 ≥ 梯宽": [
+  "StairCoreTool.jsx:5558"
+ ],
+ "门开向楼梯间": [
+  "StairCoreTool.jsx:5531"
+ ],
+ "门宽": [
+  "StairCoreTool.jsx:4660"
+ ],
+ "门扇 {0} − 门框约 50 ≈ {1}": [
+  "StairCoreTool.jsx:5573"
+ ],
+ "门扇 90° 开启后平台剩余深度 ≥750": [
+  "StairCoreTool.jsx:5565"
+ ],
+ "门扇摆动弧线最远处距首级踢面 ≥300": [
+  "StairCoreTool.jsx:5560"
+ ],
+ "门扇贴墙开启时须避开该侧墙上扶手的 300 mm 延伸段：Lf − 300 ≥ 门扇 + 门框": [
+  "StairCoreTool.jsx:77"
+ ],
+ "门闩侧 {0}": [
+  "StairCoreTool.jsx:5569"
+ ],
+ "门闩侧净空按梯间宽 − 门框 − 门扇计算并标注是否满足 600 mm": [
+  "StairCoreTool.jsx:79"
+ ],
+ "门闩侧墙面 {0}": [
+  "StairCoreTool.jsx:5568"
+ ],
+ "门闩侧墙面可放楼层号牌（距门 ≤300）": [
+  "StairCoreTool.jsx:5568"
+ ],
+ "门闩侧应朝向梯间中央，保证门闩侧有墙面": [
+  "StairCoreTool.jsx:78"
+ ],
+ "门沿疏散方向开入楼梯间；铰链靠侧墙、门闩朝梯间中央": [
+  "StairCoreTool.jsx:5545"
+ ],
+ "门与踢面的距离": [
+  "StairCoreTool.jsx:91"
+ ],
+ "门在摆动过程中其前缘与楼梯踢面的距离不得小于 300 mm。": [
+  "StairCoreTool.jsx:91"
+ ],
+ "门在侧墙：门扇及摆动弧线距首级踢面 ≥300": [
+  "StairCoreTool.jsx:5571"
+ ],
+ "密钥只存本机 ⓘ": [
+  "StairCoreTool.jsx:3998"
+ ],
+ "密钥只存在这台电脑的浏览器 localStorage 里，不会写进源码或打包文件；请求由浏览器直接发给 Anthropic / OpenAI 官方接口，不经过任何第三方服务器。": [
+  "StairCoreTool.jsx:3998"
+ ],
+ "面积": [
+  "StairCoreTool.jsx:5425"
+ ],
+ "面积 m²": [
+  "StairCoreTool.jsx:5199"
+ ],
+ "面墙、": [
+  "StairCoreTool.jsx:4909"
+ ],
+ "模型（默认 {0}）": [
+  "StairCoreTool.jsx:3993"
+ ],
+ "模型返回的不是 JSON：": [
+  "aiVisionDetect.js:87"
+ ],
+ "模型没有返回任何内容": [
+  "aiVisionDetect.js:82"
+ ],
+ "模型名": [
+  "StairCoreTool.jsx:3996"
+ ],
+ "模型名不存在": [
+  "aiVisionDetect.js:217"
+ ],
+ "默认首层直接由外门出口": [
+  "StairCoreTool.jsx:5130"
+ ],
+ "目标核心筒": [
+  "StairCoreTool.jsx:4826"
+ ],
+ "内净宽 {0}": [
+  "StairCoreTool.jsx:1280"
+ ],
+ "内净长 {0}": [
+  "StairCoreTool.jsx:1275",
+  "StairCoreTool.jsx:1519"
+ ],
+ "跑 / 中间平台": [
+  "StairCoreTool.jsx:5425"
+ ],
+ "跑数": [
+  "StairCoreTool.jsx:5483"
+ ],
+ "跑数 = max(2, ceil(层高 / 3 700))，中间平台数 = 跑数 − 1": [
+  "StairCoreTool.jsx:86"
+ ],
+ "跑数 = max(基本跑数, ceil(层高 / 3 700), ceil(踢面数 / X))，折返梯取偶数": [
+  "StairCoreTool.jsx:84"
+ ],
+ "喷淋": [
+  "StairCoreTool.jsx:4758",
+  "StairCoreTool.jsx:4820"
+ ],
+ "批量编辑": [
+  "StairCoreTool.jsx:5169"
+ ],
+ "平开门在摆动范围内不得使楼梯或平台的所需宽度小于 750 mm；门开启后不得削减或阻挡出口所需宽度；扶手及其支撑向所需宽度内的凸出不得超过 100 mm。": [
+  "StairCoreTool.jsx:76"
+ ],
+ "平面布置与疏散距离校核": [
+  "StairCoreTool.jsx:5704",
+  "PlanApp.jsx:67"
+ ],
+ "平面楼层": [
+  "StairCoreTool.jsx:5506"
+ ],
+ "平面图-{0}": [
+  "planFile.js:70"
+ ],
+ "平面图工程": [
+  "planFile.js:74"
+ ],
+ "平面图工具": [
+  "PlanApp.jsx:46"
+ ],
+ "平面图已清空（如需找回，按 Ctrl+Z 撤销）": [
+  "StairCoreTool.jsx:3620"
+ ],
+ "平面图中门开向平台": [
+  "StairCoreTool.jsx:92"
+ ],
+ "平台 {0}": [
+  "StairCoreTool.jsx:1123",
+  "StairCoreTool.jsx:1124",
+  "StairCoreTool.jsx:1158",
+  "StairCoreTool.jsx:1162",
+  "StairCoreTool.jsx:1164"
+ ],
+ "平台侧墙": [
+  "StairCoreTool.jsx:5148"
+ ],
+ "平台尺寸": [
+  "StairCoreTool.jsx:87"
+ ],
+ "平台的宽度和长度不小于所在楼梯宽度；直跑或转角小于 90° 的楼梯，平台长度不必超过楼梯所需宽度与 1 100 mm 二者中的较小值。": [
+  "StairCoreTool.jsx:87"
+ ],
+ "平台端墙": [
+  "StairCoreTool.jsx:5148"
+ ],
+ "平台换端": [
+  "StairCoreTool.jsx:5461"
+ ],
+ "平台深 {0} ≥ {1}": [
+  "StairCoreTool.jsx:5558"
+ ],
+ "平台深 {0} ≥ 门扇 {1} + 300": [
+  "StairCoreTool.jsx:5571"
+ ],
+ "平移模式：在画布任意位置拖动都会平移视野（不会误触核心筒/门/墙），再点一次“平移”退出": [
+  "StairCoreTool.jsx:3726"
+ ],
+ "剖面标注": [
+  "StairCoreTool.jsx:89"
+ ],
+ "剖面起始层": [
+  "StairCoreTool.jsx:5517"
+ ],
+ "其他用途（按是否喷淋）": [
+  "StairCoreTool.jsx:250"
+ ],
+ "启动服务": [
+  "StairCoreTool.jsx:3906"
+ ],
+ "启动中…（最多等 20 秒）": [
+  "StairCoreTool.jsx:3906"
+ ],
+ "起始层": [
+  "StairCoreTool.jsx:5617"
+ ],
+ "墙#": [
+  "StairCoreTool.jsx:4695"
+ ],
+ "墙厚": [
+  "StairCoreTool.jsx:1210",
+  "StairCoreTool.jsx:5664"
+ ],
+ "墙候选→正式墙；楼梯框→核心筒（贴在框边上的门当它的门）；其余门→挂到最近的墙上，附近没墙的跳过": [
+  "StairCoreTool.jsx:4022"
+ ],
+ "墙体": [
+  "StairCoreTool.jsx:3873",
+  "StairCoreTool.jsx:3874"
+ ],
+ "墙体 / 门 / 楼梯": [
+  "StairCoreTool.jsx:3872",
+  "StairCoreTool.jsx:3875"
+ ],
+ "清除标注识别结果": [
+  "StairCoreTool.jsx:3863"
+ ],
+ "清除底图（改手动坐标）": [
+  "StairCoreTool.jsx:3798"
+ ],
+ "清除门/楼梯标记": [
+  "StairCoreTool.jsx:4030"
+ ],
+ "清除识别结果": [
+  "StairCoreTool.jsx:4047"
+ ],
+ "清空边界": [
+  "StairCoreTool.jsx:4065"
+ ],
+ "清空平面图": [
+  "StairCoreTool.jsx:4928"
+ ],
+ "请求失败": [
+  "aiVisionDetect.js:217"
+ ],
+ "请求太频繁或额度用完": [
+  "aiVisionDetect.js:217"
+ ],
+ "请填写人数": [
+  "StairCoreTool.jsx:752"
+ ],
+ "取消": [
+  "StairCoreTool.jsx:3780",
+  "StairCoreTool.jsx:4090",
+  "StairCoreTool.jsx:4157",
+  "StairCoreTool.jsx:4916"
+ ],
+ "全部": [
+  "StairCoreTool.jsx:5632"
+ ],
+ "全部接受为墙体": [
+  "StairCoreTool.jsx:4044"
+ ],
+ "全楼设自动喷淋": [
+  "StairCoreTool.jsx:5131"
+ ],
+ "全楼为住宅、不超过 6 层且建筑面积 ≤600 m² 时，剪刀梯两出口门及其室外出口的最小间距不必超过 4.5 m；两梯道之间须设连续气密屏障。": [
+  "StairCoreTool.jsx:94"
+ ],
+ "确定": [
+  "StairCoreTool.jsx:3836"
+ ],
+ "确定覆盖示例": [
+  "StairCoreTool.jsx:3774"
+ ],
+ "确定清空": [
+  "StairCoreTool.jsx:4913"
+ ],
+ "确定清空整张平面图吗？底图、比例、边界、": [
+  "StairCoreTool.jsx:4909"
+ ],
+ "确定载入": [
+  "StairCoreTool.jsx:4154"
+ ],
+ "确认并计算": [
+  "StairCoreTool.jsx:5109"
+ ],
+ "让开发服务器把本机 Floorplan Marker 识图服务拉起来（等同双击 floorplan-marker/start_windows.bat）": [
+  "StairCoreTool.jsx:3905"
+ ],
+ "热力图格子大小": [
+  "StairCoreTool.jsx:4763"
+ ],
+ "热力图用途分组": [
+  "StairCoreTool.jsx:4748"
+ ],
+ "人数": [
+  "StairCoreTool.jsx:5203",
+  "StairCoreTool.jsx:5474"
+ ],
+ "人数（依据）": [
+  "StairCoreTool.jsx:5425"
+ ],
+ "人数列：住宅填卧室数（×2 人，3.1.17.1.(1)(b)）；其他用途留空自动按表计算，填写则作为设计人数覆盖。蓝色横线为楼梯数量变化处。": [
+  "StairCoreTool.jsx:5234"
+ ],
+ "人员荷载确定": [
+  "StairCoreTool.jsx:68"
+ ],
+ "任何一跑楼梯在楼层或平台之间的垂直高度不得超过 3.7 m（B2 用途出口楼梯 2.4 m）；每跑上下端及门开向楼梯处须设平台。": [
+  "StairCoreTool.jsx:86"
+ ],
+ "若为无障碍通路上的门：开向侧门闩旁净空 ≥600": [
+  "StairCoreTool.jsx:5569"
+ ],
+ "若为无障碍通路上的门：门洞净宽 ≥850": [
+  "StairCoreTool.jsx:5573"
+ ],
+ "删除": [
+  "StairCoreTool.jsx:4650",
+  "StairCoreTool.jsx:4699",
+  "StairCoreTool.jsx:4731",
+  "StairCoreTool.jsx:4801"
+ ],
+ "商业—地下及首层 Mercantile, basements & first storeys (E)": [
+  "StairCoreTool.jsx:39"
+ ],
+ "商业—其他楼层 Mercantile, other storeys (E)": [
+  "StairCoreTool.jsx:40"
+ ],
+ "上 {0} 步": [
+  "StairCoreTool.jsx:1951",
+  "StairCoreTool.jsx:1952",
+  "StairCoreTool.jsx:1976",
+  "StairCoreTool.jsx:1984"
+ ],
+ "上 UP · {0} 步": [
+  "StairCoreTool.jsx:1099"
+ ],
+ "上 UP 第 2 跑 · {0} 步": [
+  "StairCoreTool.jsx:1100"
+ ],
+ "上部区段的楼梯必须连续向下贯通至出口层，因此下部楼梯数量 ≥ 上部；只服务下部楼层的楼梯可在其最高服务层的顶板处终止（裙房梯）。楼梯净宽按其服务楼层中最大的（本层需求 ÷ 本层楼梯数）确定": [
+  "StairCoreTool.jsx:5315"
+ ],
+ "上传平面图": [
+  "StairCoreTool.jsx:3741"
+ ],
+ "上传平面图并标定比例，摆放核心筒、绘制楼层边界与疏散路径": [
+  "PlanApp.jsx:67"
+ ],
+ "上下镜像": [
+  "StairCoreTool.jsx:4665",
+  "StairCoreTool.jsx:4728"
+ ],
+ "上下楼层不累加": [
+  "StairCoreTool.jsx:73"
+ ],
+ "上行梯段侧": [
+  "StairCoreTool.jsx:5159"
+ ],
+ "设计净宽": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "设计设定（非规范要求）": [
+  "StairCoreTool.jsx:105"
+ ],
+ "识别{0}": [
+  "StairCoreTool.jsx:3897"
+ ],
+ "识别出的门（绿色）/ 楼梯（橙色框）": [
+  "StairCoreTool.jsx:4016"
+ ],
+ "识别到": [
+  "StairCoreTool.jsx:3861",
+  "StairCoreTool.jsx:4037"
+ ],
+ "识别楼梯{0}": [
+  "StairCoreTool.jsx:3201"
+ ],
+ "识别中…": [
+  "StairCoreTool.jsx:3897"
+ ],
+ "识图：": [
+  "StairCoreTool.jsx:3886"
+ ],
+ "识图方式": [
+  "StairCoreTool.jsx:3887"
+ ],
+ "矢量解析：识别到 {0} 段可能的墙": [
+  "StairCoreTool.jsx:3288"
+ ],
+ "矢量解析（矢量 CAD PDF）": [
+  "StairCoreTool.jsx:3873"
+ ],
+ "矢量解析没有找到可用的线段——这页大概率是扫描件，试试下面的“按图像识别”": [
+  "StairCoreTool.jsx:3288"
+ ],
+ "示例文件：下次保存仍会先确认": [
+  "StairCoreTool.jsx:2988"
+ ],
+ "示意性布置，尺寸为内净 / 外包 mm": [
+  "StairCoreTool.jsx:5493"
+ ],
+ "适应窗口": [
+  "StairCoreTool.jsx:4183"
+ ],
+ "收起": [
+  "StairCoreTool.jsx:5134"
+ ],
+ "收起参数": [
+  "StairCoreTool.jsx:3919"
+ ],
+ "收起面板 ▶": [
+  "StairCoreTool.jsx:4583"
+ ],
+ "首层出口层楼梯落地方式提示": [
+  "StairCoreTool.jsx:82"
+ ],
+ "首层人员计入楼梯疏散：假定楼梯继续向下通至出口层（如地下出口）。": [
+  "StairCoreTool.jsx:5309"
+ ],
+ "首层人员经楼梯疏散": [
+  "StairCoreTool.jsx:5130"
+ ],
+ "首层以上楼层的出口不得经过大堂；仅允许一个出口经大堂，且大堂楼面距室外地面 ≤4.5 m、穿越大堂至室外路径 ≤15 m、相邻房间不含护理/住宅/工业用途、大堂按出口要求构造并保持防火分隔。": [
+  "StairCoreTool.jsx:82"
+ ],
+ "疏散距离": [
+  "StairCoreTool.jsx:95"
+ ],
+ "疏散路径 / 距离校核": [
+  "StairCoreTool.jsx:4739"
+ ],
+ "输入已修改，右侧结果、图纸与三维模型尚未更新，点击确认后重新计算。": [
+  "StairCoreTool.jsx:5111"
+ ],
+ "刷新": [
+  "StairCoreTool.jsx:4594"
+ ],
+ "宿舍 Dormitories (C)": [
+  "StairCoreTool.jsx:49"
+ ],
+ "踏步与平台参数": [
+  "StairCoreTool.jsx:5134"
+ ],
+ "踏面 run": [
+  "StairCoreTool.jsx:5138"
+ ],
+ "踏面（run）≥280 mm；踢面（rise）125–180 mm；封闭踢面；同一跑内踢面高度均匀（相邻 ≤5 mm，最大最小差 ≤10 mm）。": [
+  "StairCoreTool.jsx:90"
+ ],
+ "踏面与踢面": [
+  "StairCoreTool.jsx:90"
+ ],
+ "梯段 / 平台板厚": [
+  "StairCoreTool.jsx:5162"
+ ],
+ "梯段长": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "梯间": [
+  "StairCoreTool.jsx:5496"
+ ],
+ "梯间内净 (宽×长)": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "梯间同上（": [
+  "StairCoreTool.jsx:5615"
+ ],
+ "梯间外包": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "梯井": [
+  "StairCoreTool.jsx:5393"
+ ],
+ "梯井 {0}": [
+  "StairCoreTool.jsx:5615"
+ ],
+ "梯井 {0}：{1}": [
+  "StairCoreTool.jsx:5500"
+ ],
+ "梯井 {0}：{1}（L{2}–L{3}）": [
+  "StairCoreTool.jsx:2845"
+ ],
+ "梯井 {0}（{1}）": [
+  "StairCoreTool.jsx:5661"
+ ],
+ "梯井 / 栏板": [
+  "StairCoreTool.jsx:1260"
+ ],
+ "梯井{0}": [
+  "StairCoreTool.jsx:2846"
+ ],
+ "踢面": [
+  "StairCoreTool.jsx:1502",
+  "StairCoreTool.jsx:5425",
+  "StairCoreTool.jsx:5480"
+ ],
+ "踢面数 = ceil(层高 / 180)，踢面高 = 层高 / 踢面数": [
+  "StairCoreTool.jsx:90"
+ ],
+ "提供宽度": [
+  "StairCoreTool.jsx:5425"
+ ],
+ "提示：本建筑 ≤2 层且有楼层人数 ≤60、面积在 Table 3.4.2.1 限值内，若疏散距离 ≤25 m，该楼层理论上可只设 1 个出口": [
+  "StairCoreTool.jsx:5331"
+ ],
+ "添加核心筒到平面图": [
+  "StairCoreTool.jsx:4078"
+ ],
+ "添加门": [
+  "StairCoreTool.jsx:4113"
+ ],
+ "添加门：在已画的墙上点击门的位置（会自动吸附到最近的墙）": [
+  "StairCoreTool.jsx:3732"
+ ],
+ "条文": [
+  "StairCoreTool.jsx:5579"
+ ],
+ "贴侧墙·开启后贴墙": [
+  "StairCoreTool.jsx:5153"
+ ],
+ "贴哪一侧": [
+  "StairCoreTool.jsx:5158"
+ ],
+ "贴墙门扇避开该侧扶手 300 mm 水平延伸段": [
+  "StairCoreTool.jsx:5563"
+ ],
+ "停车库 Storage garages (F3)": [
+  "StairCoreTool.jsx:53"
+ ],
+ "同一出口服务上下叠置的两个或以上楼层时，所需出口宽度不必累加——即楼梯宽度由所服务楼层中需求最大的一层决定。": [
+  "StairCoreTool.jsx:73"
+ ],
+ "图像识别：识别到 {0} 段可能的墙": [
+  "StairCoreTool.jsx:3302"
+ ],
+ "图像识别（扫描件 PDF）": [
+  "StairCoreTool.jsx:3874"
+ ],
+ "图像识别失败：": [
+  "StairCoreTool.jsx:3306"
+ ],
+ "拖动旋转 · 滚轮缩放 · 右键 / Shift+拖动平移": [
+  "StairCoreTool.jsx:1885"
+ ],
+ "外包": [
+  "StairCoreTool.jsx:4669"
+ ],
+ "外包总宽 {0}": [
+  "StairCoreTool.jsx:1279"
+ ],
+ "外包总长 {0}": [
+  "StairCoreTool.jsx:1274"
+ ],
+ "外门出口": [
+  "StairCoreTool.jsx:5448"
+ ],
+ "完成路径": [
+  "StairCoreTool.jsx:4122"
+ ],
+ "完成墙体": [
+  "StairCoreTool.jsx:4087"
+ ],
+ "未知的 AI 服务商：": [
+  "aiVisionDetect.js:233"
+ ],
+ "位置建议：门贴下行梯段一侧的侧墙，铰链在侧墙侧、门闩朝梯间中央。进门后直行即到下行梯段顶部，不穿越在上行梯段底部转向的下楼人流；门扇开启后贴墙，不占用平台净深，因此平台深度只需满足 ≥ 梯宽": [
+  "StairCoreTool.jsx:5602"
+ ],
+ "温哥华单个室外出口楼梯及外廊": [
+  "StairCoreTool.jsx:97"
+ ],
+ "温哥华建筑条例 #14343": [
+  "StairCoreTool.jsx:5084"
+ ],
+ "文件不是本工具保存的平面图工程（缺少 plan 数据）": [
+  "planFile.js:52"
+ ],
+ "文件夹里还没有 .json 工程文件——用“另存为…”把平面图存进去就会出现在这里": [
+  "StairCoreTool.jsx:4599"
+ ],
+ "文件内容不是平面图工程": [
+  "planFile.js:49"
+ ],
+ "文件是更新版本（v{0}）保存的，当前工具只认到 v{1}": [
+  "planFile.js:53"
+ ],
+ "卧室": [
+  "StairCoreTool.jsx:5227"
+ ],
+ "卧室数 × 2 人": [
+  "StairCoreTool.jsx:5227"
+ ],
+ "卧室数（住宅用）": [
+  "StairCoreTool.jsx:5188"
+ ],
+ "无障碍通路上的门": [
+  "StairCoreTool.jsx:79"
+ ],
+ "吸附终点到：": [
+  "StairCoreTool.jsx:4844"
+ ],
+ "下 {0} 步": [
+  "StairCoreTool.jsx:1952"
+ ],
+ "下 DN · {0} 步（自 L{1}）": [
+  "StairCoreTool.jsx:1100"
+ ],
+ "下行梯段侧（推荐）": [
+  "StairCoreTool.jsx:5159"
+ ],
+ "先画好墙，再点\"添加门\"，在墙上点击开门位置": [
+  "StairCoreTool.jsx:4708"
+ ],
+ "先绘制楼层边界，才能按对角线一半计算最小间距": [
+  "StairCoreTool.jsx:4879"
+ ],
+ "先添加至少一个核心筒": [
+  "StairCoreTool.jsx:4746"
+ ],
+ "显示": [
+  "StairCoreTool.jsx:3987"
+ ],
+ "显示 L": [
+  "StairCoreTool.jsx:1886"
+ ],
+ "显示层数": [
+  "StairCoreTool.jsx:5627"
+ ],
+ "线宽上限": [
+  "StairCoreTool.jsx:3956"
+ ],
+ "线宽下限": [
+  "StairCoreTool.jsx:3953"
+ ],
+ "限值": [
+  "StairCoreTool.jsx:4769"
+ ],
+ "像素之间的线条（原始像素；改完再点一次识别）": [
+  "StairCoreTool.jsx:3958"
+ ],
+ "小型住宅剪刀梯出口间距放宽（温哥华独有，2026-01-20 生效）": [
+  "StairCoreTool.jsx:94"
+ ],
+ "行走距离热力图": [
+  "StairCoreTool.jsx:4145"
+ ],
+ "行走距离热力图（整层每格到最近核心筒门）": [
+  "StairCoreTool.jsx:4744"
+ ],
+ "休息": [
+  "StairCoreTool.jsx:1962"
+ ],
+ "休息平台": [
+  "StairCoreTool.jsx:671",
+  "StairCoreTool.jsx:676",
+  "StairCoreTool.jsx:1107"
+ ],
+ "修改下方任何输入后需点击此按钮才会重新计算。": [
+  "StairCoreTool.jsx:5111"
+ ],
+ "需求宽度": [
+  "StairCoreTool.jsx:5425"
+ ],
+ "需求宽度 = 人数 × 每人毫米数；提供宽度 = 本层楼梯净宽之和": [
+  "StairCoreTool.jsx:5420"
+ ],
+ "需求宽度 = OL × 8 mm": [
+  "StairCoreTool.jsx:71"
+ ],
+ "需要一个以上出口时，每个出口最多只能计入所需总宽度的一半。": [
+  "StairCoreTool.jsx:74"
+ ],
+ "需中间扶手 3.4.6.5.(3)": [
+  "StairCoreTool.jsx:5368"
+ ],
+ "旋转": [
+  "StairCoreTool.jsx:4657"
+ ],
+ "选择楼层范围后一次修改": [
+  "StairCoreTool.jsx:5169"
+ ],
+ "沿墙面翻转（换朝哪边开）": [
+  "StairCoreTool.jsx:4664",
+  "StairCoreTool.jsx:4727"
+ ],
+ "沿墙面方向翻转（换转轴在哪一端）": [
+  "StairCoreTool.jsx:4661",
+  "StairCoreTool.jsx:4724"
+ ],
+ "沿疏散方向开启、绕竖轴转动": [
+  "StairCoreTool.jsx:5557"
+ ],
+ "要求": [
+  "StairCoreTool.jsx:5579"
+ ],
+ "一键添加全部（墙 + 门 + 楼梯）": [
+  "StairCoreTool.jsx:4025"
+ ],
+ "医疗—治疗及病房 Treatment & sleeping rooms (B2)": [
+  "StairCoreTool.jsx:50"
+ ],
+ "已按净高调整": [
+  "StairCoreTool.jsx:5460"
+ ],
+ "已保存：{0}": [
+  "StairCoreTool.jsx:2993"
+ ],
+ "已保存到 {0}（{1}）": [
+  "StairCoreTool.jsx:2988"
+ ],
+ "已打开：{0}{1}{2}{3}": [
+  "StairCoreTool.jsx:3017"
+ ],
+ "已添加 {0} 面墙、{1} 个门、{2} 个楼梯核心筒": [
+  "StairCoreTool.jsx:3255"
+ ],
+ "已下载到浏览器默认下载目录：{0}（这个浏览器不支持选路径）": [
+  "StairCoreTool.jsx:2992"
+ ],
+ "以下结果对应上一次确认的输入；左栏有未确认的修改。": [
+  "StairCoreTool.jsx:5246"
+ ],
+ "引用条文": [
+  "StairCoreTool.jsx:5676"
+ ],
+ "隐藏": [
+  "StairCoreTool.jsx:3987"
+ ],
+ "应用到 L": [
+  "StairCoreTool.jsx:5190"
+ ],
+ "用户设定（非规范条文）": [
+  "StairCoreTool.jsx:84"
+ ],
+ "用途": [
+  "StairCoreTool.jsx:5175",
+  "StairCoreTool.jsx:5200",
+  "StairCoreTool.jsx:5425"
+ ],
+ "用于 3.4.2.3.(5) 判断": [
+  "StairCoreTool.jsx:5132"
+ ],
+ "由楼层开入楼梯间平台": [
+  "StairCoreTool.jsx:5557"
+ ],
+ "右": [
+  "StairCoreTool.jsx:1128"
+ ],
+ "阅览室 / 休息室 Reading rooms, lounges (A)": [
+  "StairCoreTool.jsx:46"
+ ],
+ "再按 Ctrl+S 直接覆盖这个文件": [
+  "StairCoreTool.jsx:2988"
+ ],
+ "在底图上点击第": [
+  "StairCoreTool.jsx:3818"
+ ],
+ "在新标签页打开平面图工具 →": [
+  "StairCoreTool.jsx:5715"
+ ],
+ "载入示例：50×50m 环形走廊 + 核心筒": [
+  "StairCoreTool.jsx:3794"
+ ],
+ "载入示例平面会清空当前的边界、核心筒、墙体、门与路径，确定继续吗？": [
+  "StairCoreTool.jsx:4152"
+ ],
+ "展开": [
+  "StairCoreTool.jsx:5134"
+ ],
+ "展开右侧面板（核心筒 / 走廊墙体 / 门 / 疏散路径）": [
+  "StairCoreTool.jsx:4565"
+ ],
+ "展厅 Exhibition halls (A)": [
+  "StairCoreTool.jsx:47"
+ ],
+ "站立空间 Standing space (A)": [
+  "StairCoreTool.jsx:44"
+ ],
+ "折返（180°）中间平台深度 = 楼梯宽度；直跑平台深度 = min(宽度, 1 100)": [
+  "StairCoreTool.jsx:87"
+ ],
+ "折返梯（双跑）": [
+  "StairCoreTool.jsx:5122"
+ ],
+ "这不是一个有效的 JSON 文件": [
+  "planFile.js:47"
+ ],
+ "这个浏览器环境不允许网页直接写文件，已改为下载到浏览器默认下载目录：{0}（之后的保存也会直接下载）": [
+  "StairCoreTool.jsx:2991"
+ ],
+ "这里确认过的楼梯计算结果会自动同步给平面图工具（同一浏览器打开即可，不需要手动导入）。": [
+  "StairCoreTool.jsx:5706"
+ ],
+ "这两点在图上的实际距离：": [
+  "StairCoreTool.jsx:3821"
+ ],
+ "整层按格子算每格到最近核心筒门的最短路径（避墙、穿门），达标绿、超标红；限值在右侧“疏散路径 / 距离校核”面板里设": [
+  "StairCoreTool.jsx:4143"
+ ],
+ "整体参数": [
+  "StairCoreTool.jsx:5114"
+ ],
+ "正在解析 PDF…": [
+  "StairCoreTool.jsx:3784"
+ ],
+ "正在上传图片并等模型读图（通常 10~60 秒）…": [
+  "StairCoreTool.jsx:3999"
+ ],
+ "正在识别图纸上的标注数字（OCR，需要联网下载语言包，可能要几秒到几十秒）…": [
+  "StairCoreTool.jsx:3850"
+ ],
+ "知道了": [
+  "StairCoreTool.jsx:3763",
+  "StairCoreTool.jsx:3789",
+  "StairCoreTool.jsx:3855",
+  "StairCoreTool.jsx:3913",
+  "StairCoreTool.jsx:4006"
+ ],
+ "直跑平台深": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "只保留真的把两块空间分隔开的墙。注意：墙上有门洞时相邻房间会连成一块，中间的隔墙会被误删——默认关闭": [
+  "StairCoreTool.jsx:3962"
+ ],
+ "只识别线宽在": [
+  "StairCoreTool.jsx:3952"
+ ],
+ "至少一个出口的疏散距离：高危工业 25 m；办公及个人服务 40 m；喷淋楼层（除高危工业）45 m；其他 30 m。": [
+  "StairCoreTool.jsx:95"
+ ],
+ "制造 / 加工 Manufacturing (F)": [
+  "StairCoreTool.jsx:51"
+ ],
+ "中间": [
+  "StairCoreTool.jsx:1962",
+  "StairCoreTool.jsx:1977",
+  "StairCoreTool.jsx:1985"
+ ],
+ "中间平台": [
+  "StairCoreTool.jsx:671",
+  "StairCoreTool.jsx:1107",
+  "StairCoreTool.jsx:1137",
+  "StairCoreTool.jsx:1146",
+  "StairCoreTool.jsx:1379",
+  "StairCoreTool.jsx:1386"
+ ],
+ "中间平台深": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "重新读取文件夹": [
+  "StairCoreTool.jsx:4593"
+ ],
+ "重新选点": [
+  "StairCoreTool.jsx:3839"
+ ],
+ "重做 (Ctrl+Y / Ctrl+Shift+Z)": [
+  "StairCoreTool.jsx:4216"
+ ],
+ "逐层参数": [
+  "StairCoreTool.jsx:5195"
+ ],
+ "逐层校核": [
+  "StairCoreTool.jsx:5420"
+ ],
+ "住宅 ≤6 层、≤18 m，1–3 层每层 ≤6 户、4 层以上每层 ≤4 户且 ≤24 人，可采用单个室外楼梯 + 至少 50% 开敞的室外走廊作为唯一出口。属室外楼梯，不属于核心筒内楼梯，本工具不计算。": [
+  "StairCoreTool.jsx:97"
+ ],
+ "住宅 ≤6 层、≤18 m、每层 ≤4 户且 ≤24 人、疏散距离 ≤25 m 时可设单个室内出口楼梯，楼梯宽 ≥1 500 mm、2 h 分隔、NFPA 13 喷淋、>4 层需防烟。温哥华 2025-12 议会明确不采纳此条，故本工具在温哥华项目中不适用。": [
+  "StairCoreTool.jsx:96"
+ ],
+ "住宅单元 / 酒店客房 Dwelling units & suites (C) — 2人/卧室": [
+  "StairCoreTool.jsx:48"
+ ],
+ "自定义人数（设计人数，需张贴标识）": [
+  "StairCoreTool.jsx:56"
+ ],
+ "自动": [
+  "StairCoreTool.jsx:4799"
+ ],
+ "自动路径 {0}": [
+  "StairCoreTool.jsx:3656"
+ ],
+ "自动最短路径：在图上点击疏散起点，工具会沿走廊避开墙体自动算出到核心筒门的最短路径": [
+  "StairCoreTool.jsx:3734"
+ ],
+ "自动最短路径（避开墙体）": [
+  "StairCoreTool.jsx:4135"
+ ],
+ "自上而下排列": [
+  "StairCoreTool.jsx:5195"
+ ],
+ "走不到任何核心筒的门（被墙围死或漏开门）": [
+  "StairCoreTool.jsx:4252"
+ ],
+ "走廊墙体（": [
+  "StairCoreTool.jsx:4678"
+ ],
+ "最大踢面 rise": [
+  "StairCoreTool.jsx:5139"
+ ],
+ "最近的核心筒": [
+  "StairCoreTool.jsx:4833"
+ ],
+ "最少 2 部": [
+  "StairCoreTool.jsx:5256"
+ ],
+ "最少出口数量": [
+  "StairCoreTool.jsx:69"
+ ],
+ "最少踢面数": [
+  "StairCoreTool.jsx:85"
+ ],
+ "最小宽度": [
+  "StairCoreTool.jsx:5343"
+ ],
+ "最远一格": [
+  "StairCoreTool.jsx:4778"
+ ],
+ "左": [
+  "StairCoreTool.jsx:1128"
+ ],
+ "左右镜像": [
+  "StairCoreTool.jsx:4662",
+  "StairCoreTool.jsx:4725"
+ ],
+ "A/B1/C/D/E/F 用途：楼梯服务最低出口层以上 ≤2 层（或以下 ≤1 层）最小 900 mm；服务更多楼层最小 1 100 mm；走道 1 100 mm；门 800 mm。B2 服务病房的楼梯最小 1 650 mm。": [
+  "StairCoreTool.jsx:75"
+ ],
+ "AI 服务商": [
+  "StairCoreTool.jsx:3969"
+ ],
+ "AI 识图（{0}）：识别到 {1} 段可能的墙、{2} 个门、{3} 处楼梯": [
+  "StairCoreTool.jsx:3345"
+ ],
+ "AI 识图（Claude / ChatGPT）": [
+  "StairCoreTool.jsx:3875"
+ ],
+ "API 密钥": [
+  "StairCoreTool.jsx:3984"
+ ],
+ "API 密钥无效": [
+  "aiVisionDetect.js:217"
+ ],
+ "B2 楼层 18.4 mm/人": [
+  "StairCoreTool.jsx:72"
+ ],
+ "BC 省单出口住宅楼梯（温哥华未采纳）": [
+  "StairCoreTool.jsx:96"
+ ],
+ "BC 省建筑规范": [
+  "StairCoreTool.jsx:5085"
+ ],
+ "BCBC 2024 省级条款": [
+  "StairCoreTool.jsx:103"
+ ],
+ "BCBC 3.2.10（Revision 3, 2024-08）": [
+  "StairCoreTool.jsx:96"
+ ],
+ "ChatGPT 的回复超出长度上限被截断了（图太复杂），试试把图裁小一点再传": [
+  "aiVisionDetect.js:224"
+ ],
+ "ChatGPT 拒绝处理这张图：": [
+  "aiVisionDetect.js:223"
+ ],
+ "ChatGPT（OpenAI）": [
+  "aiSettings.js:9"
+ ],
+ "Claude 的回复超出长度上限被截断了（图太复杂），试试把图裁小一点再传": [
+  "aiVisionDetect.js:164"
+ ],
+ "Claude 接口：模型名不存在（404），检查一下模型名": [
+  "aiVisionDetect.js:172"
+ ],
+ "Claude 接口：请求被拒绝（400）：": [
+  "aiVisionDetect.js:174"
+ ],
+ "Claude 接口：请求太频繁或额度用完（429），稍后再试": [
+  "aiVisionDetect.js:173"
+ ],
+ "Claude 接口：这个密钥没有权限用这个模型（403）": [
+  "aiVisionDetect.js:171"
+ ],
+ "Claude 接口：API 密钥无效或没有权限（401）": [
+  "aiVisionDetect.js:170"
+ ],
+ "Claude 接口错误 {0}：{1}": [
+  "aiVisionDetect.js:176"
+ ],
+ "Claude 接口调用失败：": [
+  "aiVisionDetect.js:177"
+ ],
+ "Claude 拒绝处理这张图": [
+  "aiVisionDetect.js:163"
+ ],
+ "Claude（Anthropic）": [
+  "aiSettings.js:8"
+ ],
+ "example（示例平面": [
+  "StairCoreTool.jsx:4589"
+ ],
+ "Floorplan Marker 返回的数据格式不对": [
+  "markerDetect.js:107"
+ ],
+ "Floorplan Marker 识别失败：": [
+  "markerDetect.js:105"
+ ],
+ "Floorplan Marker 正在处理上一张图，稍等几秒再点": [
+  "markerDetect.js:104"
+ ],
+ "Group B 楼层出口总宽度按 18.4 mm/人计算。": [
+  "StairCoreTool.jsx:72"
+ ],
+ "L{0} · 楼梯 #{1} 至此终止": [
+  "StairCoreTool.jsx:1329"
+ ],
+ "L{0} · 梯井至此终止": [
+  "StairCoreTool.jsx:1372"
+ ],
+ "L{0} 平台": [
+  "StairCoreTool.jsx:1138",
+  "StairCoreTool.jsx:1139",
+  "StairCoreTool.jsx:1147",
+  "StairCoreTool.jsx:1148"
+ ],
+ "L{0}: 楼层平台上方净高 {1} mm < 2 050 mm (3.4.3.4.(1))": [
+  "StairCoreTool.jsx:798"
+ ],
+ "L{0}: 每跑踢面数 < 3 (3.4.6.2.(1))": [
+  "StairCoreTool.jsx:797"
+ ],
+ "L{0}: 人数为 0，请填写卧室数或人数": [
+  "StairCoreTool.jsx:800"
+ ],
+ "L{0}: 梯段下净高 {1} mm < 2 050 mm (3.4.3.4.(1))": [
+  "StairCoreTool.jsx:799"
+ ],
+ "L{0}: 踢面 {1} mm < 125 mm (3.4.6.8.(2))，层高过小": [
+  "StairCoreTool.jsx:796"
+ ],
+ "L{0}: 同端叠置平台之间净高 {1} mm < 2 050 mm (3.4.3.4.(1))——{2} 跑 ({3}) 无论如何分配踢面都不够；请放宽每跑级数上限、加大层高或改剪刀梯": [
+  "StairCoreTool.jsx:798"
+ ],
+ "L1 为出口层：{0} 部楼梯贯通至此并直接对外出口；仅允许其中 1 部经大堂出口 ": [
+  "StairCoreTool.jsx:5310"
+ ],
+ "m；每格取格内最不利点的距离；鼠标悬停在格子上可看具体数值。路径算法跟\"自动最短路径\"完全相同（同一张避墙栅格），只是把所有核心筒门当起点一次算完全图。": [
+  "StairCoreTool.jsx:4778"
+ ],
+ "m²）": [
+  "StairCoreTool.jsx:5303"
+ ],
+ "Marker 黑白阈值": [
+  "StairCoreTool.jsx:3927"
+ ],
+ "Marker 黑白阈值数值": [
+  "StairCoreTool.jsx:3946"
+ ],
+ "mm · 拖动黄点调整出口门位置(可吸附)": [
+  "StairCoreTool.jsx:4669"
+ ],
+ "mm / 限值": [
+  "StairCoreTool.jsx:4858"
+ ],
+ "mm，": [
+  "StairCoreTool.jsx:5656"
+ ],
+ "mm，烟密封、耐火极限 ≥ 楼板": [
+  "StairCoreTool.jsx:5397"
+ ],
+ "mm。规范只给出上述定量限制，没有规定门必须在端墙的哪个位置。": [
+  "StairCoreTool.jsx:5604"
+ ],
+ "mm（": [
+  "StairCoreTool.jsx:5303"
+ ],
+ "mm）后按最短路径算法（8 方向、避开对角穿墙）求距离，栅格分辨率与门宽处理是近似值，不是精确的可见光路径或规范意义上的\"实际行走路线\"；出口间距按已绘边界包络的对角线近似（非精确的楼层区域对角线）。核心筒或墙体较多时，拖动过程中自动路径会实时重算，可能略有卡顿。结果仅供方案阶段参考，不替代正式安全疏散图纸复核。": [
+  "StairCoreTool.jsx:4932"
+ ],
+ "mm/人": [
+  "StairCoreTool.jsx:5265",
+  "StairCoreTool.jsx:5425",
+  "StairCoreTool.jsx:5477"
+ ],
+ "n 部楼梯每部 ≥ 需求宽度 / n": [
+  "StairCoreTool.jsx:74"
+ ],
+ "NBC 2020 → BCBC 2024 → VBBL 2025 三级一致": [
+  "StairCoreTool.jsx:102"
+ ],
+ "OpenAI 接口：{0}（{1}）{2}": [
+  "aiVisionDetect.js:218"
+ ],
+ "OpenAI 接口返回了空结果": [
+  "aiVisionDetect.js:222"
+ ],
+ "PDF 解析失败：": [
+  "StairCoreTool.jsx:3563"
+ ],
+ "Table 3.1.17.1 · {0} m²/人": [
+  "StairCoreTool.jsx:749"
+ ],
+ "Table 3.4.3.2.-A（服务 >2 层）": [
+  "StairCoreTool.jsx:833"
+ ],
+ "Table 3.4.3.2.-A（服务 ≤2 层）": [
+  "StairCoreTool.jsx:833"
+ ],
+ "Table 3.4.3.2.-B（B2 病房）": [
+  "StairCoreTool.jsx:838"
+ ],
+ "VBBL 2019 3.4.1.2.(3)（已删除）": [
+  "StairCoreTool.jsx:98"
+ ],
+ "VBBL 2019 曾禁止 5–6 层木结构建筑使用剪刀梯；2026-01-20 修订已删除该句，现按 3.4.4.4.(2)(3) 及 3.4.2.3 执行。": [
+  "StairCoreTool.jsx:98"
+ ],
+ "VBBL 2019 对 5–6 层木结构剪刀梯的禁令已于 2026-01 删除": [
+  "StairCoreTool.jsx:5412"
+ ],
+ "VBBL 2025 温哥华独有": [
+  "StairCoreTool.jsx:104"
+ ],
+ "VBBL 2025 Book I Division B；条号与 BCBC 2024 / NBC 2020 相同者标为三级一致": [
+  "StairCoreTool.jsx:5676"
+ ],
+ "VBBL 3.2.10（2026-01-20 生效）": [
+  "StairCoreTool.jsx:97"
+ ]
+}
