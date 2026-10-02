@@ -113,7 +113,7 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                 aria-expanded={has ? exp : undefined}
                 aria-level={depth + 1}
                 className="flex items-center gap-1 pr-2 hover:bg-slate-100"
-                style={{ height: 26, paddingLeft: 6 + depth * 16, background: sel ? "#D6E6F7" : undefined, cursor: "pointer", fontWeight: sel || node.current ? 600 : 400, color: node.visible === false ? C.muted : C.ink, userSelect: "none" }}
+                style={{ height: 28, paddingLeft: 4 + depth * 18, background: sel ? "#D6E6F7" : undefined, cursor: "pointer", fontWeight: sel || node.current ? 600 : 400, color: node.visible === false ? C.muted : C.ink, userSelect: "none" }}
                 onClick={() => {
                   onChange(node.path);
                   setOpen(false);
@@ -122,12 +122,16 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                 data-testid="layer-row"
                 data-path={node.path}
               >
+                {/* 展开/折叠按钮：点击区 24×24，比字符本身大得多，好点 */}
                 <span
+                  role="button"
+                  aria-label={exp ? t("折叠子图层") : t("展开子图层")}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (has) toggleNode(node.path);
                   }}
-                  style={{ width: 14, textAlign: "center", color: C.muted, fontSize: 10, visibility: has ? "visible" : "hidden", cursor: has ? "pointer" : "default" }}
+                  className={has ? "rounded hover:bg-slate-200" : ""}
+                  style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: C.ink, fontSize: 14, lineHeight: 1, flexShrink: 0, visibility: has ? "visible" : "hidden", cursor: has ? "pointer" : "default" }}
                   data-testid="layer-caret"
                 >
                   {exp ? "▾" : "▸"}

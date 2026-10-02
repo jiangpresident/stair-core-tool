@@ -756,4 +756,6 @@ export const EN = {
   "区段共 {0} 部楼梯、{1} 个梯井": "zone has {0} stairs in {1} shafts",
   "梯段方向": "run direction",
   "校核目标：Rhino 里这一个长方体要装下几个梯井。4 部疏散梯通常分在几个核心筒里，不必一个核心筒装全部。": "Check target: how many shafts this one Rhino box must hold. Four exit stairs are usually split across several cores; one core need not hold them all.",
+  "折叠子图层": "Collapse sub-layers",
+  "展开子图层": "Expand sub-layers",
 };

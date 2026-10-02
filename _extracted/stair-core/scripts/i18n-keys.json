@@ -1039,7 +1039,7 @@
   "RhinoPanel.jsx:201"
  ],
  "没有图层": [
-  "LayerTree.jsx:154"
+  "LayerTree.jsx:158"
  ],
  "每部楼梯": [
   "StairCoreTool.jsx:5393"
@@ -1886,7 +1886,7 @@
  ],
  "隐藏": [
   "StairCoreTool.jsx:4047",
-  "LayerTree.jsx:142"
+  "LayerTree.jsx:146"
  ],
  "应用到 L": [
   "StairCoreTool.jsx:5248"
@@ -1944,6 +1944,9 @@
  "展开右侧面板（核心筒 / 走廊墙体 / 门 / 疏散路径）": [
   "StairCoreTool.jsx:4625"
  ],
+ "展开子图层": [
+  "LayerTree.jsx:128"
+ ],
  "展厅 Exhibition halls (A)": [
   "StairCoreTool.jsx:48"
  ],
@@ -1955,6 +1958,9 @@
  ],
  "长方体 {0}": [
   "RhinoPanel.jsx:329"
+ ],
+ "折叠子图层": [
+  "LayerTree.jsx:128"
  ],
  "折返（180°）中间平台深度 = 楼梯宽度；直跑平台深度 = min(宽度, 1 100)": [
   "StairCoreTool.jsx:88"
@@ -2071,7 +2077,7 @@
   "StairCoreTool.jsx:49"
  ],
  "子图层上的对象（读取时一并计入）": [
-  "LayerTree.jsx:145"
+  "LayerTree.jsx:149"
  ],
  "自定义人数（设计人数，需张贴标识）": [
   "StairCoreTool.jsx:57"
@@ -2302,7 +2308,7 @@
   "StairCoreTool.jsx:3623"
  ],
  "Rhino 当前图层": [
-  "LayerTree.jsx:138"
+  "LayerTree.jsx:142"
  ],
  "Rhino 烘焙失败：{0}": [
   "rhinoBridge.js:278"
