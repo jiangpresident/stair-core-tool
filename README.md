@@ -1,59 +1,92 @@
-# Stair Core Tool · 核心筒疏散楼梯工具
+# Stair Core Tool
 
-Vancouver (VBBL 2025 → BCBC 2024 → NBC 2020) exit-stair calculator and floor-plan egress checker, built with React + Vite + three.js, plus a local Python/OpenCV floor-plan recognition service.
+**▶ Live demo (GitHub Pages): https://jiangpresident.github.io/stair-core-tool/**
+Calculator: https://jiangpresident.github.io/stair-core-tool/ · Floor plan tool: https://jiangpresident.github.io/stair-core-tool/plan.html
 
-温哥华建筑规范核心筒疏散楼梯计算器 + 平面图疏散校核工具（React + Vite + three.js），附一个本机 Python/OpenCV 平面图识别服务。
+Vancouver exit-stair calculator and floor-plan egress checker (VBBL 2025 → BCBC 2024 → NBC 2020). UI is English by default; switch to 中文 with the toggle at the top-right.
 
-UI language: **English by default**, switch to 中文 with the toggle at the top-right.
+## 1. Purpose
 
-## What it does / 功能
+<!-- TODO (作者本人填写，≤150 词)：这个工具帮谁、理解或完成什么。作业要求这一段必须自己写。 -->
+_To be written by the author._
 
-- **Stair-core calculator** — number of exit stairs, clear width, flights, landings and stair-enclosure size per storey from floor area, occupancy and storey height; plan / section / 3D views with code references.
-  **核心筒计算器**：按每层面积、用途、层高算楼梯数量、净宽、跑数、平台与楼梯间尺寸，带平面 / 剖面 / 三维图和条文引用。
-- **Floor plan tool** — upload a PDF or image, calibrate scale, recognise walls / doors / stairs (four routes: local OpenCV service, vector PDF parsing, image edge detection, or Claude / ChatGPT vision), place cores, draw corridor walls and doors, then check exit separation, shortest egress paths and a whole-floor travel-distance heatmap. Save / open projects as `.stairplan.json`.
-  **平面图工具**：上传 PDF/图片、标定比例、识别墙/门/楼梯（四条路线：本机 OpenCV 服务、矢量 PDF 解析、图像边缘识别、Claude/ChatGPT 识图），摆核心筒、画走廊墙和门，校核出口间距、最短疏散路径和整层行走距离热力图。工程可保存为 `.stairplan.json`。
+## 2. How to use it
 
-> Schematic-stage estimates only — not a substitute for a code review by a registered professional.
-> 仅供方案阶段估算，不替代注册专业人员的规范审查。
+The tool is a web app with two pages that share data through the browser's local storage:
 
-## Quick start / 快速开始
+- **Stair-core calculator** (`/`) — enter storeys, storey heights, floor areas and occupancies; press **Confirm & calculate**. You get the number of exit stairs, clear widths, flights, landings, stair-enclosure sizes, plan / section / 3D drawings, and a per-storey check with clause references.
+- **Floor plan tool** (`/plan.html` on the live site, `/plan` locally) — upload a floor plan (PDF or image), **Calibrate scale** by clicking two points of known distance, recognise walls / doors / stairs from the drawing (or draw them), place stair cores from the calculator, then check **exit separation**, **auto shortest egress paths** and the whole-floor **travel-distance heatmap** (green = within limit, red = over). Projects save as `.stairplan.json`.
 
-Requirements: **Node.js** (with npm) and **Python 3.10+** (for the local recognition service).
+**Online (GitHub Pages)** — open the links at the top. Everything runs in the browser; nothing is uploaded. On the hosted version the recognition routes available are *vector PDF parsing*, *image edge detection* and *AI recognition* (needs your own Claude / OpenAI API key, stored only in your browser). The *Local Marker* route, the system save dialog and the *example* panel need the local dev server (below).
 
-**Windows, one click:** double-click `启动平面图工具.bat` — the first run installs the npm dependencies and the Python environment, then starts the dev server (which also starts the recognition service) and opens the browser.
-
-**Manual:**
+**Locally (full feature set)** — requires Node.js (with npm) and Python 3.10+:
 
 ```bash
-cd _extracted/stair-core
+git clone https://github.com/jiangpresident/stair-core-tool.git
+cd stair-core-tool/_extracted/stair-core
 npm install
 npm run dev          # http://localhost:5173  (/ calculator, /plan floor plan tool)
 ```
 
-The floor-plan recognition service (`floorplan-marker/`) is started automatically by the dev server; the first time, create its Python environment with `floorplan-marker/start_windows.bat` (or `sh floorplan-marker/start_mac_linux.sh`).
+The dev server also starts the local Floorplan Marker recognition service (`floorplan-marker/`, Python + OpenCV). Create its Python environment once with `floorplan-marker/start_windows.bat` (Windows) or `sh floorplan-marker/start_mac_linux.sh`. On Windows you can instead double-click **`启动平面图工具.bat`** in the repository root, which installs everything on first run and opens the browser.
 
-## Repository layout / 目录
+Example projects to try are in `Saved Plans/` (open them from the **example** panel in the floor plan tool, or with **Open…**); sample drawings are in `Test Plans/`.
+
+## 3. Source
+
+| Document | Version used | Clauses / tables used |
+|---|---|---|
+| **Vancouver Building By-law (VBBL) 2025**, Book I, Division B | consolidation incl. the 2026-01-20 revision | takes precedence where it differs: 3.2.10 (single exit stair — Vancouver variant), 3.4.2.3 scissor-stair separation relaxation for small residential buildings, deletion of the former 3.4.1.2.(3) scissor-stair ban |
+| **BC Building Code (BCBC) 2024** | Revision 3 (2024-08) | 3.2.10 single-exit residential stair (shown for reference; not adopted by Vancouver) |
+| **National Building Code of Canada (NBC) 2020** | 2020 | base text for all clauses below |
+
+Clauses implemented (identical across the three levels unless tagged otherwise in the UI): **3.1.17.1** and **Table 3.1.17.1** (occupant load); **3.4.2.1** (minimum number of exits); **3.4.2.3** (distance between exits, ½ diagonal / 9 m); **3.4.2.5** (travel distance 25 / 30 / 40 / 45 m); **3.4.3.2** and **Tables 3.4.3.2.-A/-B** (exit width per person, minimum widths, non-cumulative storeys, half-width cap); **3.4.3.4** (headroom 2 050 mm); **3.4.4.1 / 3.4.4.4** (fire separation of exits, scissor stairs); **3.4.6.2 – 3.4.6.5, 3.4.6.8, 3.4.6.11, 3.4.6.12** (risers per flight, rise per flight 3.7 m, landings, handrails, treads and risers, doors on landings, door swing / latch side); **3.3.1.9** (public corridor width). Every number shown in the UI carries a clause tag; items marked *user setting* (e.g. max risers per flight) are design conventions, not code requirements.
+
+## 4. Example
+
+**Calculator** — input: 5 storeys, 300 mm core walls, dog-leg stairs, max 1 500 mm per stair, fully sprinklered, default occupancies. Result: 4 stairs in the lower zone (2 above L2), 1 350 mm clear width, 3 flights per storey, lower-zone core 12.90 × 5.82 m, with the governing clause for each value.
+
+![Calculator summary](docs/screenshots/calculator-summary.jpg)
+
+**Floor plan tool** — input: the built-in 50 × 50 m sample (ring corridor + one core), occupancy "Office & personal service" (40 m limit). Result: the travel-distance heatmap shows 2 417 cells within the limit and 73 cells over (red corners), farthest cell 44.7 m.
+
+![Travel-distance heatmap](docs/screenshots/plan-heatmap.jpg)
+
+**Recognition** — input: `Test Plans/L1-Vector.pdf` through the local Floorplan Marker route (threshold 230). Result: 44 wall centrelines (red), 19 door openings (yellow), 2 stair enclosures (green), then converted into cores, walls and doors with one click.
+
+![Marker recognition](docs/screenshots/marker-recognition-L1.png)
+
+## 5. Skill and limits
+
+**Reusable skill file:** [`_extracted/stair-core/CLAUDE.md`](_extracted/stair-core/CLAUDE.md) — the project brief, code-reference conventions and the full development log (what was built in each round, why, and how it was verified); [`_extracted/stair-core/docs/START_PROMPT.md`](_extracted/stair-core/docs/START_PROMPT.md) is the hand-off prompt for continuing the work with an AI assistant.
+
+**What the tool does not do / where a person must check:**
+
+- Schematic-stage estimate only; it does not replace a code review by a registered professional or the Chief Building Official's interpretation.
+- Travel distance and exit separation are measured on a rasterised grid (≈ 100–400 mm cells) and on the drawn boundary's envelope — approximations, not the exact routes or floor-area diagonal in the code.
+- Recognition from drawings (all four routes) produces *candidates* that must be reviewed; the local route only detects orthogonal walls; AI results depend on the model and cost money.
+- Not covered: smoke control (3.2.6), accessibility beyond the door-clearance notes, fire-separation ratings, exterior exits, ramps, and room-to-corridor travel-distance segments.
+- Occupancies are simplified to the groups in Table 3.1.17.1; design occupant loads must be posted (3.1.17.1.(2)).
+
+## Repository layout
 
 | Path | Contents |
 |---|---|
-| `_extracted/stair-core/` | The web app (React + Vite). See its own `README.md` and `CLAUDE.md` (development log). |
-| `floorplan-marker/` | Local Python + OpenCV floor-plan recognition service (walls / doors / stairs), with its own README. |
-| `Saved Plans/` | Example plan projects — open them from the **example** panel in the floor plan tool. |
-| `Test Plans/` | Sample floor-plan PDFs used for testing recognition. |
+| `_extracted/stair-core/` | The web app (React + Vite + three.js). Own `README.md` (scripts, routes) and `CLAUDE.md` (development log). |
+| `floorplan-marker/` | Local Python + OpenCV floor-plan recognition service, with its own README. |
+| `Saved Plans/` | Example plan projects (`.stairplan.json`). |
+| `Test Plans/` | Sample floor-plan PDFs / PNGs. |
+| `docs/screenshots/` | Images used in this README. |
+| `.github/workflows/pages.yml` | Builds and deploys the static site to GitHub Pages on every push to `main`. |
 | `启动平面图工具.bat` | One-click launcher for Windows. |
 
-## Tests / 测试
+## Tests
 
 ```bash
 cd _extracted/stair-core
 npm run test:calc && npm run test:pdf && npm run test:raster && npm run test:dimension && npm run test:room
 npm run test:ai && npm run test:marker && npm run test:plan-file && npm run test:plan-bridge && npm run test:marker-service
-cd ../../floorplan-marker && .venv/Scripts/python.exe -m unittest discover -s tests   # Windows
 ```
-
-## Privacy / 隐私
-
-Everything runs locally. The optional AI recognition route uses **your own** Claude / OpenAI API key, stored only in your browser's localStorage and sent directly to the official API.
 
 ## License
 

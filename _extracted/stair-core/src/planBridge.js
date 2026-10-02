@@ -42,6 +42,10 @@ export function otherAppHref(target) {
   if (typeof location !== "undefined" && location.protocol === "file:") {
     return target === "plan" ? "stair-core-plan.html" : "stair-core-calculator.html";
   }
+  // 部署在子路径下（GitHub Pages：vite build --base=/stair-core-tool/）时，Vite 把 BASE_URL 注入进来；
+  // 那里没有 /plan 这种路由，用的是 plan.html（部署脚本从 index.html 复制一份）。本地开发 BASE_URL 是 "/"，行为不变。
+  const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.BASE_URL) || "/";
+  if (base !== "/") return target === "plan" ? base + "plan.html" : base;
   return target === "plan" ? "/plan" : "/";
 }
 

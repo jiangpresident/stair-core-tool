@@ -1,0 +1,53 @@
+# 把平面图工具 + 计算器的静态构建发布到 GitHub Pages（https://jiangpresident.github.io/stair-core-tool/）。
+# 每次推到 main 自动跑。Pages 上没有开发服务器，所以本机 Marker 识图、系统保存对话框、example 面板不可用
+# （界面会自动退回：Marker 显示"服务未启动"，保存走浏览器自己的方式）；其余功能（计算器、上传/标定、
+# 矢量/图像/AI 识图、画墙画门、最短路径、热力图、工程文件下载/打开）都能用。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: _extracted/stair-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: _extracted/stair-core/package-lock.json
+      - run: npm ci
+      # 子路径 = 仓库名；/plan 路由在静态托管上不存在，复制一份 index.html 作为 plan.html（App.jsx 按 *plan.html 识别）
+      - run: npm run build -- --base=/stair-core-tool/
+      - run: cp dist/index.html dist/plan.html && cp dist/index.html dist/404.html
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _extracted/stair-core/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
