@@ -2,18 +2,25 @@
 """Stair Core Tool ↔ Rhino 桥接脚本（在 Rhino 里运行一次即可，之后一直在后台监听）。
 
 用法：Rhino 命令行输入 ScriptEditor（Rhino 8）或 EditPythonScript（Rhino 7），打开本文件，运行。
-      运行后 Rhino 命令行会打印 "StairCore bridge listening on http://127.0.0.1:8790"。
-      回到网页的核心筒计算器，"Rhino" 面板点「连接 Rhino」，再点「发送到 Rhino」。
+      运行后 Rhino 命令行会打印 "StairCore bridge listening on http://127.0.0.1:8790"（被占用就顺延到 8791…8799，
+      每个 Rhino 窗口各运行一次就各占一个端口，网页里可以选连哪个）。
+      回到网页的核心筒计算器，"Rhino" 面板点「连接 Rhino」，选图层，点「读取并校核」。
 
-做什么：在本机 127.0.0.1:8790 起一个很小的 HTTP 服务（只监听本机、只接受本机网页和项目的 GitHub Pages 页面的请求）：
-  GET  /health → {"ok":true, "rhino":"8.x", "doc":"...", "units":"Millimeters"}
-  POST /bake   → 收网页算好的盒子列表（毫米，z 朝上：踏步 / 平台 / 墙 / 门 / 楼板，带楼梯编号），
-                 在 StairCore::<名字>::<类别> 图层上烘焙成 Brep 实体，按楼梯编号上色，同名的上一批先删掉（可选）。
-几何全部由网页端算好（和网页里的三维模型是同一份数据），这里只负责"盒子 → Brep"和图层/颜色，不做任何规范计算。
+做什么：在本机 127.0.0.1:879x 起一个很小的 HTTP 服务（只监听本机、只接受本机网页和项目的 GitHub Pages 页面的请求）：
+  GET  /health       → {"ok":true, "rhino":"8.x", "doc":"...", "docPath":"C:\\...\\x.3dm", "units":"Meters", "port":8790}
+  GET  /layers       → 图层列表（完整路径 + 对象数）
+  GET  /cores?layer= → 该图层（含子图层）上每个对象的最小外接矩形：长 × 宽 / 转角 / 中心 / 高度（毫米）
+  GET  /recent       → Rhino 的"最近打开的文件"
+  POST /open         → {"path": "...3dm"} 在这个 Rhino 窗口里打开该文件
+  POST /open-dialog  → 在 Rhino 里弹出打开文件对话框
+  POST /bake         → 收网页算好的盒子列表（毫米，z 朝上：踏步 / 平台 / 墙 / 门 / 楼板，带楼梯编号），
+                       在 StairCore::<名字>::<类别> 图层上烘焙成 Brep 实体，按楼梯编号上色，同名的上一批先删掉（可选）。
+几何全部由网页端算好（和网页里的三维模型是同一份数据），这里只负责几何读写和图层/颜色，不做任何规范计算。
 
 兼容 Rhino 8（CPython 3）和 Rhino 7（IronPython 2.7）：不用 f-string，HTTP 模块按版本导入。
 """
 import json
+import os
 import threading
 
 import Rhino
@@ -32,7 +39,8 @@ try:  # URL 解码（图层名里可能有中文/空格/::）
 except ImportError:
     from urllib import unquote as _unquote
 
-PORT = 8790
+# 端口：从 8790 起找第一个空闲的（每个 Rhino 窗口各跑一份脚本就各占一个端口，网页端扫描 8790–8799 列出全部实例让用户选）
+PORTS = list(range(8790, 8800))
 STICKY_KEY = "stair_core_bridge_server"
 # 允许调用的网页来源：本机开发服务器 / 本机静态文件，以及项目的 GitHub Pages 线上版
 ALLOWED_ORIGIN_PREFIXES = ("http://localhost:", "http://127.0.0.1:", "http://localhost", "http://127.0.0.1", "https://jiangpresident.github.io")
@@ -248,8 +256,8 @@ def list_layers():
     return {"ok": True, "layers": names}
 
 
-def run_on_ui_thread(fn):
-    """HTTP 线程里不能动文档，交给 Rhino 主线程执行并等结果。"""
+def run_on_ui_thread(fn, timeout=60):
+    """HTTP 线程里不能动文档，交给 Rhino 主线程执行并等结果。打开文件/弹对话框可能要等用户操作，timeout 给大一些。"""
     result = {}
     done = threading.Event()
 
@@ -262,12 +270,78 @@ def run_on_ui_thread(fn):
             done.set()
 
     Rhino.RhinoApp.InvokeOnUiThread(System.Action(wrapper))
-    done.wait(60)
+    done.wait(timeout)
     if "error" in result:
         raise RuntimeError(result["error"])
     if "value" not in result:
-        raise RuntimeError("Rhino main thread did not respond within 60 s")
+        raise RuntimeError("Rhino main thread did not respond within %d s" % timeout)
     return result["value"]
+
+
+# ---------- 文档：当前是哪个文件 / 最近文件 / 打开别的文件 ----------
+def doc_info():
+    doc = Rhino.RhinoDoc.ActiveDoc
+    return {
+        "doc": (doc.Name or "Untitled") if doc else None,
+        "docPath": (doc.Path or None) if doc else None,
+        "units": str(doc.ModelUnitSystem) if doc else None,
+        "modified": bool(doc.Modified) if doc else False,
+    }
+
+
+def recent_files():
+    """Rhino 自己记录的"最近打开的文件"，只返回还存在的 .3dm。"""
+    try:
+        items = Rhino.ApplicationSettings.FileSettings.RecentlyOpenedFiles()
+    except Exception:  # noqa: BLE001
+        items = None
+    out = []
+    for p in list(items or []):
+        p = str(p)
+        if p.lower().endswith(".3dm") and os.path.isfile(p):
+            out.append({"path": p, "name": os.path.basename(p)})
+    return {"ok": True, "files": out}
+
+
+def _same_path(a, b):
+    return bool(a) and bool(b) and os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
+
+def open_file(path):
+    """在这个 Rhino 窗口里打开 path（Windows 下替换当前文档；当前文档有改动时 Rhino 会先问是否保存——那个对话框在 Rhino 里回答）。"""
+    path = str(path or "").strip()
+    if not path:
+        return {"ok": False, "error": "path is required"}
+    if not path.lower().endswith(".3dm"):
+        return {"ok": False, "error": "only .3dm files can be opened"}
+    if not os.path.isfile(path):
+        return {"ok": False, "error": "file not found: %s" % path}
+    info = doc_info()
+    if _same_path(info.get("docPath"), path):
+        info.update({"ok": True, "alreadyOpen": True})
+        return info
+    # 当前文件有未保存的改动：不弹"是否保存"对话框（网页那边看不到、请求会一直挂着），直接告诉用户先在 Rhino 里保存或放弃
+    if info.get("modified"):
+        info.update({"ok": False, "modified": True, "error": "the current Rhino file has unsaved changes: save or discard them in Rhino first, then try again"})
+        return info
+    # 用 RhinoDoc.Open（纯 API）而不是 _-Open 命令：从 InvokeOnUiThread 里调 RunScript 不会执行（实测返回但文档没变）
+    Rhino.RhinoDoc.Open(path)
+    info = doc_info()
+    if not _same_path(info.get("docPath"), path):
+        info.update({"ok": False, "cancelled": True, "error": "Rhino did not open the file"})
+        return info
+    info["ok"] = True
+    return info
+
+
+def open_file_dialog():
+    """在 Rhino 里弹出系统的打开文件对话框，选了就打开。"""
+    fd = Rhino.UI.OpenFileDialog()
+    fd.Title = "Stair Core Tool: choose the Rhino file to connect"
+    fd.Filter = "Rhino 3D Models (*.3dm)|*.3dm"
+    if not fd.ShowOpenDialog():
+        return {"ok": True, "cancelled": True}
+    return open_file(fd.FileName)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -312,17 +386,21 @@ class Handler(BaseHTTPRequestHandler):
             return
         path, _, query = self.path.partition("?")
         if path == "/health":
-            doc = Rhino.RhinoDoc.ActiveDoc
-            self._send(200, {
+            info = doc_info()
+            info.update({
                 "ok": True,
                 "app": "rhino",
                 "rhino": str(Rhino.RhinoApp.Version),
-                "doc": (doc.Name or "Untitled") if doc else None,
-                "units": str(doc.ModelUnitSystem) if doc else None,
-                "features": ["bake", "layers", "cores"],
+                "port": self.server.server_address[1],
+                "pid": System.Diagnostics.Process.GetCurrentProcess().Id,
+                "features": ["bake", "layers", "cores", "recent", "open", "open-dialog"],
             })
+            self._send(200, info)
             return
         try:
+            if path == "/recent":
+                self._send(200, recent_files())
+                return
             if path == "/layers":
                 self._send(200, run_on_ui_thread(list_layers))
                 return
@@ -346,12 +424,27 @@ class Handler(BaseHTTPRequestHandler):
         if not self._origin_ok():
             self._send(403, {"ok": False, "error": "origin not allowed"})
             return
-        if self.path.split("?")[0] != "/bake":
+        route = self.path.split("?")[0]
+        if route not in ("/bake", "/open", "/open-dialog"):
             self._send(404, {"ok": False, "error": "not found"})
             return
         try:
             length = int(self.headers.get("Content-Length") or "0")
-            payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except ValueError as exc:
+                self._send(400, {"ok": False, "error": "body is not valid JSON: %s" % exc})
+                return
+            if route == "/open-dialog":
+                # 对话框要等用户选文件，最多等 10 分钟
+                result = run_on_ui_thread(open_file_dialog, timeout=600)
+                self._send(200 if result.get("ok") else 400, result)
+                return
+            if route == "/open":
+                target = payload.get("path") if isinstance(payload, dict) else None
+                result = run_on_ui_thread(lambda: open_file(target), timeout=600)
+                self._send(200 if result.get("ok") else 400, result)
+                return
             if not isinstance(payload, dict) or not isinstance(payload.get("boxes"), list):
                 self._send(400, {"ok": False, "error": "payload must contain a boxes array"})
                 return
@@ -365,20 +458,30 @@ class Handler(BaseHTTPRequestHandler):
 
 class Server(ThreadingMixIn, HTTPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    # 不复用地址：Windows 上 SO_REUSEADDR 会让第二个 Rhino 窗口"成功"绑到同一个端口然后互相抢请求；绑不上就换下一个端口
+    allow_reuse_address = False
 
 
 def start():
     existing = sc.sticky.get(STICKY_KEY)
     if existing is not None:
-        print("StairCore bridge already listening on http://127.0.0.1:%d" % PORT)
+        print("StairCore bridge already listening on http://127.0.0.1:%d" % existing.server_address[1])
         return existing
-    server = Server(("127.0.0.1", PORT), Handler)
+    server = None
+    last_error = None
+    for port in PORTS:
+        try:
+            server = Server(("127.0.0.1", port), Handler)
+            break
+        except Exception as exc:  # noqa: BLE001  端口被别的 Rhino 窗口占了
+            last_error = exc
+    if server is None:
+        raise RuntimeError("no free port in %d-%d (%s)" % (PORTS[0], PORTS[-1], last_error))
     thread = threading.Thread(target=server.serve_forever)
     thread.daemon = True
     thread.start()
     sc.sticky[STICKY_KEY] = server
-    print("StairCore bridge listening on http://127.0.0.1:%d  (health: /health, bake: POST /bake)" % PORT)
+    print("StairCore bridge listening on http://127.0.0.1:%d  (health: /health, cores: /cores?layer=, bake: POST /bake)" % server.server_address[1])
     return server
 
 

@@ -1,6 +1,8 @@
 // 网页 ↔ Rhino 的客户端（纯逻辑，不碰 DOM，Node 里可单测：scripts/test-rhino-bridge.mjs）。
-// Rhino 那边跑的是 rhino/StairCoreBridge.py（项目根目录），在本机 127.0.0.1:8790 监听：
-//   GET /health → Rhino 版本 / 当前文档 / 文档单位；POST /bake → 把盒子列表烘焙成 Brep。
+// Rhino 那边跑的是 rhino/StairCoreBridge.py（项目根目录），在本机 127.0.0.1:8790 监听（被占就 8791…8799，
+// 每个 Rhino 窗口一个端口，scanRhino 把在线的都列出来让用户选连哪个文件）：
+//   GET /health → Rhino 版本 / 当前文档(名、路径) / 单位 / 端口；GET /layers、/cores?layer=、/recent；
+//   POST /open {path}、POST /open-dialog → 在那个 Rhino 窗口里换文件；POST /bake → 把盒子列表烘焙成 Brep。
 // 几何不在这里算：调用方把 buildSolids() 的结果（毫米、z 朝上的盒子列表，跟网页三维模型同一份数据）传进来，
 // 这里只负责整理成 payload 和收发。
 import { t } from "../i18n.js";
@@ -28,6 +30,77 @@ export function buildRhinoPayload(model, { name = "StairCore", kinds = null, ori
     boxes,
     meta: { innerL: model && model.innerL, innerW: model && model.innerW, from: model && model.from, to: model && model.to, counts },
   };
+}
+
+/* ---------- 多个 Rhino 窗口：扫描 8790–8799，每个在线的桥就是一个可选的实例（各自对应一个打开的文件） ---------- */
+export const RHINO_PORTS = Array.from({ length: 10 }, (_, i) => 8790 + i);
+export const rhinoUrl = (port) => "http://127.0.0.1:" + port;
+
+async function fetchWithTimeout(f, url, init, ms) {
+  const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = setTimeout(() => ctl && ctl.abort(), ms);
+  try {
+    return await f(url, ctl ? { ...init, signal: ctl.signal } : init);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* 返回在线实例列表 [{port, baseUrl, rhino, doc, docPath, units, pid, features, ...}]，按端口升序；没有就是 []。 */
+export async function scanRhino({ fetch: fetchImpl, ports = RHINO_PORTS, timeoutMs = 1500 } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  const found = await Promise.all(
+    ports.map(async (port) => {
+      try {
+        const res = await fetchWithTimeout(f, rhinoUrl(port) + "/health", { cache: "no-store" }, timeoutMs);
+        if (!res.ok) return null;
+        const j = await res.json();
+        return j && j.ok ? { ...j, port, baseUrl: rhinoUrl(port) } : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return found.filter(Boolean);
+}
+
+/* Rhino 自己记录的"最近打开的文件"：[{path, name}] */
+export async function listRecentFiles({ fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + "/recent", { cache: "no-store" });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
+  }
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.ok) throw new Error(t("读取 Rhino 最近文件失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return j.files || [];
+}
+
+/* 让那个 Rhino 窗口打开指定的 .3dm。成功返回 {ok:true, doc, docPath, units, alreadyOpen?}；
+   用户在 Rhino 里取消了"是否保存改动"时返回 {ok:false, cancelled:true}（不抛错）；其它失败抛错。 */
+export async function openRhinoFile(path, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  return postOpen("/open", { path }, fetchImpl, baseUrl);
+}
+
+/* 在 Rhino 里弹出"打开文件"对话框。用户取消返回 {ok:true, cancelled:true}。 */
+export async function openRhinoFileDialog({ fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  return postOpen("/open-dialog", {}, fetchImpl, baseUrl);
+}
+
+async function postOpen(route, body, fetchImpl, baseUrl) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + route, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
+  }
+  const j = await res.json().catch(() => null);
+  if (j && j.cancelled) return j;
+  if (!res.ok || !j || !j.ok) throw new Error(t("在 Rhino 里打开文件失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return j;
 }
 
 export async function checkRhino({ fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {

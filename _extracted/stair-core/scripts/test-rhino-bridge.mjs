@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -110,6 +110,59 @@ await test("listRhinoLayers / readRhinoCores：请求地址（图层名 URL 编�
   assert.equal(calls[1], RHINO_URL + "/cores?layer=" + encodeURIComponent("核心筒::A"));
   await assert.rejects(readRhinoCores("Nope", { fetch: async () => json({ ok: false, error: "layer not found: Nope" }, 404) }), /读取核心筒失败：layer not found/);
   await assert.rejects(listRhinoLayers({ fetch: async () => { throw new TypeError("x"); } }), (e) => e.message === RHINO_NOT_RUNNING_HINT);
+});
+
+await test("scanRhino：扫 8790–8799，连不上 / 非 ok / 超时的端口跳过，在线的带 port 与 baseUrl 按端口升序", async () => {
+  assert.equal(RHINO_PORTS.length, 10);
+  assert.equal(RHINO_PORTS[0], 8790);
+  assert.equal(rhinoUrl(8793), "http://127.0.0.1:8793");
+  const fetch = async (u, init) => {
+    const port = Number(new URL(u).port);
+    if (port === 8790) return json({ ok: true, rhino: "8.24", doc: "A.3dm", docPath: "C:\\x\\A.3dm", units: "Meters", features: ["open"] });
+    if (port === 8792) return json({ ok: true, rhino: "8.24", doc: "B.3dm", docPath: "C:\\x\\B.3dm", units: "Millimeters" });
+    if (port === 8795) return json({ ok: false });
+    if (port === 8797) return new Promise((_, rej) => init.signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")))); // 永不回应 → 靠超时
+    throw new TypeError("Failed to fetch");
+  };
+  const found = await scanRhino({ fetch, timeoutMs: 50 });
+  assert.deepEqual(found.map((i) => [i.port, i.doc, i.baseUrl]), [
+    [8790, "A.3dm", "http://127.0.0.1:8790"],
+    [8792, "B.3dm", "http://127.0.0.1:8792"],
+  ]);
+  assert.deepEqual(await scanRhino({ fetch: async () => { throw new TypeError("x"); } }), []);
+});
+
+await test("listRecentFiles / openRhinoFile / openRhinoFileDialog：走选中的实例地址；取消不抛错；失败翻成中文", async () => {
+  const calls = [];
+  const fetch = async (u, init) => {
+    calls.push({ u: String(u), init });
+    if (String(u).endsWith("/recent")) return json({ ok: true, files: [{ path: "C:\\x\\A.3dm", name: "A.3dm" }] });
+    if (String(u).endsWith("/open")) {
+      const body = JSON.parse(init.body);
+      if (body.path === "C:\\x\\missing.3dm") return json({ ok: false, error: "file not found: C:\\x\\missing.3dm" }, 400);
+      if (body.path === "C:\\x\\cancel.3dm") return json({ ok: false, cancelled: true, error: "Rhino did not open the file" }, 400);
+      return json({ ok: true, doc: "A.3dm", docPath: body.path, units: "Meters" });
+    }
+    if (String(u).endsWith("/open-dialog")) return json({ ok: true, cancelled: true });
+    throw new Error("unexpected " + u);
+  };
+  const base = "http://127.0.0.1:8792";
+  const recent = await listRecentFiles({ fetch, baseUrl: base });
+  assert.equal(recent.length, 1);
+  assert.equal(calls[0].u, base + "/recent");
+  const opened = await openRhinoFile("C:\\x\\A.3dm", { fetch, baseUrl: base });
+  assert.equal(opened.ok, true);
+  assert.equal(opened.docPath, "C:\\x\\A.3dm");
+  assert.equal(calls[1].u, base + "/open");
+  assert.equal(calls[1].init.method, "POST");
+  assert.deepEqual(JSON.parse(calls[1].init.body), { path: "C:\\x\\A.3dm" });
+  const cancelled = await openRhinoFile("C:\\x\\cancel.3dm", { fetch, baseUrl: base });
+  assert.equal(cancelled.cancelled, true, "用户在 Rhino 里取消保存询问：不抛错");
+  await assert.rejects(openRhinoFile("C:\\x\\missing.3dm", { fetch, baseUrl: base }), /打开文件失败：file not found/);
+  const dlg = await openRhinoFileDialog({ fetch, baseUrl: base });
+  assert.equal(dlg.cancelled, true);
+  assert.equal(calls.at(-1).u, base + "/open-dialog");
+  await assert.rejects(openRhinoFileDialog({ fetch: async () => { throw new TypeError("x"); } }), (e) => e.message === RHINO_NOT_RUNNING_HINT);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

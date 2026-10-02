@@ -2,10 +2,28 @@
 //   1. 从 Rhino 读核心筒：用户在 Rhino 里自己画好核心筒的长方体（放在某个图层），这里读出它的长 × 宽（含转角、
 //      位置、高度，毫米），和计算出来的各区段核心筒外包尺寸比，告诉用户够不够、差多少。
 //   2. 发送到 Rhino：把当前梯井整栋高度的楼梯实体（跟上方三维模型同一份盒子数据）烘焙进 Rhino（次要功能，默认收起）。
-// Rhino 那边跑的是 rhino/StairCoreBridge.py（127.0.0.1:8790）。
+//   0. 连到哪个文件：扫描 8790–8799 列出所有运行了桥接脚本的 Rhino 窗口让用户选；也能让当前窗口打开最近文件 / 浏览打开别的 .3dm。
+// Rhino 那边跑的是 rhino/StairCoreBridge.py（127.0.0.1:8790，被占就顺延）。
 import { useState } from "react";
 import { t } from "../i18n.js";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, RHINO_SCRIPT_PATH } from "./rhinoBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+
+const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
+const readSavedPort = () => {
+  try {
+    const v = Number(localStorage.getItem(PORT_KEY));
+    return RHINO_PORTS.includes(v) ? v : null;
+  } catch {
+    return null;
+  }
+};
+const savePort = (port) => {
+  try {
+    localStorage.setItem(PORT_KEY, String(port));
+  } catch {
+    /* 隐私模式等 */
+  }
+};
 
 const KIND_OPTIONS = [
   { key: "step", label: "踏步" },
@@ -19,7 +37,12 @@ const fmtMm = (v) => Math.round(v).toLocaleString("en-US");
 const fmtM = (v) => (v / 1000).toFixed(2);
 
 export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
-  const [status, setStatus] = useState(null); // null | {checking} | {ok, rhino, doc, units} | {ok:false, error}
+  const [status, setStatus] = useState(null); // null | {checking} | {ok, rhino, doc, docPath, units, port, baseUrl} | {ok:false, error}
+  // 连到哪个 Rhino 窗口 / 哪个文件
+  const [instances, setInstances] = useState([]); // scanRhino 的结果
+  const [recent, setRecent] = useState([]); // 那个窗口的最近文件
+  const [switching, setSwitching] = useState(false);
+  const [fileMsg, setFileMsg] = useState(null);
   // 读核心筒
   const [layers, setLayers] = useState([]);
   const [layer, setLayer] = useState("Core");
@@ -35,28 +58,97 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   const [name, setName] = useState("StairCore");
 
   const online = !!(status && status.ok);
+  const baseUrl = online ? status.baseUrl : undefined;
+  const opts = baseUrl ? { baseUrl } : {};
+  const canOpen = !!(online && Array.isArray(status.features) && status.features.includes("open"));
 
+  /* 连上某个实例后：拉图层（默认选像核心筒的那层）和最近文件，清掉上一个文件的校核结果 */
+  const loadDoc = async (inst) => {
+    const o = { baseUrl: inst.baseUrl };
+    setCores(null);
+    setReadError(null);
+    try {
+      const ls = await listRhinoLayers(o);
+      setLayers(ls);
+      const pick = ls.find((l) => /core|核心/i.test(l.path) && l.objects > 0) || ls.find((l) => /core|核心/i.test(l.path)) || ls.find((l) => l.objects > 0);
+      if (pick && !ls.some((l) => l.path === layer)) setLayer(pick.path);
+    } catch (err) {
+      setReadError(err && err.message ? err.message : String(err));
+    }
+    if (Array.isArray(inst.features) && inst.features.includes("recent")) {
+      try {
+        setRecent(await listRecentFiles(o));
+      } catch {
+        setRecent([]);
+      }
+    } else setRecent([]);
+  };
+  const useInstance = async (inst) => {
+    setStatus(inst);
+    savePort(inst.port);
+    await loadDoc(inst);
+  };
   const connect = async () => {
     setStatus({ checking: true });
-    const s = await checkRhino();
-    setStatus(s);
-    if (s.ok) {
-      try {
-        const ls = await listRhinoLayers();
-        setLayers(ls);
-        // 默认选一个像核心筒的图层：名字含 core/核心，否则第一个有对象的图层
-        const pick = ls.find((l) => /core|核心/i.test(l.path) && l.objects > 0) || ls.find((l) => /core|核心/i.test(l.path)) || ls.find((l) => l.objects > 0);
-        if (pick && !ls.some((l) => l.path === layer)) setLayer(pick.path);
-      } catch (err) {
-        setReadError(err && err.message ? err.message : String(err));
-      }
+    setFileMsg(null);
+    const found = await scanRhino();
+    setInstances(found);
+    if (!found.length) {
+      setStatus({ ok: false, error: RHINO_NOT_RUNNING_HINT, offline: true });
+      return;
+    }
+    // 优先上次选过的窗口，否则端口最小的那个
+    const saved = readSavedPort();
+    const inst = found.find((i) => i.port === saved) || found[0];
+    await useInstance(inst);
+  };
+  const selectInstance = (port) => {
+    const inst = instances.find((i) => i.port === Number(port));
+    if (inst) {
+      setFileMsg(null);
+      useInstance(inst);
+    }
+  };
+  /* 换文件：result 是 /open 或 /open-dialog 的返回；成功就把状态里的文件信息换掉并重拉图层 */
+  const afterOpen = async (r) => {
+    if (r.cancelled) {
+      setFileMsg({ text: t("已取消（文件没有变）"), muted: true });
+      return;
+    }
+    const inst = { ...status, doc: r.doc, docPath: r.docPath, units: r.units };
+    setStatus(inst);
+    setInstances((prev) => prev.map((i) => (i.port === inst.port ? inst : i)));
+    setFileMsg({ text: r.alreadyOpen ? t("这个文件本来就是当前文件") : t("已在 Rhino 里打开 {0}", [r.docPath || r.doc]) });
+    await loadDoc(inst);
+  };
+  const openPath = async (path) => {
+    if (!path) return;
+    setSwitching(true);
+    setFileMsg(null);
+    try {
+      await afterOpen(await openRhinoFile(path, opts));
+    } catch (err) {
+      setFileMsg({ text: err && err.message ? err.message : String(err), error: true });
+    } finally {
+      setSwitching(false);
+    }
+  };
+  const browse = async () => {
+    setSwitching(true);
+    setFileMsg({ text: t("对话框已在 Rhino 窗口里弹出，请到 Rhino 里选文件…"), muted: true });
+    try {
+      await afterOpen(await openRhinoFileDialog(opts));
+    } catch (err) {
+      setFileMsg({ text: err && err.message ? err.message : String(err), error: true });
+    } finally {
+      setSwitching(false);
     }
   };
   const read = async () => {
     setReading(true);
     setReadError(null);
     try {
-      const boxes = await readRhinoCores(layer);
+      const boxes = await readRhinoCores(layer, opts);
       setCores(checkCoreBoxes(boxes, zones));
     } catch (err) {
       setReadError(err && err.message ? err.message : String(err));
@@ -71,7 +163,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       const model = buildModel();
       const payload = buildRhinoPayload(model, { name: name.trim() || "StairCore", kinds: [...kinds], replace });
       if (!payload.boxes.length) throw new Error(t("没有可发送的几何（勾选至少一种构件）"));
-      const r = await sendToRhino(payload);
+      const r = await sendToRhino(payload, opts);
       setResult({ text: t("已发送到 Rhino：{0} 个实体，图层 {1}（文档单位 {2}）", [r.added, (r.layers || []).length, r.units]) });
     } catch (err) {
       setResult({ text: err && err.message ? err.message : String(err), error: true });
@@ -106,6 +198,61 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
         <div className="mt-2" style={{ color: C.muted, fontSize: 11.5 }}>
           {status.error}
           {status.offline && <div className="mt-1">{t("脚本路径：项目根目录 {0}。它只监听本机 127.0.0.1:8790，不联网；运行一次后一直在后台监听，直到关闭 Rhino。", [RHINO_SCRIPT_PATH])}</div>}
+        </div>
+      )}
+
+      {/* 0. 连到哪个 Rhino 窗口 / 哪个文件 */}
+      {online && (
+        <div className="mt-3" data-testid="rhino-file">
+          <div className="flex flex-wrap items-center gap-2">
+            <span style={{ fontWeight: 600 }}>{t("文件")}</span>
+            {instances.length > 1 ? (
+              <select value={status.port} onChange={(e) => selectInstance(e.target.value)} className="rounded px-2 py-0.5" style={{ border: `1px solid ${C.rule}`, background: C.panel, maxWidth: 320 }} aria-label="Rhino window" data-testid="rhino-instance">
+                {instances.map((i) => (
+                  <option key={i.port} value={i.port}>
+                    {i.doc || "Untitled"} · Rhino {String(i.rhino || "").split(".").slice(0, 2).join(".")} · :{i.port}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span style={{ fontFamily: "monospace" }} title={status.docPath || ""} data-testid="rhino-doc">
+                {status.docPath || status.doc || "Untitled"}
+              </span>
+            )}
+            {canOpen && (
+              <>
+                {recent.length > 0 && (
+                  <select value="" onChange={(e) => openPath(e.target.value)} disabled={switching} className="rounded px-2 py-0.5" style={{ border: `1px solid ${C.rule}`, background: C.panel, maxWidth: 260 }} aria-label="Recent Rhino files" data-testid="rhino-recent">
+                    <option value="">{t("最近文件…")}</option>
+                    {recent.map((f) => (
+                      <option key={f.path} value={f.path} title={f.path}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button type="button" onClick={browse} disabled={switching} className="rounded px-3 py-1" style={{ border: `1px solid ${C.accent}`, color: C.accent, fontWeight: 600 }} data-testid="rhino-browse">
+                  {switching ? t("切换中…") : t("浏览其它文件…")}
+                </button>
+              </>
+            )}
+            {!canOpen && <span style={{ color: C.muted, fontSize: 11.5 }}>{t("要在这里换文件，请在 Rhino 里重新运行最新的 {0}", [RHINO_SCRIPT_PATH])}</span>}
+          </div>
+          {instances.length > 1 && status.docPath && (
+            <div className="mt-1" style={{ color: C.muted, fontSize: 11, fontFamily: "monospace" }} data-testid="rhino-doc">
+              {status.docPath}
+            </div>
+          )}
+          <div className="mt-1" style={{ color: C.muted, fontSize: 11.5 }}>
+            {instances.length > 1
+              ? t("检测到 {0} 个运行了桥接脚本的 Rhino 窗口，在上面选连哪个；也可以让当前窗口换到别的文件。", [instances.length])
+              : t("只检测到 1 个 Rhino 窗口。要连别的文件：在上面选最近文件或浏览（当前窗口会换文件，有未保存改动时 Rhino 会先问是否保存）；或者在另一个 Rhino 窗口里也运行一次桥接脚本，再点「重新检测」。")}
+          </div>
+          {fileMsg && (
+            <div className="mt-1" style={{ color: fileMsg.error ? C.err : fileMsg.muted ? C.muted : C.ok, fontWeight: fileMsg.error || fileMsg.muted ? 400 : 600 }} data-testid="rhino-file-msg">
+              {fileMsg.text}
+            </div>
+          )}
         </div>
       )}
 

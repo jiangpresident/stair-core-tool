@@ -79,9 +79,10 @@ Clauses implemented (identical across the three levels unless tagged otherwise i
 
 The calculator page has a **Rhino** panel under the 3D model. Its main job is to **check the core boxes you drew in Rhino**: draw each stair core as a box (Brep, extrusion, mesh or closed rectangular curve) on a layer of your choice, and the tool reads its length × width and compares it with the required outer core size of every zone it computed.
 
-1. In Rhino, run `rhino/StairCoreBridge.py` once (Rhino 8: `ScriptEditor`, open the file, run; Rhino 7: `EditPythonScript`). It starts a tiny server on `127.0.0.1:8790` that only accepts requests from this tool.
-2. In the calculator, click **Connect Rhino** (shows Rhino version, document and units). Pick the layer that holds your core boxes (a layer named like "Core" is picked automatically) and click **Read & check**.
-3. Each box gets one row: ✓ / ✗, its L × W in mm, height, rotation and centre, then per zone "needs L × W: OK (spare …)" or "too small (length −…, width +…)". Rotated boxes are measured by their minimum bounding rectangle; sub-layers are included; document units are converted to mm automatically.
+1. In Rhino, run `rhino/StairCoreBridge.py` once (Rhino 8: `ScriptEditor`, open the file, run; Rhino 7: `EditPythonScript`). It starts a tiny server on `127.0.0.1:8790` (or the next free port up to 8799) that only accepts requests from this tool.
+2. In the calculator, click **Connect Rhino** (shows Rhino version, document and units). The **File** row shows which Rhino file you are connected to: pick one of Rhino's **recent files** or **browse** to make that Rhino window open another `.3dm` (if the current file has unsaved changes, save or discard them in Rhino first). If several Rhino windows run the bridge script, a drop-down lets you choose the window.
+3. Pick the layer that holds your core boxes (a layer named like "Core" is picked automatically) and click **Read & check**.
+4. Each box gets one row: ✓ / ✗, its L × W in mm, height, rotation and centre, then per zone "needs L × W: OK (spare …)" or "too small (length −…, width +…)". Rotated boxes are measured by their minimum bounding rectangle; sub-layers are included; document units are converted to mm automatically.
 
 Optionally, the collapsed **Reverse** section sends the computed stair solids (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, on separate layers) into Rhino; resending replaces the previous batch under the same layer name.
 
