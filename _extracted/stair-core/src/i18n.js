@@ -12,8 +12,10 @@ export const LANGS = [
 ];
 
 export function getLang() {
+  // 没有浏览器存储的环境（Node 单测、构建脚本）用源语言中文：测试断言的是源码里的中文文案；浏览器里默认英文
+  if (typeof localStorage === "undefined") return "zh";
   try {
-    const v = typeof localStorage !== "undefined" ? localStorage.getItem(LANG_KEY) : null;
+    const v = localStorage.getItem(LANG_KEY);
     return v === "zh" || v === "en" ? v : "en";
   } catch {
     return "en";
