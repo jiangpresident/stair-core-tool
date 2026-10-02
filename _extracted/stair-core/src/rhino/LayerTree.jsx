@@ -5,6 +5,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../i18n.js";
 import { buildLayerTree } from "./rhinoBridge.js";
 
+/* 实心三角：比字符 ▸/▾ 大得多也清楚得多；expanded 时朝下，否则朝右。 */
+function Caret({ expanded, size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" style={{ display: "block", transform: expanded ? "rotate(90deg)" : "none", transition: "transform .12s" }}>
+      <polygon points="2.5,1 8.5,5 2.5,9" fill="currentColor" />
+    </svg>
+  );
+}
+
 function Swatch({ color }) {
   return <span style={{ width: 10, height: 10, borderRadius: 2, background: color || "#000", border: "1px solid rgba(0,0,0,.25)", flexShrink: 0, display: "inline-block" }} />;
 }
@@ -88,7 +97,9 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
           {value || t("选择图层…")}
         </span>
         {selected && (selected.objects || 0) > 0 && <span style={{ color: C.muted, fontSize: 11 }}>({selected.objects})</span>}
-        <span style={{ marginLeft: "auto", color: C.muted, fontSize: 10 }}>▾</span>
+        <span style={{ marginLeft: "auto", color: C.muted, display: "inline-flex" }}>
+          <Caret expanded size={12} />
+        </span>
       </button>
       {open && (
         <div
@@ -131,10 +142,11 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                     if (has) toggleNode(node.path);
                   }}
                   className={has ? "rounded hover:bg-slate-200" : ""}
-                  style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: C.ink, fontSize: 14, lineHeight: 1, flexShrink: 0, visibility: has ? "visible" : "hidden", cursor: has ? "pointer" : "default" }}
+                  style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: C.ink, flexShrink: 0, visibility: has ? "visible" : "hidden", cursor: has ? "pointer" : "default" }}
                   data-testid="layer-caret"
+                  data-expanded={exp ? "1" : "0"}
                 >
-                  {exp ? "▾" : "▸"}
+                  <Caret expanded={exp} size={14} />
                 </span>
                 <Swatch color={node.color} />
                 <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{node.name}</span>
