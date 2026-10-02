@@ -32,6 +32,8 @@ The dev server also starts the local Floorplan Marker recognition service (`floo
 
 Example projects to try are in `Saved Plans/` (open them from the **example** panel in the floor plan tool, or with **Open…**); sample drawings are in `Test Plans/`.
 
+Platform notes for the local version: the Local Marker recognition service and the example panel work on Windows, macOS and Linux. The **Save** button opens a native "Save as" dialog (choose any location, then Ctrl+S overwrites the same file) on Windows only; on macOS / Linux it falls back to the browser's own file picker (Chrome / Edge) or to a download into the default downloads folder. The first run needs internet access to download the npm and Python dependencies; after that everything works offline except the optional AI recognition route.
+
 ## 3. Source
 
 | Document | Version used | Clauses / tables used |
