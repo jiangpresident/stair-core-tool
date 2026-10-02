@@ -5714,8 +5714,23 @@ export default function StairCoreTool() {
                       {(z.totW / 1000).toFixed(2)} × {(z.totL / 1000).toFixed(2)} m
                     </div>
                     <div style={{ fontSize: 12, color: C.muted, fontVariantNumeric: "tabular-nums" }}>
-                      = {fmt(z.totW)} × {fmt(z.totL)} {t("mm，")}{z.area.toFixed(1)} m²
+                      {t("宽向")} {fmt(z.totW)} × {t("梯段方向")} {fmt(z.totL)} {t("mm，")}{z.area.toFixed(1)} m²{t("（全部梯间排成一排）")}
                     </div>
+                    {z.shafts.length > 1 && (
+                      <div style={{ fontSize: 12, marginTop: 6, fontVariantNumeric: "tabular-nums" }} data-testid="core-combos">
+                        <div style={{ color: C.muted }}>{t("分到几个核心筒时，每个核心筒放：")}</div>
+                        {Array.from({ length: z.shafts.length - 1 }, (_, k) => k + 1).map((k) => {
+                          const pick = [...z.shafts].sort((a, b) => b.innerW - a.innerW).slice(0, k);
+                          const w = pick.reduce((s, sh) => s + sh.innerW, 0) + (k + 1) * inp.wall;
+                          const l = Math.max(...z.shafts.map((sh) => sh.innerL)) + 2 * inp.wall;
+                          return (
+                            <div key={k}>
+                              {k} {inp.stairType === "dogleg" ? t("部楼梯") : t("个梯井")}：{fmt(w)} × {fmt(l)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     <ul style={{ fontSize: 12, marginTop: 8, paddingLeft: 16, color: C.ink }}>
                       {z.shafts.map((sh, j) => (
                         <li key={j} style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -5728,7 +5743,7 @@ export default function StairCoreTool() {
                 ))}
               </div>
               <p style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
-                {t("宽度方向：Σ 梯间内净宽 + (梯间数 + 1) × 墙厚；长度方向：最长梯间内净长 + 2 × 墙厚。若梯间分设于核心筒两侧，请分别取单个梯间外包尺寸。两个出口的间距还需满足")} <Ref k="DIST" />{t("，疏散距离满足")} <Ref k="TRAVEL" />{t("。")}
+                {t("宽向：Σ 梯间内净宽 + (梯间数 + 1) × 墙厚；梯段方向：最长梯间内净长 + 2 × 墙厚。大数字是全部梯间排成一排的外包；实际分到几个核心筒时按上面“每个核心筒放 k 部”的尺寸。两个出口的间距还需满足")} <Ref k="DIST" />{t("，疏散距离满足")} <Ref k="TRAVEL" />{t("。")}
               </p>
             </Panel>
 

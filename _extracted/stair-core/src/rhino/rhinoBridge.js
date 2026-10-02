@@ -225,13 +225,42 @@ export function wallsToPlan(walls, plan, { defaultT = 200, margin = 1000 } = {})
 /* 纯逻辑：把 Rhino 里读到的长方体（length ≥ width，毫米）和计算结果里各区段需要的核心筒外包尺寸比。
    zones：res.zones（每项 {from,to,count,totL,totW}）。长方体横放竖放都算（长对长、宽对宽），
    返回每个长方体对每个区段的判定：fits / 长边差多少 / 短边差多少。 */
-export function checkCoreBoxes(boxes, zones, { tolerance = 0 } = {}) {
-  const zs = (zones || []).map((z) => ({ from: z.from, to: z.to, count: z.count, reqL: Math.max(z.totL, z.totW), reqW: Math.min(z.totL, z.totW) }));
+export function checkCoreBoxes(boxes, zones, { tolerance = 0, perCore = 1 } = {}) {
+  /* 一个核心筒不必装下区段里的全部楼梯（4 部疏散梯本来就要分散到几个核心筒），所以按"这个核心筒放 k 个梯井"算需要的外包：
+       宽向 = 最宽的 k 个梯井内净宽之和 + (k+1) × 墙厚；梯段方向 = 最长梯井内净长 + 2 × 墙厚
+     墙厚从区段的 totL 反推（totL = 最长内净长 + 2 × 墙）。zones 里没有 shafts（老数据 / 测试）时退化成"整个区段一个核心筒"。 */
+  const zs = (zones || []).map((z) => {
+    const shafts = Array.isArray(z.shafts) ? z.shafts.map((s) => ({ innerW: s.innerW, innerL: s.innerL, stairs: (s.stairs && s.stairs.length) || 1 })) : null;
+    if (!shafts || !shafts.length) {
+      return { from: z.from, to: z.to, count: z.count, n: 1, target: 1, need: () => ({ width: z.totW, length: z.totL, stairs: z.count }) };
+    }
+    const maxInnerL = Math.max(...shafts.map((s) => s.innerL));
+    const wall = Math.max(0, (z.totL - maxInnerL) / 2);
+    const widest = [...shafts].sort((a, b) => b.innerW - a.innerW);
+    const need = (k) => {
+      const pick = widest.slice(0, Math.max(0, k));
+      return { width: pick.reduce((s, x) => s + x.innerW, 0) + (pick.length + 1) * wall, length: maxInnerL + 2 * wall, stairs: pick.reduce((s, x) => s + x.stairs, 0) };
+    };
+    return { from: z.from, to: z.to, count: z.count, n: shafts.length, target: Math.max(1, Math.min(Math.round(perCore) || 1, shafts.length)), need };
+  });
   return (boxes || []).map((b) => {
     const L = Math.max(b.length, b.width), W = Math.min(b.length, b.width);
+    const fitsSize = (need) => L + tolerance >= Math.max(need.width, need.length) && W + tolerance >= Math.min(need.width, need.length);
     const perZone = zs.map((z) => {
-      const dL = L - z.reqL, dW = W - z.reqW;
-      return { from: z.from, to: z.to, count: z.count, reqL: z.reqL, reqW: z.reqW, dL, dW, fits: dL >= -tolerance && dW >= -tolerance };
+      let capacity = 0; // 这个长方体最多能放几个梯井（长宽都够）
+      for (let k = 1; k <= z.n; k++) {
+        if (fitsSize(z.need(k))) capacity = k;
+        else break;
+      }
+      const req = z.need(z.target);
+      const reqL = Math.max(req.width, req.length), reqW = Math.min(req.width, req.length);
+      return {
+        from: z.from, to: z.to, count: z.count, n: z.n, target: z.target,
+        capacity, capacityStairs: capacity ? z.need(capacity).stairs : 0,
+        reqWidth: req.width, reqLength: req.length, reqStairs: req.stairs,
+        reqL, reqW, dL: L - reqL, dW: W - reqW,
+        fits: z.n > 0 && capacity >= z.target,
+      };
     });
     return { ...b, L, W, perZone, fitsAll: perZone.length > 0 && perZone.every((p) => p.fits) };
   });

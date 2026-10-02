@@ -74,26 +74,46 @@ await test("sendToRhino：POST /bake 带 JSON；成功返回桥的结果；桥�
   await assert.rejects(sendToRhino(buildRhinoPayload(model), { fetch: async () => { throw new TypeError("x"); } }), (e) => e.message === RHINO_NOT_RUNNING_HINT);
 });
 
-await test("checkCoreBoxes：长对长、短对短（横竖都算），逐区段给出差值与是否够", () => {
+await test("checkCoreBoxes：按'一个核心筒放 k 个梯井'算所需外包，报容量；横竖都算；老数据退化成整区段", () => {
+  // 默认例子：折返梯，每个梯井内净 2850 × 5220，墙 300；L2 四部（totW 12900）、L3–L5 两部（totW 6600）
+  const sh = { innerW: 2850, innerL: 5220, stairs: [{}] };
   const zones = [
-    { from: 2, to: 4, count: 4, totW: 5820, totL: 12900 },
-    { from: 5, to: 5, count: 2, totW: 5820, totL: 6600 },
+    { from: 2, to: 2, count: 4, shafts: [sh, sh, sh, sh], totW: 12900, totL: 5820 },
+    { from: 3, to: 5, count: 2, shafts: [sh, sh], totW: 6600, totL: 5820 },
   ];
   const boxes = [
     { id: "a", name: "big", length: 13000, width: 6000, angleDeg: 0 },
-    { id: "b", name: "rotated-small", length: 7000, width: 6000, angleDeg: 30 }, // 够上部区段，不够下部
+    { id: "b", name: "rotated-two", length: 7000, width: 6000, angleDeg: 30 }, // 放得下 2 个梯井（6600），放不下 3 个（9750）
     { id: "c", name: "swapped", length: 6000, width: 13000, angleDeg: 90 }, // length/width 反了也要认
+    { id: "d", name: "tiny", length: 3000, width: 3000 },
   ];
-  const r = checkCoreBoxes(boxes, zones);
-  assert.equal(r[0].fitsAll, true);
-  assert.deepEqual(r[0].perZone.map((z) => [z.fits, z.dL, z.dW]), [[true, 100, 180], [true, 6400, 180]]);
-  assert.equal(r[1].fitsAll, false);
-  assert.deepEqual(r[1].perZone.map((z) => z.fits), [false, true]);
-  assert.equal(r[1].perZone[0].dL, 7000 - 12900);
+  const r = checkCoreBoxes(boxes, zones); // 默认每个核心筒放 1 个梯井
+  assert.deepEqual(r[0].perZone.map((z) => [z.capacity, z.n, z.fits]), [[4, 4, true], [2, 2, true]]);
+  assert.deepEqual(r[0].perZone.map((z) => [z.reqWidth, z.reqLength]), [[3450, 5820], [3450, 5820]], "放 1 个梯井：2850 + 2×300");
+  assert.equal(r[1].fitsAll, true, "7000×6000 放 1 个梯井当然够");
+  assert.deepEqual(r[1].perZone.map((z) => z.capacity), [2, 2]);
+  assert.equal(r[1].perZone[0].capacityStairs, 2);
   assert.equal(r[2].L, 13000, "长边取 max");
-  assert.equal(r[2].fitsAll, true);
+  assert.equal(r[2].perZone[0].capacity, 4);
+  assert.equal(r[3].fitsAll, false);
+  assert.deepEqual(r[3].perZone.map((z) => z.capacity), [0, 0]);
+  // 目标改成每个核心筒放 2 个梯井：需 2×2850 + 3×300 = 6600 × 5820
+  const r2 = checkCoreBoxes(boxes, zones, { perCore: 2 });
+  assert.deepEqual(r2[1].perZone.map((z) => [z.reqWidth, z.reqLength, z.fits, z.dL, z.dW]), [[6600, 5820, true, 400, 180], [6600, 5820, true, 400, 180]]);
+  // 目标 3：L2 需 3×2850 + 4×300 = 9750，7000 不够；L3–L5 只有 2 个梯井，目标被夹到 2 → 够
+  const r3 = checkCoreBoxes(boxes, zones, { perCore: 3 });
+  assert.deepEqual(r3[1].perZone.map((z) => [z.target, z.reqWidth, z.fits]), [[3, 9750, false], [2, 6600, true]]);
+  assert.equal(r3[1].perZone[0].dL, 7000 - 9750);
+  assert.equal(r3[1].fitsAll, false);
+  // 剪刀梯：一个梯井两部楼梯，stairs 数按梯井累加
+  const sc = { innerW: 3000, innerL: 7000, stairs: [{}, {}] };
+  const rs = checkCoreBoxes([{ length: 7600, width: 3600 }], [{ from: 2, to: 5, count: 2, shafts: [sc], totW: 3600, totL: 7600 }]);
+  assert.deepEqual([rs[0].perZone[0].capacity, rs[0].perZone[0].capacityStairs, rs[0].fitsAll], [1, 2, true]);
+  // 没有 shafts 的老数据：整个区段当一个核心筒
+  const old = checkCoreBoxes([{ length: 13000, width: 6000 }, { length: 7000, width: 6000 }], [{ from: 2, to: 4, count: 4, totW: 12900, totL: 5820 }]);
+  assert.deepEqual(old.map((b) => b.fitsAll), [true, false]);
   assert.equal(checkCoreBoxes(boxes, []).every((b) => b.fitsAll === false), true, "没有区段时不算够");
-  assert.equal(checkCoreBoxes([{ length: 12850, width: 5800 }], zones, { tolerance: 50 })[0].perZone[0].fits, true, "容差内算够");
+  assert.equal(checkCoreBoxes([{ length: 3400, width: 5800 }], zones, { tolerance: 50 })[0].perZone[0].fits, true, "容差内算够");
 });
 
 await test("listRhinoLayers / readRhinoCores：请求地址（图层名 URL 编码）、返回解包、错误翻译", async () => {

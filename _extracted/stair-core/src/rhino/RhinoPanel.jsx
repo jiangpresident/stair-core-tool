@@ -4,7 +4,7 @@
 //   2. 发送到 Rhino：把当前梯井整栋高度的楼梯实体（跟上方三维模型同一份盒子数据）烘焙进 Rhino（次要功能，默认收起）。
 //   0. 连到哪个文件：扫描 8790–8799 列出所有运行了桥接脚本的 Rhino 窗口让用户选；也能让当前窗口打开最近文件 / 浏览打开别的 .3dm。
 // Rhino 那边跑的是 rhino/StairCoreBridge.py（127.0.0.1:8790，被占就顺延）。
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
 import { loadPlan, savePlan, otherAppHref } from "../planBridge.js";
@@ -49,8 +49,13 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   const [layers, setLayers] = useState([]);
   const [layer, setLayer] = useState("Core");
   const [reading, setReading] = useState(false);
-  const [cores, setCores] = useState(null); // checkCoreBoxes 的结果
+  const [rawBoxes, setRawBoxes] = useState(null); // /cores 读回来的长方体（毫米）
+  const [perCore, setPerCore] = useState(1); // 校核目标：一个核心筒放几个梯井
   const [readError, setReadError] = useState(null);
+  // 校核结果：目标变了不用重新读 Rhino
+  const cores = useMemo(() => (rawBoxes ? checkCoreBoxes(rawBoxes, zones, { perCore }) : null), [rawBoxes, zones, perCore]);
+  const maxShafts = Math.max(1, ...(zones || []).map((z) => (z.shafts ? z.shafts.length : 1)));
+  const shaftUnit = (zones || []).some((z) => (z.shafts || []).some((s) => s.stairs && s.stairs.length > 1)) ? t("个梯井（剪刀梯一井两梯）") : t("部楼梯");
   // 读墙体
   const [wallLayer, setWallLayer] = useState("Walls");
   const [wallsReading, setWallsReading] = useState(false);
@@ -73,7 +78,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   /* 连上某个实例后：拉图层（默认选像核心筒的那层）和最近文件，清掉上一个文件的校核结果 */
   const loadDoc = async (inst) => {
     const o = { baseUrl: inst.baseUrl };
-    setCores(null);
+    setRawBoxes(null);
     setReadError(null);
     try {
       const ls = await listRhinoLayers(o);
@@ -161,8 +166,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
     setReading(true);
     setReadError(null);
     try {
-      const boxes = await readRhinoCores(layer, opts);
-      setCores(checkCoreBoxes(boxes, zones));
+      setRawBoxes(await readRhinoCores(layer, opts));
     } catch (err) {
       setReadError(err && err.message ? err.message : String(err));
     } finally {
@@ -301,6 +305,17 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
             <button type="button" onClick={read} disabled={reading} className="rounded px-3 py-1" style={{ background: reading ? C.rule : C.accent, color: reading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-read-btn">
               {reading ? t("读取中…") : t("读取并校核")}
             </button>
+            <label className="flex items-center gap-1" title={t("校核目标：Rhino 里这一个长方体要装下几个梯井。4 部疏散梯通常分在几个核心筒里，不必一个核心筒装全部。")}>
+              {t("每个核心筒放")}
+              <select value={perCore} onChange={(e) => setPerCore(Number(e.target.value))} className="rounded px-2 py-0.5" style={{ border: `1px solid ${C.rule}`, background: C.panel }} aria-label="Shafts per core" data-testid="rhino-per-core">
+                {Array.from({ length: maxShafts }, (_, i) => i + 1).map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              {shaftUnit}
+            </label>
             <span style={{ color: C.muted, fontSize: 11.5 }}>{t("认 Brep / 挤出体 / 网格 / 封闭矩形曲线；斜放的按最小外接矩形算；含子图层")}</span>
           </div>
           {readError && <div className="mt-1" style={{ color: C.err }}>{readError}</div>}
@@ -320,18 +335,23 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
                       {t("高 {0} mm · 转角 {1}° · 中心 ({2}, {3}) m · {4}", [fmtMm(c.height), c.angleDeg.toFixed(1), fmtM(c.centerX), fmtM(c.centerY), c.type])}
                     </span>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-3" style={{ fontSize: 11.5 }}>
+                  <div className="mt-1 flex flex-col gap-0.5" style={{ fontSize: 11.5 }}>
                     {c.perZone.map((z) => (
-                      <span key={z.from + "-" + z.to} style={{ color: z.fits ? C.ok : C.err }}>
-                        L{z.from}
-                        {z.to !== z.from ? `–L${z.to}` : ""}（{z.count} {t("部楼梯")}）{t("需 {0} × {1}", [fmtMm(z.reqL), fmtMm(z.reqW)])}：
-                        {z.fits ? t("够（长余 {0}，宽余 {1}）", [fmtMm(z.dL), fmtMm(z.dW)]) : t("不够（长 {0}，宽 {1}）", [(z.dL >= 0 ? "+" : "") + fmtMm(z.dL), (z.dW >= 0 ? "+" : "") + fmtMm(z.dW)])}
-                      </span>
+                      <div key={z.from + "-" + z.to} style={{ color: z.fits ? C.ok : C.err }} data-testid="rhino-zone-check">
+                        <span style={{ fontWeight: 600 }}>
+                          L{z.from}
+                          {z.to !== z.from ? `–L${z.to}` : ""}
+                        </span>
+                        （{t("区段共 {0} 部楼梯、{1} 个梯井", [z.count, z.n])}）：
+                        {t("放 {0} 个需 {1} × {2}（宽向 × 梯段方向）", [z.target, fmtMm(z.reqWidth), fmtMm(z.reqLength)])}
+                        {z.fits ? t("，够（长边余 {0}，短边余 {1}）", [fmtMm(z.dL), fmtMm(z.dW)]) : t("，不够（长边 {0}，短边 {1}）", [(z.dL >= 0 ? "+" : "") + fmtMm(z.dL), (z.dW >= 0 ? "+" : "") + fmtMm(z.dW)])}
+                        <span style={{ color: C.muted }}>{t("；这个长方体最多放 {0} / {1} 个梯井（{2} 部楼梯）", [z.capacity, z.n, z.capacityStairs])}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
               ))}
-              <div style={{ color: C.muted, fontSize: 11 }}>{t("比对规则：长方体的长边对区段所需外包的长边、短边对短边（横放竖放都算）；所需外包尺寸见下方“楼梯间核心筒尺寸”。")}</div>
+              <div style={{ color: C.muted, fontSize: 11 }}>{t("比对规则：一个核心筒放 k 个梯井需要 宽向 = 最宽 k 个梯井内净宽之和 + (k+1) × 墙厚，梯段方向 = 最长梯井内净长 + 2 × 墙厚；长方体的长边对所需的长边、短边对短边（横放竖放都算）。各种组合的尺寸见下方“楼梯间核心筒尺寸”。")}</div>
             </div>
           )}
         </div>
