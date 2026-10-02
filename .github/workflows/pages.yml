@@ -35,6 +35,8 @@ jobs:
       # 子路径 = 仓库名；/plan 路由在静态托管上不存在，复制一份 index.html 作为 plan.html（App.jsx 按 *plan.html 识别）
       - run: npm run build -- --base=/stair-core-tool/
       - run: cp dist/index.html dist/plan.html && cp dist/index.html dist/404.html
+      # 示例工程（仓库根目录 Saved Plans/*.json）+ 清单 → dist/examples/，线上版的 example 面板从这里读
+      - run: node scripts/copy-examples.mjs "../../Saved Plans" dist/examples && ls dist/examples
       - uses: actions/configure-pages@v5
         with:
           enablement: true

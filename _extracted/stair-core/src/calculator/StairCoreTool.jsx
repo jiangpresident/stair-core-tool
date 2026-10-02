@@ -3038,7 +3038,8 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
     }
   };
   useEffect(() => {
-    if (bridgeOk) loadExamples();
+    // 有桥走桥（Saved Plans 目录），没桥读静态清单（GitHub Pages 构建里的 examples/index.json）；桥的探测结果变了再读一次
+    loadExamples();
   }, [bridgeOk]);
   const openExampleByName = async (name) => {
     try {
@@ -4583,7 +4584,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             {t("收起面板 ▶")}
           </button>
           {/* example 面板：项目根目录 "Saved Plans" 里的工程文件，点一下直接打开。只在有开发服务器桥时显示（dist-single 静态版没有）。 */}
-          {bridgeOk && (
+          {(bridgeOk || examples.files.length > 0) && (
             <details className="rounded p-3" style={{ border: `1px solid ${C.rule}` }} open={panelOpen.examples} onToggle={(e) => setPanelOpen("examples", e.currentTarget.open)} data-testid="panel-examples">
               <summary style={{ fontWeight: 600, fontSize: 13, cursor: "pointer", listStyle: "none", userSelect: "none" }}>
                 {panelOpen.examples ? "▾" : "▸"} {t("example（示例平面")} {examples.files.length}{t("）")}

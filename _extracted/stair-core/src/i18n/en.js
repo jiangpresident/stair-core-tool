@@ -3,6 +3,7 @@
 // 注意：不少键是 JSX 里被表达式切开的"句子碎片"（比如 "个核心筒、"），翻译时要把前后空格/标点带上，
 // 拼回去才通顺；碎片两侧在 JSX 里本来有空格的，这里就不用再加。
 export const EN = {
+  "示例文件不存在：{0}": "Example file not found: {0}",
   " / 最小 {0} mm {1}": " / min {0} mm {1}",
   " 且 ≤{0} 级 ": " and ≤{0} risers ",
   "——这份工程没有底图": " — this project has no background image",

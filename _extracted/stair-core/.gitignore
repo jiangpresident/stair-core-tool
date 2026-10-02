@@ -3,3 +3,6 @@ dist
 dist-single
 dist-tests
 .DS_Store
+
+# 构建时由 scripts/copy-examples.mjs 生成
+public/examples/

@@ -139,18 +139,40 @@ async function bridgePost(url, body) {
 }
 
 /* example 面板：列出 / 打开开发服务器配置的示例目录（项目根目录 "Saved Plans"）里的工程文件。只在有桥时可用。 */
+/* 没有开发服务器时（GitHub Pages / 静态构建）的退路：构建脚本 scripts/copy-examples.mjs 把 Saved Plans 里的
+   .json 和一份清单 index.json 放到站点的 examples/ 下，这里按 BASE_URL 去取。这样打开的示例没有磁盘路径，
+   不会被覆盖保存（保存会走浏览器自己的方式）。 */
+const staticExamplesBase = () => {
+  const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.BASE_URL) || "/";
+  return (base.endsWith("/") ? base : base + "/") + "examples/";
+};
 export async function listExamples() {
-  if (!(await bridgeAvailable())) return { files: [], dir: null, unavailable: true };
-  const res = await fetch("/__plan/examples", { cache: "no-store" });
-  const j = await res.json().catch(() => null);
-  if (!res.ok) throw new Error((j && j.error) || t("服务器返回 {0}", [res.status]));
-  return j;
+  if (await bridgeAvailable()) {
+    const res = await fetch("/__plan/examples", { cache: "no-store" });
+    const j = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((j && j.error) || t("服务器返回 {0}", [res.status]));
+    return j;
+  }
+  try {
+    const res = await fetch(staticExamplesBase() + "index.json", { cache: "no-store" });
+    if (!res.ok) return { files: [], dir: null, unavailable: true };
+    const j = await res.json();
+    return { files: Array.isArray(j.files) ? j.files : [], dir: null, static: true };
+  } catch {
+    return { files: [], dir: null, unavailable: true };
+  }
 }
 export async function openExample(name) {
-  const r = await bridgePost("/__plan/open-example", { name });
-  const parsed = parsePlanFile(r.text);
-  // 显示/关联的名字用实际文件名：文件内部记录的 name 是上次"另存为"时的名字，文件被改名/复制成示例后就过时了
-  return { ...parsed, name: r.name || parsed.name, handle: null, path: r.path, viaBridge: true };
+  if (await bridgeAvailable()) {
+    const r = await bridgePost("/__plan/open-example", { name });
+    const parsed = parsePlanFile(r.text);
+    // 显示/关联的名字用实际文件名：文件内部记录的 name 是上次"另存为"时的名字，文件被改名/复制成示例后就过时了
+    return { ...parsed, name: r.name || parsed.name, handle: null, path: r.path, viaBridge: true };
+  }
+  const res = await fetch(staticExamplesBase() + encodeURIComponent(name), { cache: "no-store" });
+  if (!res.ok) throw new Error(t("示例文件不存在：{0}", [name]));
+  const parsed = parsePlanFile(await res.text());
+  return { ...parsed, name, handle: null, path: null, static: true };
 }
 
 /* 保存。优先级：开发服务器桥（系统对话框 + 直接写盘；有 path 且不是另存为就直接覆盖）→ 浏览器 File System

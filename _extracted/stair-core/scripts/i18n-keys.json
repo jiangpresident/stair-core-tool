@@ -533,7 +533,7 @@
  "服务器返回 {0}": [
   "StairCoreTool.jsx:2698",
   "planFile.js:135",
-  "planFile.js:146"
+  "planFile.js:153"
  ],
  "复制": [
   "StairCoreTool.jsx:4647"
@@ -627,7 +627,9 @@
   "StairCoreTool.jsx:93"
  ],
  "核心筒疏散楼梯计算器": [
-  "StairCoreTool.jsx:5077"
+  "StairCoreTool.jsx:5077",
+  "LangToggle.jsx:10",
+  "LangToggle.jsx:10"
  ],
  "黑白阈值": [
   "StairCoreTool.jsx:3926"
@@ -1110,7 +1112,8 @@
   "planFile.js:74"
  ],
  "平面图工具": [
-  "PlanApp.jsx:46"
+  "PlanApp.jsx:46",
+  "LangToggle.jsx:10"
  ],
  "平面图已清空（如需找回，按 Ctrl+Z 撤销）": [
   "StairCoreTool.jsx:3620"
@@ -1361,6 +1364,9 @@
  ],
  "示例文件：下次保存仍会先确认": [
   "StairCoreTool.jsx:2988"
+ ],
+ "示例文件不存在：{0}": [
+  "planFile.js:173"
  ],
  "示意性布置，尺寸为内净 / 外包 mm": [
   "StairCoreTool.jsx:5493"
