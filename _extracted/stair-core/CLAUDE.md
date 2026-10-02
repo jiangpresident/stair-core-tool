@@ -459,6 +459,14 @@
 - **验证**：`node scripts/i18n-keys.mjs` → 669/669、缺 0 多 0。浏览器（先删 `stair-core:lang` 模拟首次打开）：`/plan` → h1 "Floor Plan Tool"，前 8 个按钮全英文，页面正文里唯一的汉字是切换按钮的"中"，`__i18nMissing()` 为空，切换按钮 top 10px / 距右 27px；`/` → h1 "Stair-Core Exit Stair Calculator"，同样 0 漏翻；点"中"→ 刷新后 `lang=zh`、h1 "核心筒疏散楼梯计算器"、按钮中文。测完把语言恢复成默认（删掉键 = 英文）。截图核对两页英文版排版正常。
 - 后续新加界面文字的流程：照旧写中文 → 跑 `node scripts/i18n-wrap.mjs`（只会包新出现的裸中文）→ `npm run i18n:keys -- --missing` 看缺哪些 → 补进 `en.js`。开发模式下也可以直接在控制台调 `__i18nMissing()`。注释不受影响（脚本只动字符串节点）。
 
+**2026-10-02 第三十六轮：开源到 GitHub + GitHub Pages 线上演示版（含静态示例）；Node 环境下 t() 默认中文（所有 10 套测试全过；线上版两页、示例面板、热力图均实际验证）：**
+
+- 仓库 **https://github.com/jiangpresident/stair-core-tool**（公开，MIT，署名 Guoxian Xu），线上演示 **https://jiangpresident.github.io/stair-core-tool/**（计算器）和 **…/plan.html**（平面图）。仓库根目录 = 原来的 "Stair core Tool" 文件夹：`_extracted/stair-core`（本应用）、`floorplan-marker`、`Saved Plans`、`Test Plans`、`启动平面图工具.bat`、根 README（按课程作业格式：Pages 链接置顶、Purpose（用户本人写的中文由我润色成 145 词英文）、How to use、Source（三级规范 + 所用条文）、Example（三张截图在 `docs/screenshots/`）、Skill and limits）；`.gitignore` 排除 node_modules / .venv / dist* / 旧 zip 和 V1 文件。推送用 Git Credential Manager 弹窗登录。
+- **Pages 部署**：`.github/workflows/pages.yml`——`npm ci` → `vite build --base=/stair-core-tool/` → 复制 `index.html` 为 `plan.html` 和 `404.html`（静态托管没有 `/plan` 路由，`App.jsx` 按 `*plan.html` 识别）→ `scripts/copy-examples.mjs` 把 `Saved Plans/*.json` + 清单放进 `dist/examples/` → 上传 artifact → deploy。第一次失败在 `configure-pages`（仓库未开 Pages，默认令牌没权限开），用户在 Settings → Pages 把 Source 选成 GitHub Actions 后重跑成功。`planBridge.js` 的 `otherAppHref` 改为读 `import.meta.env.BASE_URL`：子路径下两页互链用 `base + "plan.html"` / `base`，本地开发不变。本地用 Git Bash 验证带 base 的构建时要 `MSYS_NO_PATHCONV=1`，否则 `/stair-core-tool/` 会被改写成 `/Program Files/Git/...`。
+- **线上版的 example 面板**：用户要求"demo 能用那三个 example"。`listExamples()` / `openExample()` 有桥走桥（Saved Plans 目录），没桥读 `${BASE_URL}examples/index.json` 和同目录下的 JSON（静态构建产物）；面板显示条件改为"有桥或静态清单里有文件"。本地 `public/examples/` 也由同一脚本生成（已 gitignore）。静态版打开的示例没有磁盘路径，`fileProtectedRef` 只在真有路径/句柄时才置 true（否则提示会误说"保存时会先确认"）。线上实测：三个示例列出、点 Example 1 载入 70 墙 / 2 核心筒 / 比例 17.34。
+- **测试踩坑**：词典填满后 `test:plan-file` / `test:ai` / `test:marker` 失败——它们断言中文报错文案，而 Node 里没有 localStorage，`getLang()` 落到默认英文。修法：`getLang()` 在没有 `localStorage` 的环境返回 `"zh"`（源语言），浏览器默认仍英文。教训：之前"全过"是因为当时词典为空、t() 回退到中文，掩盖了问题。
+- 线上版没有开发服务器：Marker 识图、系统另存为对话框不可用（界面自动退化），README 和 Pages 工作流注释都写明了。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

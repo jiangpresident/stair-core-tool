@@ -3011,7 +3011,8 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
     setSelectedWallCandidateId(null);
     setPlan(() => r.plan);
     fileHandleRef.current = r.handle || null;
-    fileProtectedRef.current = !!r.protect || isExamplePath(r.path);
+    // 只有真有磁盘路径/文件句柄（会被覆盖写）的示例才需要保护；线上静态版打开的示例没有路径，保存走浏览器自己的方式，不会覆盖任何东西
+    fileProtectedRef.current = !!(r.path || r.handle) && (!!r.protect || isExamplePath(r.path));
     setOverwriteConfirm(false);
     setFileName(r.name);
     setFileMsg({ text: t("已打开：{0}{1}{2}{3}", [r.name, r.savedAt ? t("（保存于 {0}）", [new Date(r.savedAt).toLocaleString()]) : "", r.plan.bgSrc ? "" : t("——这份工程没有底图"), fileProtectedRef.current ? t("。这是示例文件：保存时会先确认，避免误覆盖") : ""]) });
