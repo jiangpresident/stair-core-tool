@@ -505,6 +505,16 @@
 - **验证**：Node 测 `buildLayerTree`（分级、顺序、子孙对象数、父层缺失、空输入）。真机：Rhino 里给 Core 加子图层 "Core 1"（橙色）放一个 6.6×5.9 m 盒子、把 Layer 05 隐藏；`/layers` 带 color/visible/current。浏览器：连接 → 按钮显示 "Core (1)" → 点开：8 行（Core 折叠、有 ▸、右侧 "1 +1"），Default 加粗带 ✓，Layer 05 灰字 "隐藏"，色块颜色与 Rhino 一致；点 Core 的 ▸ → 菜单仍开着、多出 "Core 1" 一行、缩进 22px（根 6px）；点 "Core 1" → 菜单关闭、按钮变 "Core::Core 1 (1)" → 读取 → 一行 "Core C (sub-layer) 6,600 × 5,900"；重新点开时 Core::Core 1 高亮且 Core 已展开；Esc 关闭、点外面关闭；`__i18nMissing()` 为空。截图核对样式接近 Rhino 图层面板。
 - 没做的：Rhino 面板里的锁定图标、图层开关（灯泡）不能在这里点——这里只是选择器，不改 Rhino 的图层状态；图层很多时没有搜索框。
 
+**2026-10-02 第四十一轮：Rhino 独立成面板；新增"从 Rhino 读取墙体"→ 一键加进平面图工具（`npm run test:rhino` 9 项全过，`test:calc`/`test:plan-file`/`build` 过，词典 0 缺；真机 Rhino 8.24 + 浏览器验证了读墙、加进 plan、平面图页跨标签页自动刷新）：**
+
+- 用户诉求："先从简单做起……增加读取墙体的界面，就放在'从 Rhino 读取核心筒长方体'下面。还有，连接 Rhino 做成独立的面板，从楼梯三维模型面板独立出来。"
+- **独立面板**：`StairCoreTool.jsx` 里 `<RhinoPanel>` 从 model3d 面板挪出来，放进新的 `<Panel id="rhino" title="Rhino">`（可折叠，跟其它面板一样）；`RhinoPanel` 根元素去掉自己的边框/内边距（原来那圈绿/灰边框是在三维面板里当分隔用的）。
+- **桥接脚本** 新增 `read_walls(layer_path)` + `GET /walls?layer=`（和 `/cores` 共用参数解析；features 加 "walls"）：直线 / 多段线每一段一面墙（`thickness: null`）；Brep / 挤出体 / 网格复用 `_footprint_points` + `_min_rect`，长边中线当墙中线、短边当厚度；弧线、圆等计入 `skipped`。全部毫米，含子图层。
+- **网页端**：`rhinoBridge.js` 新增 `readRhinoWalls(layer)` 和纯函数 **`wallsToPlan(walls, plan, {defaultT=200, margin=1000})`**——把 Rhino 墙追加进平面图工具的 plan：整批平移到画布左上角留 1 m 边距，**y 翻转**（Rhino y 朝上、SVG y 朝下，北都在上），厚度用 Rhino 的（没有就默认 200）夹到 40–600，id 从 `nextId` 连续分配，名字存进 `label`；没有底图时把 `naturalW/H` 撑到装得下（按 mmPerPx 换算），有底图时不动画布；plan 为 null / 不完整时用 `PLAN_DEFAULTS` 补（`rhinoBridge.js` 因此 import 了 `planFile.js`）。`RhinoPanel` 新增 "从 Rhino 读取墙体" 区块：图层树选择器（默认选名字含 wall/墙 的层）、「读取墙体」、结果表（名称/类型、长度、厚度或"默认"、起终点 Rhino 坐标）、「添加到平面图（N 段）」（`loadPlan()` → `wallsToPlan` → `savePlan()`）、「打开平面图工具 →」链接。
+- **平面图页跨标签页刷新**：`PlanApp.jsx` 加了 `onExternalChange(PLAN_KEY, …)`——别的标签页写了 `stair-core:plan` 就 `setPlan(() => 合并后的新 plan)`。这边每次改动都立刻存，那边是"读当前存的 + 追加"再写回，所以不会互相覆盖丢内容。词典 +17。
+- **验证**：Node：`readRhinoWalls` 请求地址、`wallsToPlan` 的平移/翻转/厚度默认与夹取/nextId/画布撑大/有底图不动/零长度丢弃/入参不改/空 plan。真机：Rhino 里图层 Walls 放一条 L 形多段线、一条直线、一个 20×0.3×3 m 的盒子和一段弧 → `/walls` 返回 4 段（盒子 t=300，三段线 t=null）、skipped 1。浏览器：Rhino 面板是独立 `section[data-panel=rhino]`、三维面板里不再有它；连接后墙体图层自动选 "Walls (4)"；读取 → 4 行；点添加 → localStorage 里 plan 的墙从 8 变 12，新墙 id 141–144、坐标已平移翻转（Rhino (0,0)-(30,0) 变成平面图 (1000,31150)-(31000,31150)），有底图所以画布没动；再在另一个标签页开 `/plan` 验证 storage 事件刷新（见下一条）。**测试前把用户当前 plan（3.5 MB，带底图）备份到 `window.__planBackup`，测完原样写回。**
+- 没做的：Rhino 墙和平面图底图之间没有比例/位置对齐（只是放左上角）；门洞不识别；读到的墙不会跟 Rhino 保持联动（是一次性导入）；没有"导入前预览"。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

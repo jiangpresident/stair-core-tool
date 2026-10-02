@@ -84,6 +84,8 @@ The calculator page has a **Rhino** panel under the 3D model. Its main job is to
 3. Pick the layer that holds your core boxes (a layer named like "Core" is picked automatically) and click **Read & check**.
 4. Each box gets one row: ✓ / ✗, its L × W in mm, height, rotation and centre, then per zone "needs L × W: OK (spare …)" or "too small (length −…, width +…)". Rotated boxes are measured by their minimum bounding rectangle; sub-layers are included; document units are converted to mm automatically.
 
+**Walls**: below the core boxes, pick the layer that holds your walls (lines, polylines or thin solids) and click **Read walls**. Each straight segment becomes a wall (solids use their minimum bounding rectangle for centreline and thickness; arcs are skipped). **Add to floor plan** appends them to the floor plan tool, placed at the top-left of the canvas with Rhino's Y-up flipped to the plan's Y-down; an open plan page refreshes automatically.
+
 Optionally, the collapsed **Reverse** section sends the computed stair solids (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, on separate layers) into Rhino; resending replaces the previous batch under the same layer name.
 
 ## Repository layout

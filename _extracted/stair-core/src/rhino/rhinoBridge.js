@@ -6,6 +6,7 @@
 // 几何不在这里算：调用方把 buildSolids() 的结果（毫米、z 朝上的盒子列表，跟网页三维模型同一份数据）传进来，
 // 这里只负责整理成 payload 和收发。
 import { t } from "../i18n.js";
+import { PLAN_DEFAULTS } from "../plan/planFile.js";
 
 export const RHINO_URL = "http://127.0.0.1:8790";
 export const RHINO_SCRIPT_PATH = "rhino/StairCoreBridge.py";
@@ -166,6 +167,59 @@ export async function readRhinoCores(layer, { fetch: fetchImpl, baseUrl = RHINO_
   const j = await res.json().catch(() => null);
   if (!res.ok || !j || !j.ok) throw new Error(t("读取核心筒失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
   return j.cores || [];
+}
+
+/* 读某个图层上的墙体：返回 {walls:[{id,name,layer,type,x1,y1,x2,y2,thickness|null,zBottom,height}], skipped}，全部毫米。
+   直线 / 多段线按线段拆（thickness 为 null，网页用默认厚度）；Brep / 挤出体 / 网格按最小外接矩形取中线和厚度；弧线等跳过计入 skipped。 */
+export async function readRhinoWalls(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + "/walls?layer=" + encodeURIComponent(layer), { cache: "no-store" });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
+  }
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.ok) throw new Error(t("读取墙体失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return { walls: j.walls || [], skipped: Number(j.skipped) || 0 };
+}
+
+/* 纯逻辑：把 Rhino 里读到的墙（毫米，Rhino 世界坐标：y 朝上）加进平面图工具的 plan（毫米，SVG 坐标：y 朝下）。
+   做法：整批平移到左上角留 margin，并把 y 翻过来（Rhino 的北 = 平面图的上）；厚度用 Rhino 给的（没有就 defaultT），夹到 40–600；
+   没有底图时把画布 naturalW/H 撑大到装得下；有底图时不动比例和画布（墙按原毫米尺寸放在左上角，用户自己拖到位）。
+   返回新的 plan 对象（不改入参）。plan 可以是 null / 不完整（平面图页从没打开过），缺的字段用 PLAN_DEFAULTS 补。 */
+export function wallsToPlan(walls, plan, { defaultT = 200, margin = 1000 } = {}) {
+  const base = { ...PLAN_DEFAULTS, ...(plan || {}) };
+  const list = (walls || []).filter((w) => [w.x1, w.y1, w.x2, w.y2].every(Number.isFinite) && Math.hypot(w.x2 - w.x1, w.y2 - w.y1) > 1);
+  if (!list.length) return { ...base, walls: [...(base.walls || [])] };
+  let minX = Infinity, maxY = -Infinity, maxX = -Infinity, minY = Infinity;
+  for (const w of list) {
+    minX = Math.min(minX, w.x1, w.x2);
+    maxX = Math.max(maxX, w.x1, w.x2);
+    minY = Math.min(minY, w.y1, w.y2);
+    maxY = Math.max(maxY, w.y1, w.y2);
+  }
+  let nextId = Number.isFinite(base.nextId) ? base.nextId : 1;
+  const added = list.map((w) => {
+    const tRaw = Number.isFinite(w.thickness) && w.thickness > 0 ? w.thickness : defaultT;
+    const wall = {
+      id: nextId++,
+      x1: Math.round(w.x1 - minX + margin),
+      y1: Math.round(maxY - w.y1 + margin),
+      x2: Math.round(w.x2 - minX + margin),
+      y2: Math.round(maxY - w.y2 + margin),
+      t: Math.round(Math.min(600, Math.max(40, tRaw))),
+    };
+    if (w.name) wall.label = w.name;
+    return wall;
+  });
+  const out = { ...base, walls: [...(base.walls || []), ...added], nextId };
+  if (!base.bgSrc) {
+    const scale = Number(base.mmPerPx) || 1;
+    out.naturalW = Math.max(Number(base.naturalW) || 0, Math.ceil((maxX - minX + 2 * margin) / scale));
+    out.naturalH = Math.max(Number(base.naturalH) || 0, Math.ceil((maxY - minY + 2 * margin) / scale));
+  }
+  return out;
 }
 
 /* 纯逻辑：把 Rhino 里读到的长方体（length ≥ width，毫米）和计算结果里各区段需要的核心筒外包尺寸比。

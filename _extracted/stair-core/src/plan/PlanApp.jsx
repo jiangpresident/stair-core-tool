@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { compute, defaultFloors, PlanEditor, usePlanHistory, C, FONT, H2 } from "../calculator/StairCoreTool.jsx";
-import { loadInp, savePlan, loadPlan, onExternalChange, INP_KEY, otherAppHref } from "../planBridge.js";
+import { loadInp, savePlan, loadPlan, onExternalChange, INP_KEY, PLAN_KEY, otherAppHref } from "../planBridge.js";
 import { PLAN_DEFAULTS } from "./planFile.js";
 import LangToggle from "../LangToggle.jsx";
 import { t } from "../i18n.js";
@@ -36,6 +36,16 @@ export default function PlanApp() {
   useEffect(() => {
     savePlan(plan);
   }, [plan]);
+  /* 别的标签页（计算器页的 Rhino 面板"添加到平面图"）往 localStorage 写了新的 plan：直接换成那份。
+     那边是"读当前存的 plan + 追加"再写回，而这里每次改动都会立刻存，所以不会丢这边的内容。 */
+  useEffect(
+    () =>
+      onExternalChange(PLAN_KEY, () => {
+        const next = loadPlan();
+        if (next) setPlan(() => ({ ...DEFAULT_PLAN, ...next }));
+      }),
+    [setPlan]
+  );
 
   return (
     <div style={{ background: C.paper, minHeight: "100vh", fontFamily: FONT, color: C.ink }}>

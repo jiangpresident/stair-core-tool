@@ -5689,6 +5689,10 @@ export default function StairCoreTool() {
               </div>
               <Stair3D res={res} inp={inp} shaftIdx={shaftIdx} fromLevel={clamp(v3.from, 1, Math.max(1, inp.nFloors - 1))} nLevels={v3.count} />
               {/* 1.1：Rhino 连接——把当前梯井整栋高度的实体（跟上面三维模型同一份 buildSolids 数据）发到本机 Rhino 里烘焙 */}
+            </Panel>
+
+            {/* Rhino 连接（1.1）：独立面板——读 Rhino 里画好的核心筒 / 墙体并校核，或把算出的楼梯实体发过去 */}
+            <Panel id="rhino" title="Rhino" sub={t("读取 Rhino 图层上画好的核心筒长方体 / 墙体；也可把算出的楼梯实体发到 Rhino")}>
               <RhinoPanel
                 C={C}
                 buildModel={() => buildSolids(res, inp, shaftIdx, 1, 999)}

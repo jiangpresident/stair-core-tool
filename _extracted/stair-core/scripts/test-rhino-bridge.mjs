@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -186,6 +186,43 @@ await test("buildLayerTree：按 :: 分级成树、保持顺序、子孙对象�
   assert.equal(tree[3].path, "Gone::Orphan", "父层不在列表里：保留完整路径当根节点");
   assert.deepEqual(buildLayerTree([]), []);
   assert.deepEqual(buildLayerTree(null), []);
+});
+
+await test("readRhinoWalls / wallsToPlan：请求地址；追加进 plan 时平移到左上角、y 翻转、厚度默认与夹取、nextId 递增、画布撑大", async () => {
+  const calls = [];
+  const fetch = async (u) => {
+    calls.push(String(u));
+    return json({ ok: true, layer: "Walls", units: "Meters", skipped: 1, walls: [
+      { id: "a", name: "north", type: "Curve", x1: 0, y1: 20000, x2: 30000, y2: 20000, thickness: null, zBottom: 0, height: 0 },
+      { id: "b", name: "", type: "Brep", x1: 0, y1: 0, x2: 0, y2: 20000, thickness: 300, zBottom: 0, height: 3000 },
+      { id: "c", name: "thin", type: "Brep", x1: 5000, y1: 5000, x2: 15000, y2: 5000, thickness: 10, zBottom: 0, height: 3000 },
+      { id: "zero", type: "Curve", x1: 1, y1: 1, x2: 1, y2: 1 }, // 零长度：丢掉
+    ] });
+  };
+  const r = await readRhinoWalls("Walls", { fetch, baseUrl: "http://127.0.0.1:8791" });
+  assert.equal(calls[0], "http://127.0.0.1:8791/walls?layer=Walls");
+  assert.equal(r.skipped, 1);
+  assert.equal(r.walls.length, 4);
+  const plan = { walls: [{ id: 7, x1: 0, y1: 0, x2: 100, y2: 0, t: 200 }], nextId: 8, naturalW: 20000, naturalH: 15000, bgSrc: null, mmPerPx: 1 };
+  const out = wallsToPlan(r.walls, plan, { defaultT: 200, margin: 1000 });
+  assert.equal(plan.walls.length, 1, "不改入参");
+  assert.equal(out.walls.length, 4, "原 1 + 新 3（零长度丢掉）");
+  assert.deepEqual(out.walls.slice(1).map((w) => w.id), [8, 9, 10]);
+  assert.equal(out.nextId, 11);
+  // Rhino (0,20000)-(30000,20000) 是最北的一条 → 翻转后贴着上边 margin
+  assert.deepEqual([out.walls[1].x1, out.walls[1].y1, out.walls[1].x2, out.walls[1].y2, out.walls[1].t], [1000, 1000, 31000, 1000, 200]);
+  assert.equal(out.walls[1].label, "north");
+  // Rhino (0,0)-(0,20000) 竖墙 → 从下边(21000)到上边(1000)，厚 300
+  assert.deepEqual([out.walls[2].x1, out.walls[2].y1, out.walls[2].x2, out.walls[2].y2, out.walls[2].t], [1000, 21000, 1000, 1000, 300]);
+  assert.equal(out.walls[3].t, 40, "厚度夹到 40");
+  assert.equal(out.naturalW, 32000, "30000 + 2×1000");
+  assert.equal(out.naturalH, 22000, "20000 + 2×1000");
+  const withBg = wallsToPlan(r.walls, { ...plan, bgSrc: "data:...", naturalW: 800, naturalH: 600, mmPerPx: 50 });
+  assert.equal(withBg.naturalW, 800, "有底图时不动画布");
+  const fromNothing = wallsToPlan(r.walls, null);
+  assert.equal(fromNothing.walls.length, 3);
+  assert.equal(fromNothing.cores.length, 0, "缺的字段用默认值补");
+  assert.equal(wallsToPlan([], plan).walls.length, 1);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

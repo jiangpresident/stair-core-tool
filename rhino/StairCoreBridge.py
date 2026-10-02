@@ -245,6 +245,60 @@ def read_cores(layer_path):
     return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "cores": out}
 
 
+def read_walls(layer_path):
+    """UI 线程里执行：读某个图层（含子图层）上的墙体，返回毫米单位的中线段列表。
+    直线 / 多段线：每一段一面墙，thickness 为 None（网页用默认厚度）；Brep / 挤出体 / 网格：最小外接矩形的长边中线 + 短边当厚度；
+    其它（弧线、圆等）跳过并计入 skipped。"""
+    import math
+    doc = Rhino.RhinoDoc.ActiveDoc
+    to_mm = Rhino.RhinoMath.UnitScale(doc.ModelUnitSystem, Rhino.UnitSystem.Millimeters)
+    idx = doc.Layers.FindByFullPath(layer_path, -1)
+    if idx < 0:
+        return {"ok": False, "error": "layer not found: " + layer_path}
+    wanted = set([doc.Layers[idx].Id])
+    for layer in doc.Layers:
+        if not layer.IsDeleted and layer.ParentLayerId in wanted:
+            wanted.add(layer.Id)
+    walls = []
+    skipped = 0
+    for obj in doc.Objects:
+        if obj.Attributes.LayerIndex < 0 or doc.Layers[obj.Attributes.LayerIndex].Id not in wanted:
+            continue
+        geo = obj.Geometry
+        base = {"id": str(obj.Id), "name": obj.Attributes.Name or "", "layer": doc.Layers[obj.Attributes.LayerIndex].FullPath, "type": geo.GetType().Name}
+        if isinstance(geo, Rhino.Geometry.Curve):
+            ok, pl = geo.TryGetPolyline()
+            pts = list(pl) if ok else ([geo.PointAtStart, geo.PointAtEnd] if geo.IsLinear() else None)
+            if not pts:
+                skipped += 1
+                continue
+            for k in range(len(pts) - 1):
+                a, b = pts[k], pts[k + 1]
+                if a.DistanceTo(b) < 1e-9:
+                    continue
+                w = dict(base)
+                w.update({"x1": a.X * to_mm, "y1": a.Y * to_mm, "x2": b.X * to_mm, "y2": b.Y * to_mm,
+                          "thickness": None, "zBottom": min(a.Z, b.Z) * to_mm, "height": 0.0})
+                walls.append(w)
+            continue
+        pts = _footprint_points(geo)
+        if len(pts) < 3:
+            skipped += 1
+            continue
+        cx, cy, length, width, deg = _min_rect(pts)
+        if length < 1e-9:
+            skipped += 1
+            continue
+        rad = math.radians(deg)
+        hx, hy = math.cos(rad) * length / 2.0, math.sin(rad) * length / 2.0
+        bb = geo.GetBoundingBox(True)
+        w = dict(base)
+        w.update({"x1": (cx - hx) * to_mm, "y1": (cy - hy) * to_mm, "x2": (cx + hx) * to_mm, "y2": (cy + hy) * to_mm,
+                  "thickness": width * to_mm, "zBottom": bb.Min.Z * to_mm, "height": (bb.Max.Z - bb.Min.Z) * to_mm})
+        walls.append(w)
+    return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "walls": walls, "skipped": skipped}
+
+
 def list_layers():
     doc = Rhino.RhinoDoc.ActiveDoc
     names = []
@@ -401,7 +455,7 @@ class Handler(BaseHTTPRequestHandler):
                 "rhino": str(Rhino.RhinoApp.Version),
                 "port": self.server.server_address[1],
                 "pid": System.Diagnostics.Process.GetCurrentProcess().Id,
-                "features": ["bake", "layers", "cores", "recent", "open", "open-dialog"],
+                "features": ["bake", "layers", "cores", "walls", "recent", "open", "open-dialog"],
             })
             self._send(200, info)
             return
@@ -412,15 +466,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/layers":
                 self._send(200, run_on_ui_thread(list_layers))
                 return
-            if path == "/cores":
+            if path in ("/cores", "/walls"):
                 # ?layer=Core 或 ?layer=Parent::Child（URL 编码）
                 params = {}
                 for part in query.split("&"):
                     if "=" in part:
                         k, v = part.split("=", 1)
                         params[k] = _unquote(v)
-                layer = params.get("layer") or "Core"
-                result = run_on_ui_thread(lambda: read_cores(layer))
+                layer = params.get("layer") or ("Core" if path == "/cores" else "Walls")
+                fn = read_cores if path == "/cores" else read_walls
+                result = run_on_ui_thread(lambda: fn(layer))
                 self._send(200 if result.get("ok") else 404, result)
                 return
         except Exception as exc:  # noqa: BLE001

@@ -7,7 +7,8 @@
 import { useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
-import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+import { loadPlan, savePlan, otherAppHref } from "../planBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
 const readSavedPort = () => {
@@ -50,6 +51,12 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   const [reading, setReading] = useState(false);
   const [cores, setCores] = useState(null); // checkCoreBoxes 的结果
   const [readError, setReadError] = useState(null);
+  // 读墙体
+  const [wallLayer, setWallLayer] = useState("Walls");
+  const [wallsReading, setWallsReading] = useState(false);
+  const [walls, setWalls] = useState(null); // {walls, skipped}
+  const [wallsError, setWallsError] = useState(null);
+  const [wallsMsg, setWallsMsg] = useState(null);
   // 发送
   const [sendOpen, setSendOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -73,9 +80,14 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       setLayers(ls);
       const pick = ls.find((l) => /core|核心/i.test(l.path) && l.objects > 0) || ls.find((l) => /core|核心/i.test(l.path)) || ls.find((l) => l.objects > 0);
       if (pick && !ls.some((l) => l.path === layer)) setLayer(pick.path);
+      const pickW = ls.find((l) => /wall|墙/i.test(l.path) && l.objects > 0) || ls.find((l) => /wall|墙/i.test(l.path));
+      if (pickW && !ls.some((l) => l.path === wallLayer)) setWallLayer(pickW.path);
     } catch (err) {
       setReadError(err && err.message ? err.message : String(err));
     }
+    setWalls(null);
+    setWallsError(null);
+    setWallsMsg(null);
     if (Array.isArray(inst.features) && inst.features.includes("recent")) {
       try {
         setRecent(await listRecentFiles(o));
@@ -157,6 +169,25 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       setReading(false);
     }
   };
+  const readWalls = async () => {
+    setWallsReading(true);
+    setWallsError(null);
+    setWallsMsg(null);
+    try {
+      setWalls(await readRhinoWalls(wallLayer, opts));
+    } catch (err) {
+      setWallsError(err && err.message ? err.message : String(err));
+    } finally {
+      setWallsReading(false);
+    }
+  };
+  /* 把读到的墙追加进平面图工具的 plan（localStorage）。平面图页开着的话会收到 storage 事件自动刷新。 */
+  const addWallsToPlan = () => {
+    if (!walls || !walls.walls.length) return;
+    const next = wallsToPlan(walls.walls, loadPlan());
+    savePlan(next);
+    setWallsMsg(t("已加入平面图：{0} 段墙（平面图里现在共 {1} 段）。平面图页开着会自动刷新；没开的话点右边的链接。", [walls.walls.length, next.walls.length]));
+  };
   const send = async () => {
     setSending(true);
     setResult(null);
@@ -181,7 +212,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
     });
 
   return (
-    <div className="rounded p-3 mt-3" style={{ border: `1px solid ${online ? C.ok : C.rule}`, fontSize: 12.5 }} data-testid="rhino-panel">
+    <div style={{ fontSize: 12.5 }} data-testid="rhino-panel">
       {/* 连接状态 */}
       <div className="flex flex-wrap items-center gap-2">
         <span style={{ fontWeight: 600 }}>Rhino</span>
@@ -301,6 +332,80 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
                 </div>
               ))}
               <div style={{ color: C.muted, fontSize: 11 }}>{t("比对规则：长方体的长边对区段所需外包的长边、短边对短边（横放竖放都算）；所需外包尺寸见下方“楼梯间核心筒尺寸”。")}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 1b. 从 Rhino 读墙体 → 加进平面图工具 */}
+      {online && (
+        <div className="mt-3" data-testid="rhino-walls">
+          <div className="flex flex-wrap items-center gap-2">
+            <span style={{ fontWeight: 600 }}>{t("从 Rhino 读取墙体")}</span>
+            <span className="flex items-center gap-1">
+              {t("图层")}
+              <LayerTreePicker layers={layers} value={wallLayer} onChange={setWallLayer} C={C} />
+            </span>
+            <button type="button" onClick={readWalls} disabled={wallsReading} className="rounded px-3 py-1" style={{ background: wallsReading ? C.rule : C.accent, color: wallsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-walls-btn">
+              {wallsReading ? t("读取中…") : t("读取墙体")}
+            </button>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("直线 / 多段线按线段算（厚度用平面图默认值）；Brep / 挤出体按最小外接矩形取中线和厚度；弧线跳过；含子图层")}</span>
+          </div>
+          {wallsError && <div className="mt-1" style={{ color: C.err }}>{wallsError}</div>}
+          {walls && walls.walls.length === 0 && (
+            <div className="mt-1" style={{ color: C.muted }}>
+              {t("这个图层上没有可识别的墙体")}
+              {walls.skipped ? t("（跳过 {0} 个非直线对象）", [walls.skipped]) : ""}
+            </div>
+          )}
+          {walls && walls.walls.length > 0 && (
+            <div className="mt-2" data-testid="rhino-walls-result">
+              <div className="flex flex-wrap items-center gap-2">
+                <span style={{ fontWeight: 600 }}>
+                  {t("读到 {0} 段墙", [walls.walls.length])}
+                  {walls.skipped ? <span style={{ color: C.muted, fontWeight: 400 }}>{t("（跳过 {0} 个非直线对象）", [walls.skipped])}</span> : null}
+                </span>
+                <button type="button" onClick={addWallsToPlan} className="rounded px-3 py-1" style={{ background: C.ok, color: "#fff", fontWeight: 600 }} data-testid="rhino-walls-add">
+                  {t("添加到平面图（{0} 段）", [walls.walls.length])}
+                </button>
+                <a href={otherAppHref("plan")} target="_blank" rel="noopener" style={{ color: C.accent, textDecoration: "underline" }}>
+                  {t("打开平面图工具 →")}
+                </a>
+              </div>
+              <div className="overflow-x-auto mt-2">
+                <table style={{ fontSize: 11.5, borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+                  <thead>
+                    <tr style={{ color: C.muted, textAlign: "left" }}>
+                      <th className="pr-3 pb-1">#</th>
+                      <th className="pr-3 pb-1">{t("名称 / 类型")}</th>
+                      <th className="pr-3 pb-1">{t("长度 m")}</th>
+                      <th className="pr-3 pb-1">{t("厚度 mm")}</th>
+                      <th className="pr-3 pb-1">{t("起点 → 终点（m，Rhino 坐标）")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {walls.walls.map((w, i) => (
+                      <tr key={w.id + "-" + i} style={{ borderTop: `1px solid ${C.rule}` }} data-testid="rhino-wall-row">
+                        <td className="pr-3 py-1" style={{ color: C.muted }}>{i + 1}</td>
+                        <td className="pr-3 py-1">
+                          {w.name || "—"} <span style={{ color: C.muted }}>· {w.type}</span>
+                        </td>
+                        <td className="pr-3 py-1">{(Math.hypot(w.x2 - w.x1, w.y2 - w.y1) / 1000).toFixed(2)}</td>
+                        <td className="pr-3 py-1">{Number.isFinite(w.thickness) && w.thickness > 0 ? fmtMm(w.thickness) : <span style={{ color: C.muted }}>{t("默认")}</span>}</td>
+                        <td className="pr-3 py-1" style={{ color: C.muted }}>
+                          ({fmtM(w.x1)}, {fmtM(w.y1)}) → ({fmtM(w.x2)}, {fmtM(w.y2)})
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {wallsMsg && (
+                <div className="mt-1" style={{ color: C.ok, fontWeight: 600 }} data-testid="rhino-walls-msg">
+                  {wallsMsg}
+                </div>
+              )}
+              <div className="mt-1" style={{ color: C.muted, fontSize: 11 }}>{t("加入平面图时整批放到画布左上角（留 1 m 边距），Rhino 的 Y 轴朝上会翻成平面图的朝下；平面图没有底图时画布会自动撑大，有底图时请自行拖到位。")}</div>
             </div>
           )}
         </div>
