@@ -42,6 +42,49 @@ export async function checkRhino({ fetch: fetchImpl, baseUrl = RHINO_URL } = {})
   }
 }
 
+/* ---------- 反向：从 Rhino 读用户自己画的核心筒长方体 ---------- */
+export async function listRhinoLayers({ fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + "/layers", { cache: "no-store" });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
+  }
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.ok) throw new Error(t("读取 Rhino 图层失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return j.layers || [];
+}
+
+/* 读某个图层上的长方体：返回 [{id,name,layer,type,centerX,centerY,length,width,angleDeg,zBottom,height}]，全部毫米。 */
+export async function readRhinoCores(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + "/cores?layer=" + encodeURIComponent(layer), { cache: "no-store" });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
+  }
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.ok) throw new Error(t("读取核心筒失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return j.cores || [];
+}
+
+/* 纯逻辑：把 Rhino 里读到的长方体（length ≥ width，毫米）和计算结果里各区段需要的核心筒外包尺寸比。
+   zones：res.zones（每项 {from,to,count,totL,totW}）。长方体横放竖放都算（长对长、宽对宽），
+   返回每个长方体对每个区段的判定：fits / 长边差多少 / 短边差多少。 */
+export function checkCoreBoxes(boxes, zones, { tolerance = 0 } = {}) {
+  const zs = (zones || []).map((z) => ({ from: z.from, to: z.to, count: z.count, reqL: Math.max(z.totL, z.totW), reqW: Math.min(z.totL, z.totW) }));
+  return (boxes || []).map((b) => {
+    const L = Math.max(b.length, b.width), W = Math.min(b.length, b.width);
+    const perZone = zs.map((z) => {
+      const dL = L - z.reqL, dW = W - z.reqW;
+      return { from: z.from, to: z.to, count: z.count, reqL: z.reqL, reqW: z.reqW, dL, dW, fits: dL >= -tolerance && dW >= -tolerance };
+    });
+    return { ...b, L, W, perZone, fitsAll: perZone.length > 0 && perZone.every((p) => p.fits) };
+  });
+}
+
 export async function sendToRhino(payload, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
   const f = fetchImpl || globalThis.fetch;
   let res;

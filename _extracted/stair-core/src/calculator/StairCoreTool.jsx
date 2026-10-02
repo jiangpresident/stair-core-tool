@@ -5645,6 +5645,7 @@ export default function StairCoreTool() {
                 C={C}
                 buildModel={() => buildSolids(res, inp, shaftIdx, 1, 999)}
                 shaftLabel={inp.stairType === "dogleg" ? t("楼梯 #{0}", [shaft.stairs[0].k]) : t("梯井 {0}", [shaftIdx + 1])}
+                zones={res.zones}
               />
             </section>
 

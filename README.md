@@ -77,10 +77,13 @@ Clauses implemented (identical across the three levels unless tagged otherwise i
 
 ## Rhino connection (1.1, local version only)
 
-The calculator page has a **Rhino** panel under the 3D model that bakes the current stair core (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, coloured by stair number, on separate layers) straight into Rhino running on the same computer.
+The calculator page has a **Rhino** panel under the 3D model. Its main job is to **check the core boxes you drew in Rhino**: draw each stair core as a box (Brep, extrusion, mesh or closed rectangular curve) on a layer of your choice, and the tool reads its length × width and compares it with the required outer core size of every zone it computed.
 
 1. In Rhino, run `rhino/StairCoreBridge.py` once (Rhino 8: `ScriptEditor`, open the file, run; Rhino 7: `EditPythonScript`). It starts a tiny server on `127.0.0.1:8790` that only accepts requests from this tool.
-2. In the calculator, click **Connect Rhino** (shows Rhino version, document and units), then **Send to Rhino**. Millimetres are converted to the document's units automatically; resending replaces the previous batch under the same layer name.
+2. In the calculator, click **Connect Rhino** (shows Rhino version, document and units). Pick the layer that holds your core boxes (a layer named like "Core" is picked automatically) and click **Read & check**.
+3. Each box gets one row: ✓ / ✗, its L × W in mm, height, rotation and centre, then per zone "needs L × W: OK (spare …)" or "too small (length −…, width +…)". Rotated boxes are measured by their minimum bounding rectangle; sub-layers are included; document units are converted to mm automatically.
+
+Optionally, the collapsed **Reverse** section sends the computed stair solids (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, on separate layers) into Rhino; resending replaces the previous batch under the same layer name.
 
 ## Repository layout
 
@@ -88,7 +91,7 @@ The calculator page has a **Rhino** panel under the 3D model that bakes the curr
 |---|---|
 | `_extracted/stair-core/` | The web app (React + Vite + three.js). Own `README.md` (scripts, routes) and `CLAUDE.md` (development log). |
 | `floorplan-marker/` | Local Python + OpenCV floor-plan recognition service, with its own README. |
-| `rhino/` | `StairCoreBridge.py` — run inside Rhino to receive stair-core solids from the calculator (see "Rhino connection"). |
+| `rhino/` | `StairCoreBridge.py` — run inside Rhino so the calculator can read your core boxes (and optionally receive stair solids); see "Rhino connection". |
 | `Saved Plans/` | Example plan projects (`.stairplan.json`). |
 | `Test Plans/` | Sample floor-plan PDFs / PNGs. |
 | `docs/screenshots/` | Images used in this README. |

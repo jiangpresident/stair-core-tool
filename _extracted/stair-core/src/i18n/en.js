@@ -3,7 +3,21 @@
 // 注意：不少键是 JSX 里被表达式切开的"句子碎片"（比如 "个核心筒、"），翻译时要把前后空格/标点带上，
 // 拼回去才通顺；碎片两侧在 JSX 里本来有空格的，这里就不用再加。
 export const EN = {
-  "把上方三维模型的实体直接烘焙进本机 Rhino（毫米 → 文档单位自动换算，按楼梯编号上色、分图层）。需要先在 Rhino 里运行一次桥接脚本。": "Bake the solids of the 3D model above straight into Rhino on this computer (mm → document units converted automatically, coloured by stair number, on separate layers). Run the bridge script in Rhino once first.",
+  "反向：把计算出的楼梯实体发送到 Rhino（可选）": "Reverse: send the computed stair solids to Rhino (optional)",
+  "比对规则：长方体的长边对区段所需外包的长边、短边对短边（横放竖放都算）；所需外包尺寸见下方“楼梯间核心筒尺寸”。": "Rule: the box's long side is compared with the zone's required long side and short with short (either orientation); required outer sizes are listed under “Stair-core dimensions” below.",
+  "不够（长 {0}，宽 {1}）": "too small (length {0}, width {1})",
+  "够（长余 {0}，宽余 {1}）": "OK (length spare {0}, width spare {1})",
+  "需 {0} × {1}": "needs {0} × {1}",
+  "高 {0} mm · 转角 {1}° · 中心 ({2}, {3}) m · {4}": "height {0} mm · rotation {1}° · centre ({2}, {3}) m · {4}",
+  "长方体 {0}": "Box {0}",
+  "这个图层上没有可识别的长方体": "No recognisable box on this layer",
+  "认 Brep / 挤出体 / 网格 / 封闭矩形曲线；斜放的按最小外接矩形算；含子图层": "Accepts Breps / extrusions / meshes / closed rectangular curves; rotated boxes use the minimum bounding rectangle; sub-layers included",
+  "读取并校核": "Read & check",
+  "图层": "Layer",
+  "从 Rhino 读取核心筒长方体": "Read core boxes from Rhino",
+  "在 Rhino 里把核心筒画成长方体（放在一个图层上），这里读出它的长 × 宽，和计算出的核心筒外包尺寸比对够不够。需要先在 Rhino 里运行一次桥接脚本。": "Draw the stair core as a box in Rhino (on its own layer); this reads its length × width and checks it against the computed core outer size. Run the bridge script in Rhino once first.",
+  "读取核心筒失败：{0}": "Failed to read cores: {0}",
+  "读取 Rhino 图层失败：{0}": "Failed to read Rhino layers: {0}",
   "脚本路径：项目根目录 {0}。它只监听本机 127.0.0.1:8790，不联网；运行一次后一直在后台监听，直到关闭 Rhino。": "Script path: {0} in the project root. It listens only on 127.0.0.1:8790, no internet; once run it keeps listening in the background until Rhino is closed.",
   "替换上一批": "Replace previous batch",
   "再次发送时先删掉 Rhino 里同名图层下的上一批实体": "On resend, delete the previous batch under the same layer first",

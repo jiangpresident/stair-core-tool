@@ -27,6 +27,11 @@ except ImportError:  # IronPython 2.7 (Rhino 7)
     from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
     from SocketServer import ThreadingMixIn
 
+try:  # URL 解码（图层名里可能有中文/空格/::）
+    from urllib.parse import unquote as _unquote
+except ImportError:
+    from urllib import unquote as _unquote
+
 PORT = 8790
 STICKY_KEY = "stair_core_bridge_server"
 # 允许调用的网页来源：本机开发服务器 / 本机静态文件，以及项目的 GitHub Pages 线上版
@@ -117,6 +122,132 @@ def bake(payload):
     return {"ok": True, "added": added, "layers": sorted(layers_used), "units": str(doc.ModelUnitSystem)}
 
 
+def _footprint_points(geo):
+    """把一个对象的几何压到 XY 平面，返回顶点列表（Point3d）。Brep / 挤出体 / 网格 / 封闭曲线都认。"""
+    pts = []
+    if isinstance(geo, Rhino.Geometry.Extrusion):
+        geo = geo.ToBrep()
+    if isinstance(geo, Rhino.Geometry.Brep):
+        for v in geo.Vertices:
+            pts.append(v.Location)
+        if not pts:  # 没有显式顶点（比如圆柱）就用边上的采样点
+            for e in geo.Edges:
+                pts.append(e.PointAtStart)
+                pts.append(e.PointAtEnd)
+    elif isinstance(geo, Rhino.Geometry.Mesh):
+        for v in geo.Vertices:
+            pts.append(Rhino.Geometry.Point3d(v.X, v.Y, v.Z))
+    elif isinstance(geo, Rhino.Geometry.Curve):
+        ok, pl = geo.TryGetPolyline()
+        if ok:
+            pts = list(pl)
+        else:
+            n = 64
+            for i in range(n + 1):
+                pts.append(geo.PointAt(geo.Domain.ParameterAt(float(i) / n)))
+    return pts
+
+
+def _convex_hull_xy(points):
+    """Andrew 单调链凸包（二维）。"""
+    pts = sorted(set((round(p.X, 6), round(p.Y, 6)) for p in points))
+    if len(pts) <= 2:
+        return pts
+
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+    upper = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+    return lower[:-1] + upper[:-1]
+
+
+def _min_rect(points):
+    """最小面积外接矩形（旋转卡壳：矩形的一条边一定和凸包某条边平行）。
+    返回 (center_x, center_y, length, width, angle_deg)，length ≥ width，angle 是长边相对 X 轴的角度。"""
+    import math
+    hull = _convex_hull_xy(points)
+    if len(hull) < 3:
+        xs = [p[0] for p in hull] or [0.0]
+        ys = [p[1] for p in hull] or [0.0]
+        return ((min(xs) + max(xs)) / 2.0, (min(ys) + max(ys)) / 2.0, max(xs) - min(xs), max(ys) - min(ys), 0.0)
+    best = None
+    for i in range(len(hull)):
+        ax, ay = hull[i]
+        bx, by = hull[(i + 1) % len(hull)]
+        ang = math.atan2(by - ay, bx - ax)
+        c, s = math.cos(-ang), math.sin(-ang)
+        us = [(p[0] * c - p[1] * s, p[0] * s + p[1] * c) for p in hull]
+        minu, maxu = min(u[0] for u in us), max(u[0] for u in us)
+        minv, maxv = min(u[1] for u in us), max(u[1] for u in us)
+        area = (maxu - minu) * (maxv - minv)
+        if best is None or area < best[0] - 1e-9:
+            cu, cv = (minu + maxu) / 2.0, (minv + maxv) / 2.0
+            # 转回世界坐标
+            cx = cu * math.cos(ang) - cv * math.sin(ang)
+            cy = cu * math.sin(ang) + cv * math.cos(ang)
+            best = (area, cx, cy, maxu - minu, maxv - minv, ang)
+    _, cx, cy, du, dv, ang = best
+    if du >= dv:
+        length, width, a = du, dv, ang
+    else:
+        length, width, a = dv, du, ang + math.pi / 2
+    deg = math.degrees(a) % 180.0
+    return (cx, cy, length, width, deg)
+
+
+def read_cores(layer_path):
+    """UI 线程里执行：读某个图层（含子图层）上的长方体，返回毫米单位的平面外接矩形列表。"""
+    doc = Rhino.RhinoDoc.ActiveDoc
+    to_mm = Rhino.RhinoMath.UnitScale(doc.ModelUnitSystem, Rhino.UnitSystem.Millimeters)
+    idx = doc.Layers.FindByFullPath(layer_path, -1)
+    if idx < 0:
+        return {"ok": False, "error": "layer not found: " + layer_path}
+    wanted = set([doc.Layers[idx].Id])
+    for layer in doc.Layers:
+        if not layer.IsDeleted and layer.ParentLayerId in wanted:
+            wanted.add(layer.Id)
+    out = []
+    for obj in doc.Objects:
+        if obj.Attributes.LayerIndex < 0 or doc.Layers[obj.Attributes.LayerIndex].Id not in wanted:
+            continue
+        geo = obj.Geometry
+        pts = _footprint_points(geo)
+        if len(pts) < 3:
+            continue
+        cx, cy, length, width, deg = _min_rect(pts)
+        bb = geo.GetBoundingBox(True)
+        out.append({
+            "id": str(obj.Id),
+            "name": obj.Attributes.Name or "",
+            "layer": doc.Layers[obj.Attributes.LayerIndex].FullPath,
+            "type": geo.GetType().Name,
+            "centerX": cx * to_mm, "centerY": cy * to_mm,
+            "length": length * to_mm, "width": width * to_mm, "angleDeg": deg,
+            "zBottom": bb.Min.Z * to_mm, "height": (bb.Max.Z - bb.Min.Z) * to_mm,
+        })
+    return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "cores": out}
+
+
+def list_layers():
+    doc = Rhino.RhinoDoc.ActiveDoc
+    names = []
+    for layer in doc.Layers:
+        if layer.IsDeleted:
+            continue
+        count = len(list(doc.Objects.FindByLayer(layer)))
+        names.append({"path": layer.FullPath, "objects": count})
+    return {"ok": True, "layers": names}
+
+
 def run_on_ui_thread(fn):
     """HTTP 线程里不能动文档，交给 Rhino 主线程执行并等结果。"""
     result = {}
@@ -179,7 +310,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self._origin_ok():
             self._send(403, {"ok": False, "error": "origin not allowed"})
             return
-        if self.path.split("?")[0] == "/health":
+        path, _, query = self.path.partition("?")
+        if path == "/health":
             doc = Rhino.RhinoDoc.ActiveDoc
             self._send(200, {
                 "ok": True,
@@ -187,7 +319,26 @@ class Handler(BaseHTTPRequestHandler):
                 "rhino": str(Rhino.RhinoApp.Version),
                 "doc": (doc.Name or "Untitled") if doc else None,
                 "units": str(doc.ModelUnitSystem) if doc else None,
+                "features": ["bake", "layers", "cores"],
             })
+            return
+        try:
+            if path == "/layers":
+                self._send(200, run_on_ui_thread(list_layers))
+                return
+            if path == "/cores":
+                # ?layer=Core 或 ?layer=Parent::Child（URL 编码）
+                params = {}
+                for part in query.split("&"):
+                    if "=" in part:
+                        k, v = part.split("=", 1)
+                        params[k] = _unquote(v)
+                layer = params.get("layer") or "Core"
+                result = run_on_ui_thread(lambda: read_cores(layer))
+                self._send(200 if result.get("ok") else 404, result)
+                return
+        except Exception as exc:  # noqa: BLE001
+            self._send(500, {"ok": False, "error": str(exc)})
             return
         self._send(404, {"ok": False, "error": "not found"})
 
