@@ -489,6 +489,13 @@
 - **验证**：Node 7 项（新增 scanRhino 的在线/离线/非 ok/超时过滤，open·recent·dialog 的地址、请求体、取消、错误翻译）。真机：Rhino 里先用裸 socket 占住 8790 再 start() → 落到 8791，释放后 → 8790；curl `/open` A → 文档变 A（200），再开 B、再开 B（alreadyOpen）、不存在的路径 400、非 .3dm 400、坏 JSON 400；`/recent` 第一项变成刚打开的文件；换文件后 `/cores?layer=Core` 读到同样两个盒子。浏览器：连接后文件行显示 A 的完整路径、只有 1 个实例所以没有实例下拉、最近文件下拉有 A/B、选 B → 按钮变"Switching…" → 提示"Opened …B.3dm in Rhino" → 状态行文档变 B → 旧校核结果清空 → 再点读取 → 两行结果照旧；`__i18nMissing()` 为空。**没自动化的**：「浏览其它文件…」会在 Rhino 里弹系统对话框，需要人点，这次没在脚本里按（接口逻辑与 /open 共用）；多窗口下拉只用假 fetch 测了，没真开第二个 Rhino。
 - 注意：MCP 的 run_python 打开别的文件会让它的 slot 被判定"文档已关闭"并剔除，Rhino 本身和桥都还在，下次调用会重新 adopt。测试文档现在是 scratchpad 里的 StairCoreTestA/B.3dm（3 个测试对象），不是用户的文件。
 
+**2026-10-02 第三十九轮：计算器页每个面板右上角加一个小折叠按钮（`npm run test:calc` 过、`build` 过、词典 0 缺；浏览器里验证了 12 个面板的按钮、点标题行也能折叠、刷新后保持、三维视图收起再展开画布宽度跟着容器）：**
+
+- 用户诉求："能否做个能把计算器每个面板折叠的小按钮"。此前计算器页左栏 3 块参数、右栏 8 块结果加底部的平面图链接共 12 个 `<section>` 都是固定展开的（平面图页的右侧栏已经能折叠，见第二十四/二十六轮）。
+- 实现：新增 `Panel({ id, title, sub, className, children })` 组件包住原来的 `<section>` + `<H2>`；`H2` 多了 `open` / `onToggle` 两个可选 prop——传了就在标题行右端画一个 22px 的 ▾/▸ 小按钮（`aria-expanded`、悬停提示"收起本面板 / 展开本面板"），整行标题也可点，收起时不画底线、不显示副标题，面板只剩标题一行。不传 `onToggle` 的 `H2`（平面图页在用）行为完全不变。**收起用 `display:none` 而不是卸载**：三维视图的相机角度、Rhino 面板的连接状态、表格滚动位置都保留；三维视图自己有 `ResizeObserver`，重新展开时按容器宽度重画（实测收起再展开后 canvas 657px / 容器 698px，跟展开前一致）。状态按面板 id 记在 localStorage `stair-core:calc-panels`（只记收起的那些，默认全部展开），刷新后保持。
+- 12 个 section 的改写不是手改的：`scratchpad/codemod-panels.mjs` 按"紧跟着 `<H2>` 的 `<section className=… style={{ background: C.panel … }}>`"匹配，把开头两行换成 `<Panel id title sub>`、按同样缩进找到对应的 `</section>` 换成 `</Panel>`；没有标题的那块（"确认并计算"的黄色提示 section）不动。id：global / batch / floors / summary / stairs / perFloor / drawings / doors / model3d / coreSize / code / planLink。词典 +2。
+- **验证**：浏览器里数到 12 个 `section[data-panel]` 和 12 个 `panel-toggle`；点"每部楼梯"的按钮 → `data-open=0`、内容 `display:none`、面板高度只剩 67px、按钮变 ▸、提示"展开本面板"；点"楼梯三维模型"的标题行 → 也收起且 canvas 仍在 DOM 里；localStorage 里是 `{"stairs":false,"model3d":false}`；刷新 → 这两块仍收起、其它展开；再点三维面板的按钮展开 → canvas 宽度跟容器一致；`__i18nMissing()` 为空。截图核对收起态只剩一行标题。测完把 `stair-core:calc-panels` 清掉恢复全部展开。小瑕疵：面板滚到页面最顶时，右上角固定定位的 EN/中 切换按钮会盖住第一块面板的折叠按钮，往下滚一点就错开了，没有专门处理。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

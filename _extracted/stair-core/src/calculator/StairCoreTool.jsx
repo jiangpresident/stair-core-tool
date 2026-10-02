@@ -988,12 +988,69 @@ function Seg({ options, value, onChange }) {
   );
 }
 
-function H2({ children, sub }) {
+/* 面板标题。传了 onToggle 就在右端画一个小的 ▾/▸ 折叠按钮（整行标题也可点）；收起时不画底线和下边距。 */
+function H2({ children, sub, open = true, onToggle }) {
+  const collapsible = typeof onToggle === "function";
   return (
-    <div className="flex items-baseline gap-3 mb-3 pb-2" style={{ borderBottom: `1px solid ${C.rule}` }}>
+    <div
+      className={"flex items-baseline gap-3" + (open ? " mb-3 pb-2" : "")}
+      style={{ borderBottom: open ? `1px solid ${C.rule}` : "none", cursor: collapsible ? "pointer" : undefined, userSelect: collapsible ? "none" : undefined }}
+      onClick={collapsible ? onToggle : undefined}
+    >
       <h2 style={{ fontSize: 17, fontWeight: 600, color: C.ink, margin: 0 }}>{children}</h2>
-      {sub && <span style={{ color: C.muted, fontSize: 12 }}>{sub}</span>}
+      {sub && (open || !collapsible) && <span style={{ color: C.muted, fontSize: 12 }}>{sub}</span>}
+      {collapsible && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          aria-expanded={open}
+          title={open ? t("收起本面板") : t("展开本面板")}
+          className="rounded"
+          style={{ marginLeft: "auto", width: 22, height: 22, lineHeight: "20px", fontSize: 12, color: C.muted, border: `1px solid ${C.rule}`, background: C.panel, flexShrink: 0, alignSelf: "center" }}
+          data-testid="panel-toggle"
+        >
+          {open ? "▾" : "▸"}
+        </button>
+      )}
     </div>
+  );
+}
+
+/* 计算器页的可折叠面板：每个面板右上角一个小按钮，收起只留标题行；状态记在 localStorage（按 id），刷新后保持。
+   收起用 display:none 而不是卸载，三维视图的相机 / Rhino 连接 / 表格滚动位置都不会丢；三维视图自己有 ResizeObserver，重新展开时会按容器宽度重画。 */
+const CALC_PANELS_KEY = "stair-core:calc-panels";
+const readCalcPanels = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(CALC_PANELS_KEY) || "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+};
+function Panel({ id, title, sub, children, className = "rounded-lg p-5", style }) {
+  const [open, setOpen] = useState(() => readCalcPanels()[id] !== false);
+  const toggle = () =>
+    setOpen((o) => {
+      const next = !o;
+      try {
+        const all = readCalcPanels();
+        all[id] = next;
+        localStorage.setItem(CALC_PANELS_KEY, JSON.stringify(all));
+      } catch {
+        /* 隐私模式等：只在本次会话里生效 */
+      }
+      return next;
+    });
+  return (
+    <section className={className} style={{ background: C.panel, border: `1px solid ${C.rule}`, ...style }} data-panel={id} data-open={open ? "1" : "0"}>
+      <H2 sub={sub} open={open} onToggle={toggle}>
+        {title}
+      </H2>
+      <div style={open ? undefined : { display: "none" }}>{children}</div>
+    </section>
   );
 }
 
@@ -5113,8 +5170,7 @@ export default function StairCoreTool() {
               </button>
               <div style={{ fontSize: 11.5, color: C.muted, marginTop: 6 }}>{dirty ? t("输入已修改，右侧结果、图纸与三维模型尚未更新，点击确认后重新计算。") : t("修改下方任何输入后需点击此按钮才会重新计算。")}</div>
             </section>
-            <section className="rounded-lg p-4" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("建筑与核心筒")}>{t("整体参数")}</H2>
+            <Panel id="global" className="rounded-lg p-4" title={t("整体参数")} sub={t("建筑与核心筒")}>
               <Num label={t("层数（含首层）")} value={nFloors} onChange={setNFloors} unit={t("层")} min={2} max={80} />
               <Num label={t("核心筒 / 楼梯间墙厚")} value={wall} onChange={(v) => setWall(Number(v) || 0)} unit="mm" step={10} />
               <Num label={t("单部楼梯最大净宽")} value={maxStairW} onChange={(v) => setMaxStairW(Math.max(900, Number(v) || 900))} unit="mm" step={50} hint={t("超过则增加楼梯数量")} />
@@ -5166,10 +5222,9 @@ export default function StairCoreTool() {
                   <Num label={t("宽度取整")} value={adv.roundStep} onChange={(v) => setAdv({ ...adv, roundStep: Math.max(1, Number(v) || 50) })} unit="mm" />
                 </div>
               )}
-            </section>
+            </Panel>
 
-            <section className="rounded-lg p-4" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("选择楼层范围后一次修改")}>{t("批量编辑")}</H2>
+            <Panel id="batch" className="rounded-lg p-4" title={t("批量编辑")} sub={t("选择楼层范围后一次修改")}>
               <div className="grid grid-cols-2 gap-x-3" style={{ fontSize: 13 }}>
                 <Num label={t("从 L")} value={batch.from} onChange={(v) => setBatch({ ...batch, from: clamp(Number(v) || 1, 1, nFloors) })} width={70} />
                 <Num label={t("到 L")} value={batch.to} onChange={(v) => setBatch({ ...batch, to: clamp(Number(v) || 1, 1, nFloors) })} width={70} />
@@ -5192,10 +5247,9 @@ export default function StairCoreTool() {
               <button type="button" onClick={applyBatch} className="mt-2 w-full rounded py-2" style={{ background: C.accent, color: "#fff", fontSize: 13, fontWeight: 600 }}>
                 {t("应用到 L")}{Math.min(batch.from, batch.to)} – L{Math.max(batch.from, batch.to)}
               </button>
-            </section>
+            </Panel>
 
-            <section className="rounded-lg p-4" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("自上而下排列")}>{t("逐层参数")}</H2>
+            <Panel id="floors" className="rounded-lg p-4" title={t("逐层参数")} sub={t("自上而下排列")}>
               <div style={{ fontSize: 12 }}>
                 <div className="grid gap-1 pb-1 mb-1" style={{ gridTemplateColumns: "34px 58px 1fr 58px 50px 56px", color: C.muted, borderBottom: `1px solid ${C.rule}` }}>
                   <span>{t("层")}</span>
@@ -5236,14 +5290,13 @@ export default function StairCoreTool() {
                   })}
                 <p style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>{t("人数列：住宅填卧室数（×2 人，3.1.17.1.(1)(b)）；其他用途留空自动按表计算，填写则作为设计人数覆盖。蓝色横线为楼梯数量变化处。")}</p>
               </div>
-            </section>
+            </Panel>
           </aside>
 
           {/* ================= 右：结果 ================= */}
           <main className="flex flex-col gap-6 lg:col-span-2" style={{ minWidth: 0 }}>
             {/* 概要 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("出口层 L1；计入楼梯疏散的楼层 L{0}–L{1}", [res.lvl0, inp.nFloors])}>{t("结果概要")}</H2>
+            <Panel id="summary" className="rounded-lg p-5" title={t("结果概要")} sub={t("出口层 L1；计入楼梯疏散的楼层 L{0}–L{1}", [res.lvl0, inp.nFloors])}>
               {dirty && (
                 <div className="mb-3 rounded px-3 py-2" style={{ background: "#FFF8E8", border: `1px solid ${C.warn}`, color: C.warn, fontSize: 12.5 }}>
                   {t("以下结果对应上一次确认的输入；左栏有未确认的修改。")}
@@ -5334,11 +5387,10 @@ export default function StairCoreTool() {
                   {t("提示：本建筑 ≤2 层且有楼层人数 ≤60、面积在 Table 3.4.2.1 限值内，若疏散距离 ≤25 m，该楼层理论上可只设 1 个出口")} <Ref k="EXITS" />{t("；本工具仍按 2 部楼梯计算。")}
                 </p>
               )}
-            </section>
+            </Panel>
 
             {/* 每部楼梯 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("宽度取各服务楼层最大值，尺寸按最不利楼层")}>{t("每部楼梯")}</H2>
+            <Panel id="stairs" className="rounded-lg p-5" title={t("每部楼梯")} sub={t("宽度取各服务楼层最大值，尺寸按最不利楼层")}>
               <div className="overflow-x-auto">
                 <table className="w-full" style={{ fontSize: 12.5, borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
                   <thead>
@@ -5416,11 +5468,10 @@ export default function StairCoreTool() {
                   </p>
                 </div>
               )}
-            </section>
+            </Panel>
 
             {/* 逐层表 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("需求宽度 = 人数 × 每人毫米数；提供宽度 = 本层楼梯净宽之和")}>{t("逐层校核")}</H2>
+            <Panel id="perFloor" className="rounded-lg p-5" title={t("逐层校核")} sub={t("需求宽度 = 人数 × 每人毫米数；提供宽度 = 本层楼梯净宽之和")}>
               <div className="overflow-x-auto">
                 <table className="w-full" style={{ fontSize: 12.5, borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
                   <thead>
@@ -5489,11 +5540,10 @@ export default function StairCoreTool() {
                   {t("净高")} <Ref k="HEAD" />
                 </span>
               </div>
-            </section>
+            </Panel>
 
             {/* 图纸 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("示意性布置，尺寸为内净 / 外包 mm")}>{t("楼梯间平面与剖面")}</H2>
+            <Panel id="drawings" className="rounded-lg p-5" title={t("楼梯间平面与剖面")} sub={t("示意性布置，尺寸为内净 / 外包 mm")}>
               <div className="flex flex-wrap items-center gap-4 mb-4" style={{ fontSize: 12.5 }}>
                 <label className="flex items-center gap-2">
                   {t("梯间")}
@@ -5541,11 +5591,10 @@ export default function StairCoreTool() {
                   </p>
                 </div>
               </div>
-            </section>
+            </Panel>
 
             {/* 出口门 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("门沿疏散方向开入楼梯间；铰链靠侧墙、门闩朝梯间中央")}>{t("出口门位置核查")}</H2>
+            <Panel id="doors" className="rounded-lg p-5" title={t("出口门位置核查")} sub={t("门沿疏散方向开入楼梯间；铰链靠侧墙、门闩朝梯间中央")}>
               {(() => {
                 const st = shaft.stairs[0];
                 const a = inp.adv;
@@ -5609,11 +5658,10 @@ export default function StairCoreTool() {
                   </div>
                 );
               })()}
-            </section>
+            </Panel>
 
             {/* 三维 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("按上方计算结果自动生成的实体模型，颜色区分楼梯编号")}>{t("楼梯三维模型")}</H2>
+            <Panel id="model3d" className="rounded-lg p-5" title={t("楼梯三维模型")} sub={t("按上方计算结果自动生成的实体模型，颜色区分楼梯编号")}>
               <div className="flex flex-wrap items-center gap-4 mb-3" style={{ fontSize: 12.5 }}>
                 <span style={{ color: C.muted }}>{t("梯间同上（")}{inp.stairType === "dogleg" ? t("楼梯 #{0}", [shaft.stairs[0].k]) : t("梯井 {0}", [shaftIdx + 1])}{t("）")}</span>
                 <label className="flex items-center gap-2">
@@ -5647,11 +5695,10 @@ export default function StairCoreTool() {
                 shaftLabel={inp.stairType === "dogleg" ? t("楼梯 #{0}", [shaft.stairs[0].k]) : t("梯井 {0}", [shaftIdx + 1])}
                 zones={res.zones}
               />
-            </section>
+            </Panel>
 
             {/* 核心筒尺寸 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("按各区段楼梯数量，梯间并列共用墙体")}>{t("楼梯间核心筒尺寸")}</H2>
+            <Panel id="coreSize" className="rounded-lg p-5" title={t("楼梯间核心筒尺寸")} sub={t("按各区段楼梯数量，梯间并列共用墙体")}>
               <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
                 {res.zones.map((z, i) => (
                   <div key={i} className="rounded p-4" style={{ border: `1px solid ${C.rule}` }}>
@@ -5679,11 +5726,10 @@ export default function StairCoreTool() {
               <p style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>
                 {t("宽度方向：Σ 梯间内净宽 + (梯间数 + 1) × 墙厚；长度方向：最长梯间内净长 + 2 × 墙厚。若梯间分设于核心筒两侧，请分别取单个梯间外包尺寸。两个出口的间距还需满足")} <Ref k="DIST" />{t("，疏散距离满足")} <Ref k="TRAVEL" />{t("。")}
               </p>
-            </section>
+            </Panel>
 
             {/* 条文 */}
-            <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-              <H2 sub={t("VBBL 2025 Book I Division B；条号与 BCBC 2024 / NBC 2020 相同者标为三级一致")}>{t("引用条文")}</H2>
+            <Panel id="code" className="rounded-lg p-5" title={t("引用条文")} sub={t("VBBL 2025 Book I Division B；条号与 BCBC 2024 / NBC 2020 相同者标为三级一致")}>
               <div className="grid gap-2">
                 {CODE.map((c) => (
                   <div key={c.key} className="grid gap-3 py-2" style={{ gridTemplateColumns: "minmax(150px, 200px) minmax(220px, 1fr) minmax(130px, 190px)", borderBottom: `1px solid ${C.rule}`, fontSize: 12.5 }}>
@@ -5702,7 +5748,7 @@ export default function StairCoreTool() {
               <p style={{ fontSize: 11.5, color: C.muted, marginTop: 12 }}>
                 {t("本工具为方案阶段估算，不替代注册专业人员的规范审查。人员荷载、疏散距离、出口间距、防烟（3.2.6 高层）与无障碍要求需结合平面图复核；温哥华项目请以 VBBL 2025 最新合订本及 Chief Building Official 解释为准。")}
               </p>
-            </section>
+            </Panel>
           </main>
         </div>
       </div>
@@ -5710,8 +5756,7 @@ export default function StairCoreTool() {
       {/* 平面布置 / 疏散距离校核 —— 现在是独立页面（/plan），跟这里通过 localStorage 联动：
           在这边点"确认并计算"后，平面图页面里的核心筒预览会自动用最新结果重画 */}
       <div className="px-4 pb-8">
-        <section className="rounded-lg p-5" style={{ background: C.panel, border: `1px solid ${C.rule}` }}>
-          <H2 sub={t("核心筒摆放、走廊墙体、门、楼层边界与疏散路径校核 —— 独立页面，可单独打开/收藏")}>{t("平面布置与疏散距离校核")}</H2>
+        <Panel id="planLink" className="rounded-lg p-5" title={t("平面布置与疏散距离校核")} sub={t("核心筒摆放、走廊墙体、门、楼层边界与疏散路径校核 —— 独立页面，可单独打开/收藏")}>
           <p style={{ fontSize: 12.5, color: C.muted, marginBottom: 10 }}>
             {t("这里确认过的楼梯计算结果会自动同步给平面图工具（同一浏览器打开即可，不需要手动导入）。")}
           </p>
@@ -5724,7 +5769,7 @@ export default function StairCoreTool() {
           >
             {t("在新标签页打开平面图工具 →")}
           </a>
-        </section>
+        </Panel>
       </div>
     </div>
   );

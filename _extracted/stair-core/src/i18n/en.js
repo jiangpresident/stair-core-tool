@@ -722,4 +722,6 @@ export const EN = {
   "这个文件本来就是当前文件": "That file is already the current file",
   "只检测到 1 个 Rhino 窗口。要连别的文件：在上面选最近文件或浏览（当前窗口会换文件，有未保存改动时 Rhino 会先问是否保存）；或者在另一个 Rhino 窗口里也运行一次桥接脚本，再点「重新检测」。": "Only 1 Rhino window detected. To connect to another file: pick a recent file or browse above (the current window switches files; Rhino asks to save unsaved changes first), or run the bridge script in another Rhino window too and click Re-check.",
   "最近文件…": "Recent files…",
+  "收起本面板": "Collapse this panel",
+  "展开本面板": "Expand this panel",
 };
