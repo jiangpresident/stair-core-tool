@@ -7,8 +7,13 @@ Vancouver exit-stair calculator and floor-plan egress checker (VBBL 2025 → BCB
 
 ## 1. Purpose
 
-<!-- TODO (作者本人填写，≤150 词)：这个工具帮谁、理解或完成什么。作业要求这一段必须自己写。 -->
-_To be written by the author._
+This tool sizes, counts and lays out the exit stairs in a building's core, following the Vancouver Building By-law, the BC Building Code and the National Building Code of Canada. From each storey's floor area and occupancy it derives the occupant load, and from that the number and clear width of the exit stairs; storey areas, heights and uses can be set individually or edited in batches. The resulting stair-core dimensions feed the second part, the floor plan tool, which checks whether the cores are far enough apart and whether every point on the floor is within the permitted travel distance. The floor plan tool can read a plan from a PDF with several recognition methods, and where recognition falls short the walls and doors can be drawn by hand; a travel-distance heatmap then shows whether every corner of the floor meets the egress requirements.
+
+<details><summary>中文</summary>
+
+这是一个计算建筑核心筒疏散楼梯尺寸、数量与布局的工具，依据温哥华市建筑条例、BC 省建筑规范和加拿大国家建筑规范。用户输入每层的面积和用途，工具算出疏散人数，进而得到疏散楼梯的数量和净宽；每层的面积、层高、功能都可以单独设定，也可以批量修改。算出的核心筒尺寸会传给第二部分——平面图工具：它校核核心筒之间的距离是否合理，以及平面上每个位置是否满足疏散距离要求。平面图工具提供多种识图方法，可以自动读取 PDF 平面图；识别效果不好时也可以在工具里手动画墙画门。画好之后，疏散热力图会显示平面图的每个角落是否都满足疏散规范。
+
+</details>
 
 ## 2. How to use it
 
