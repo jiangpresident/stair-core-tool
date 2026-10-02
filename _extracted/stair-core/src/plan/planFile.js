@@ -28,6 +28,7 @@ export const PLAN_DEFAULTS = {
   drawingPathId: null,
   hasCorridor: true,
   nextId: 1,
+  rhinoFrame: null, // 从 Rhino 导入过东西后记下的坐标基准 {x0, y0, margin}，让之后导入的墙 / 地板和已有的对得上位置
 };
 
 const ARRAY_FIELDS = ["boundary", "cores", "walls", "doors", "paths", "wallCandidates", "doorCandidates", "stairCandidates"];

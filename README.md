@@ -86,6 +86,8 @@ The calculator page has a **Rhino** panel under the 3D model. Its main job is to
 
 **Walls**: below the core boxes, pick the layer that holds your walls (lines, polylines or thin solids) and click **Read walls**. Each straight segment becomes a wall (solids use their minimum bounding rectangle for centreline and thickness; arcs are skipped). **Add to floor plan** appends them to the floor plan tool, placed at the top-left of the canvas with Rhino's Y-up flipped to the plan's Y-down; an open plan page refreshes automatically.
 
+**Floors**: below the walls, pick the layer with your floor slabs and click **Read floors**. Only **closed polysurfaces** are accepted; anything else (open polysurface, single surface, mesh) is flagged in red with the reason. For a closed slab the outline of its largest horizontal face is shown with area, vertices, openings and thickness, and **Use as floor boundary** sets it as the plan's floor boundary. Walls and floors imported from Rhino share one coordinate frame (stored in the plan), so they line up with each other.
+
 Optionally, the collapsed **Reverse** section sends the computed stair solids (steps, landings, slabs, enclosure walls, doors — the same solids as the 3D view, on separate layers) into Rhino; resending replaces the previous batch under the same layer name.
 
 ## Repository layout

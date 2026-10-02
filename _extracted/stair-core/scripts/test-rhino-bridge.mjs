@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -224,7 +224,8 @@ await test("readRhinoWalls / wallsToPlan：请求地址；追加进 plan 时平�
   assert.equal(r.skipped, 1);
   assert.equal(r.walls.length, 4);
   const plan = { walls: [{ id: 7, x1: 0, y1: 0, x2: 100, y2: 0, t: 200 }], nextId: 8, naturalW: 20000, naturalH: 15000, bgSrc: null, mmPerPx: 1 };
-  const out = wallsToPlan(r.walls, plan, { defaultT: 200, margin: 1000 });
+  const out = wallsToPlan(r.walls, plan, { defaultT: 200 });
+  assert.deepEqual(out.rhinoFrame, { x0: 0, y0: 20000, margin: 1000 }, "第一次导入记下基准");
   assert.equal(plan.walls.length, 1, "不改入参");
   assert.equal(out.walls.length, 4, "原 1 + 新 3（零长度丢掉）");
   assert.deepEqual(out.walls.slice(1).map((w) => w.id), [8, 9, 10]);
@@ -243,6 +244,61 @@ await test("readRhinoWalls / wallsToPlan：请求地址；追加进 plan 时平�
   assert.equal(fromNothing.walls.length, 3);
   assert.equal(fromNothing.cores.length, 0, "缺的字段用默认值补");
   assert.equal(wallsToPlan([], plan).walls.length, 1);
+});
+
+await test("共用基准：第二批几何沿用第一批的基准（位置对得上）；超出左/上边时基准外扩、已有内容整体平移；有底图不平移", () => {
+  const first = wallsToPlan([{ x1: 0, y1: 0, x2: 10000, y2: 0 }], null);
+  assert.deepEqual([first.walls[0].x1, first.walls[0].y1, first.walls[0].x2, first.walls[0].y2], [1000, 1000, 11000, 1000]);
+  // 第二批在第一批右下方：同一基准，不平移
+  const second = wallsToPlan([{ x1: 10000, y1: -5000, x2: 10000, y2: 0 }], first);
+  assert.deepEqual(second.rhinoFrame, first.rhinoFrame);
+  assert.deepEqual([second.walls[1].x1, second.walls[1].y1, second.walls[1].x2, second.walls[1].y2], [11000, 6000, 11000, 1000], "Rhino y=−5000 在南边 → 平面图 y 更大");
+  assert.equal(second.naturalH, 15000, "画布只放大不缩小：需要 7000，默认 15000 已够");
+  // 第三批更靠左（x=−3000）、更靠北（y=2000）：基准外扩，已有的墙整体平移 (+3000, +2000)
+  const third = wallsToPlan([{ x1: -3000, y1: 2000, x2: 0, y2: 2000 }], second);
+  assert.deepEqual(third.rhinoFrame, { x0: -3000, y0: 2000, margin: 1000 });
+  assert.deepEqual([third.walls[0].x1, third.walls[0].y1], [4000, 3000], "第一面墙从 (1000,1000) 平移到 (4000,3000)");
+  assert.deepEqual([third.walls[2].x1, third.walls[2].y1, third.walls[2].x2, third.walls[2].y2], [1000, 1000, 4000, 1000]);
+  // shiftPlan 覆盖所有带坐标的东西
+  const shifted = shiftPlan(
+    { boundary: [{ x: 1, y: 2 }], cores: [{ x: 10, y: 20, l: 5, w: 3, doorLocal: { x: 0, y: 1 } }], walls: [{ x1: 0, y1: 0, x2: 1, y2: 1 }], wallCandidates: [{ x1: 0, y1: 0, x2: 1, y2: 1 }], doorCandidates: [], stairCandidates: [{ x: 5, y: 5, w: 1, h: 1 }], paths: [{ kind: "auto", src: { x: 1, y: 1 } }, { kind: "manual", pts: [{ x: 2, y: 2 }] }] },
+    100,
+    -50,
+  );
+  assert.deepEqual(shifted.boundary, [{ x: 101, y: -48 }]);
+  assert.deepEqual([shifted.cores[0].x, shifted.cores[0].y, shifted.cores[0].doorLocal], [110, -30, { x: 0, y: 1 }], "核心筒门的局部坐标不动");
+  assert.deepEqual(shifted.walls[0], { x1: 100, y1: -50, x2: 101, y2: -49 });
+  assert.deepEqual(shifted.paths[0].src, { x: 101, y: -49 });
+  assert.deepEqual(shifted.paths[1].pts, [{ x: 102, y: -48 }]);
+  // 有底图：基准不外扩、不平移，新墙允许落到负坐标
+  const withBg = wallsToPlan([{ x1: -3000, y1: 0, x2: 0, y2: 0 }], { ...first, bgSrc: "data:..." });
+  assert.deepEqual(withBg.rhinoFrame, first.rhinoFrame);
+  assert.equal(withBg.walls[1].x1, -2000);
+  assert.equal(withBg.walls[0].x1, 1000, "已有的墙没动");
+});
+
+await test("readRhinoFloors / floorToPlan：请求地址；封闭与否原样带回；轮廓按共用基准变成楼层边界，首尾重合点去掉；少于 3 点不动", async () => {
+  const calls = [];
+  const fetch = async (u) => {
+    calls.push(String(u));
+    return json({ ok: true, layer: "Floors", units: "Meters", floors: [
+      { id: "s", name: "slab", type: "Extrusion", closed: true, reason: null, outline: [[0, 0], [30000, 0], [30000, 20000], [0, 20000], [0, 0]], area: 600, holes: 0, zBottom: -300, thickness: 300 },
+      { id: "o", name: "open", type: "Brep", closed: false, reason: "open polysurface (5 faces, not closed)", outline: [[0, 0], [1, 0], [1, 1]], area: 0.5, holes: 0, zBottom: 0, thickness: 1 },
+      { id: "m", name: "mesh", type: "Mesh", closed: false, reason: "not a polysurface (Mesh)", outline: [], area: null, holes: 0, zBottom: null, thickness: null },
+    ] });
+  };
+  const r = await readRhinoFloors("Floors", { fetch, baseUrl: "http://127.0.0.1:8790" });
+  assert.equal(calls[0], "http://127.0.0.1:8790/floors?layer=Floors");
+  assert.deepEqual(r.floors.map((f) => f.closed), [true, false, false]);
+  // 先导入墙（基准 x0=0, y0=20000），再把地板设为边界：角点和墙端点重合
+  const withWalls = wallsToPlan([{ x1: 0, y1: 20000, x2: 30000, y2: 20000 }], null);
+  const out = floorToPlan(r.floors[0].outline, withWalls);
+  assert.equal(out.boundary.length, 4, "首尾重合的第 5 个点去掉");
+  assert.deepEqual(out.boundary, [{ x: 1000, y: 21000 }, { x: 31000, y: 21000 }, { x: 31000, y: 1000 }, { x: 1000, y: 1000 }]);
+  assert.deepEqual([out.walls[0].x1, out.walls[0].y1], [1000, 1000], "墙没动，且墙端点 = 边界角点");
+  assert.deepEqual([out.naturalW, out.naturalH], [32000, 22000]);
+  assert.deepEqual(floorToPlan([[0, 0], [1, 1]], withWalls).boundary, [], "少于 3 点：不改");
+  assert.equal(floorToPlan(r.floors[0].outline, null).boundary.length, 4, "没有 plan 也能用");
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

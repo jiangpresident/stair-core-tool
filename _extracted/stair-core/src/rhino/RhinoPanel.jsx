@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
 import { loadPlan, savePlan, otherAppHref } from "../planBridge.js";
-import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
 const readSavedPort = () => {
@@ -62,6 +62,12 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   const [walls, setWalls] = useState(null); // {walls, skipped}
   const [wallsError, setWallsError] = useState(null);
   const [wallsMsg, setWallsMsg] = useState(null);
+  // 读地板
+  const [floorLayer, setFloorLayer] = useState("Floors");
+  const [floorsReading, setFloorsReading] = useState(false);
+  const [floors, setFloors] = useState(null); // {floors}
+  const [floorsError, setFloorsError] = useState(null);
+  const [floorsMsg, setFloorsMsg] = useState(null);
   // 发送
   const [sendOpen, setSendOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -87,12 +93,17 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       if (pick && !ls.some((l) => l.path === layer)) setLayer(pick.path);
       const pickW = ls.find((l) => /wall|墙/i.test(l.path) && l.objects > 0) || ls.find((l) => /wall|墙/i.test(l.path));
       if (pickW && !ls.some((l) => l.path === wallLayer)) setWallLayer(pickW.path);
+      const pickF = ls.find((l) => /floor|slab|地板|楼板/i.test(l.path) && l.objects > 0) || ls.find((l) => /floor|slab|地板|楼板/i.test(l.path));
+      if (pickF && !ls.some((l) => l.path === floorLayer)) setFloorLayer(pickF.path);
     } catch (err) {
       setReadError(err && err.message ? err.message : String(err));
     }
     setWalls(null);
     setWallsError(null);
     setWallsMsg(null);
+    setFloors(null);
+    setFloorsError(null);
+    setFloorsMsg(null);
     if (Array.isArray(inst.features) && inst.features.includes("recent")) {
       try {
         setRecent(await listRecentFiles(o));
@@ -191,6 +202,25 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
     const next = wallsToPlan(walls.walls, loadPlan());
     savePlan(next);
     setWallsMsg(t("已加入平面图：{0} 段墙（平面图里现在共 {1} 段）。平面图页开着会自动刷新；没开的话点右边的链接。", [walls.walls.length, next.walls.length]));
+  };
+  const readFloors = async () => {
+    setFloorsReading(true);
+    setFloorsError(null);
+    setFloorsMsg(null);
+    try {
+      setFloors(await readRhinoFloors(floorLayer, opts));
+    } catch (err) {
+      setFloorsError(err && err.message ? err.message : String(err));
+    } finally {
+      setFloorsReading(false);
+    }
+  };
+  /* 把一块（封闭的）地板的轮廓设为平面图的楼层边界（替换原来的边界），跟墙用同一个坐标基准。 */
+  const setFloorAsBoundary = (f) => {
+    if (!f || !f.closed || !f.outline || f.outline.length < 3) return;
+    const next = floorToPlan(f.outline, loadPlan());
+    savePlan(next);
+    setFloorsMsg(t("已把「{0}」设为平面图的楼层边界（{1} 个顶点）。平面图页开着会自动刷新。", [f.name || f.type, next.boundary.length]));
   };
   const send = async () => {
     setSending(true);
@@ -426,6 +456,63 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
                 </div>
               )}
               <div className="mt-1" style={{ color: C.muted, fontSize: 11 }}>{t("加入平面图时整批放到画布左上角（留 1 m 边距），Rhino 的 Y 轴朝上会翻成平面图的朝下；平面图没有底图时画布会自动撑大，有底图时请自行拖到位。")}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 1c. 从 Rhino 读地板 → 设为平面图的楼层边界（必须是封闭多重曲面） */}
+      {online && (
+        <div className="mt-3" data-testid="rhino-floors">
+          <div className="flex flex-wrap items-center gap-2">
+            <span style={{ fontWeight: 600 }}>{t("从 Rhino 读取地板")}</span>
+            <span className="flex items-center gap-1">
+              {t("图层")}
+              <LayerTreePicker layers={layers} value={floorLayer} onChange={setFloorLayer} C={C} />
+            </span>
+            <button type="button" onClick={readFloors} disabled={floorsReading} className="rounded px-3 py-1" style={{ background: floorsReading ? C.rule : C.accent, color: floorsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-floors-btn">
+              {floorsReading ? t("读取中…") : t("读取地板")}
+            </button>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("只认封闭多重曲面（closed polysurface）；轮廓取最大的水平面；含子图层")}</span>
+          </div>
+          {floorsError && <div className="mt-1" style={{ color: C.err }}>{floorsError}</div>}
+          {floors && floors.floors.length === 0 && <div className="mt-1" style={{ color: C.muted }}>{t("这个图层上没有对象")}</div>}
+          {floors && floors.floors.length > 0 && (
+            <div className="mt-2 flex flex-col gap-2" data-testid="rhino-floors-result">
+              {floors.floors.map((f, i) => (
+                <div key={f.id + "-" + i} className="rounded p-2" style={{ border: `1px solid ${f.closed ? C.ok : C.err}`, background: f.closed ? "#F0F8F3" : "#FBEAEA" }} data-testid="rhino-floor-row" data-closed={f.closed ? "1" : "0"}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span style={{ fontWeight: 700 }}>
+                      {f.closed ? "✓" : "✗"} {f.name || t("地板 {0}", [i + 1])}
+                    </span>
+                    <span style={{ color: C.muted, fontSize: 11.5 }}>{f.type}</span>
+                    {f.closed && (
+                      <>
+                        <span style={{ fontVariantNumeric: "tabular-nums" }}>{t("面积 {0} m²", [Number.isFinite(f.area) ? f.area.toFixed(1) : "—"])}</span>
+                        <span style={{ color: C.muted, fontSize: 11.5 }}>
+                          {t("轮廓 {0} 个顶点", [Math.max(0, f.outline.length - 1)])}
+                          {f.holes ? t("，{0} 个洞口", [f.holes]) : ""}
+                          {Number.isFinite(f.thickness) ? t("，厚 {0} mm，底标高 {1} m", [fmtMm(f.thickness), fmtM(f.zBottom)]) : ""}
+                        </span>
+                        <button type="button" onClick={() => setFloorAsBoundary(f)} className="rounded px-3 py-1" style={{ background: C.ok, color: "#fff", fontWeight: 600 }} data-testid="rhino-floor-use">
+                          {t("设为楼层边界")}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {!f.closed && (
+                    <div className="mt-1" style={{ color: C.err, fontSize: 11.5 }}>
+                      {t("不是封闭多重曲面（closed polysurface）：{0}。请在 Rhino 里把地板做成封闭实体（例如 Cap 封口，或把轮廓线 Extrude 成 Solid）后再读。", [f.reason || "—"])}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {floorsMsg && (
+                <div style={{ color: C.ok, fontWeight: 600 }} data-testid="rhino-floors-msg">
+                  {floorsMsg}
+                </div>
+              )}
+              <div style={{ color: C.muted, fontSize: 11 }}>{t("楼层边界会替换平面图里原有的边界，位置和之前从 Rhino 加进去的墙用同一个坐标基准，所以互相对得上。")}</div>
             </div>
           )}
         </div>

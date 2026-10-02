@@ -299,6 +299,78 @@ def read_walls(layer_path):
     return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "walls": walls, "skipped": skipped}
 
 
+def _slab_outline(brep):
+    """地板轮廓：取法线接近 ±Z、面积最大的那个面，用它的外环当轮廓。返回 (点列表, 内环数, 面积) 或 None（没有水平面）。"""
+    best = None
+    for face in brep.Faces:
+        du, dv = face.Domain(0), face.Domain(1)
+        n = face.NormalAt(du.Mid, dv.Mid)
+        if abs(n.Z) < 0.9:
+            continue
+        amp = Rhino.Geometry.AreaMassProperties.Compute(face)
+        if amp is None:
+            continue
+        if best is None or amp.Area > best[1]:
+            best = (face, amp.Area)
+    if best is None:
+        return None
+    face, area = best
+    crv = face.OuterLoop.To3dCurve()
+    ok, pl = crv.TryGetPolyline()
+    if ok:
+        pts = list(pl)
+    else:
+        n = 64
+        pts = [crv.PointAt(crv.Domain.ParameterAt(float(i) / n)) for i in range(n + 1)]
+    return pts, face.Loops.Count - 1, area
+
+
+def read_floors(layer_path):
+    """UI 线程里执行：读某个图层（含子图层）上的地板。要求封闭多重曲面（closed polysurface）；不是的也返回，但 closed=False 并带 reason。
+    轮廓取最大水平面的外环（毫米），面积 m²，厚度 / 底标高毫米。"""
+    doc = Rhino.RhinoDoc.ActiveDoc
+    to_mm = Rhino.RhinoMath.UnitScale(doc.ModelUnitSystem, Rhino.UnitSystem.Millimeters)
+    idx = doc.Layers.FindByFullPath(layer_path, -1)
+    if idx < 0:
+        return {"ok": False, "error": "layer not found: " + layer_path}
+    wanted = set([doc.Layers[idx].Id])
+    for layer in doc.Layers:
+        if not layer.IsDeleted and layer.ParentLayerId in wanted:
+            wanted.add(layer.Id)
+    floors = []
+    for obj in doc.Objects:
+        if obj.Attributes.LayerIndex < 0 or doc.Layers[obj.Attributes.LayerIndex].Id not in wanted:
+            continue
+        geo = obj.Geometry
+        item = {"id": str(obj.Id), "name": obj.Attributes.Name or "", "layer": doc.Layers[obj.Attributes.LayerIndex].FullPath, "type": geo.GetType().Name,
+                "closed": False, "reason": None, "outline": [], "area": None, "holes": 0, "zBottom": None, "thickness": None}
+        brep = None
+        if isinstance(geo, Rhino.Geometry.Extrusion):
+            brep = geo.ToBrep()
+        elif isinstance(geo, Rhino.Geometry.Brep):
+            brep = geo
+        if brep is None:
+            item["reason"] = "not a polysurface (%s)" % item["type"]
+            floors.append(item)
+            continue
+        item["closed"] = bool(brep.IsSolid)
+        if not item["closed"]:
+            item["reason"] = "open polysurface (%d face%s, not closed)" % (brep.Faces.Count, "" if brep.Faces.Count == 1 else "s")
+        bb = brep.GetBoundingBox(True)
+        item["zBottom"] = bb.Min.Z * to_mm
+        item["thickness"] = (bb.Max.Z - bb.Min.Z) * to_mm
+        res = _slab_outline(brep)
+        if res is not None:
+            pts, holes, area = res
+            item["outline"] = [[p.X * to_mm, p.Y * to_mm] for p in pts]
+            item["holes"] = holes
+            item["area"] = area * to_mm * to_mm / 1e6
+        elif item["closed"]:
+            item["reason"] = "no horizontal face found"
+        floors.append(item)
+    return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "floors": floors}
+
+
 def list_layers():
     doc = Rhino.RhinoDoc.ActiveDoc
     names = []
@@ -455,7 +527,7 @@ class Handler(BaseHTTPRequestHandler):
                 "rhino": str(Rhino.RhinoApp.Version),
                 "port": self.server.server_address[1],
                 "pid": System.Diagnostics.Process.GetCurrentProcess().Id,
-                "features": ["bake", "layers", "cores", "walls", "recent", "open", "open-dialog"],
+                "features": ["bake", "layers", "cores", "walls", "floors", "recent", "open", "open-dialog"],
             })
             self._send(200, info)
             return
@@ -466,15 +538,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/layers":
                 self._send(200, run_on_ui_thread(list_layers))
                 return
-            if path in ("/cores", "/walls"):
+            readers = {"/cores": (read_cores, "Core"), "/walls": (read_walls, "Walls"), "/floors": (read_floors, "Floors")}
+            if path in readers:
                 # ?layer=Core 或 ?layer=Parent::Child（URL 编码）
                 params = {}
                 for part in query.split("&"):
                     if "=" in part:
                         k, v = part.split("=", 1)
                         params[k] = _unquote(v)
-                layer = params.get("layer") or ("Core" if path == "/cores" else "Walls")
-                fn = read_cores if path == "/cores" else read_walls
+                fn, default_layer = readers[path]
+                layer = params.get("layer") or default_layer
                 result = run_on_ui_thread(lambda: fn(layer))
                 self._send(200 if result.get("ok") else 404, result)
                 return

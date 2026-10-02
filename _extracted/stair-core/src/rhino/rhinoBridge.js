@@ -184,42 +184,105 @@ export async function readRhinoWalls(layer, { fetch: fetchImpl, baseUrl = RHINO_
   return { walls: j.walls || [], skipped: Number(j.skipped) || 0 };
 }
 
-/* 纯逻辑：把 Rhino 里读到的墙（毫米，Rhino 世界坐标：y 朝上）加进平面图工具的 plan（毫米，SVG 坐标：y 朝下）。
-   做法：整批平移到左上角留 margin，并把 y 翻过来（Rhino 的北 = 平面图的上）；厚度用 Rhino 给的（没有就 defaultT），夹到 40–600；
-   没有底图时把画布 naturalW/H 撑大到装得下；有底图时不动比例和画布（墙按原毫米尺寸放在左上角，用户自己拖到位）。
+/* ---------- Rhino → 平面图的坐标基准 ----------
+   Rhino 世界坐标（毫米，y 朝上）→ 平面图 plan 坐标（毫米，SVG y 朝下）：planX = x − x0 + margin，planY = y0 − y + margin。
+   基准 {x0, y0, margin} 存在 plan.rhinoFrame 里：第一次导入按这批几何的范围定（最左 / 最北贴着 1 m 边距），
+   之后导入的墙 / 地板都用同一个基准，所以在平面图里位置互相对得上。新几何超出左边或上边时，基准往外挪，
+   plan 里已有的东西（墙、核心筒、边界、路径、识别候选）整体平移同样的量——有底图时不平移（底图没法跟着挪），让它超出去。 */
+const RHINO_MARGIN = 1000;
+
+export function shiftPlan(plan, dx, dy) {
+  if (!dx && !dy) return plan;
+  const mv = (p) => (p && Number.isFinite(p.x) && Number.isFinite(p.y) ? { ...p, x: p.x + dx, y: p.y + dy } : p);
+  const seg = (w) => ({ ...w, x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
+  return {
+    ...plan,
+    boundary: (plan.boundary || []).map(mv),
+    cores: (plan.cores || []).map(mv),
+    walls: (plan.walls || []).map(seg),
+    wallCandidates: (plan.wallCandidates || []).map(seg),
+    doorCandidates: (plan.doorCandidates || []).map(seg),
+    stairCandidates: (plan.stairCandidates || []).map(mv),
+    paths: (plan.paths || []).map((p) => (p.kind === "auto" ? { ...p, src: mv(p.src) } : { ...p, pts: (p.pts || []).map(mv) })),
+  };
+}
+
+/* 给一批 Rhino 几何（范围 bbox，毫米）准备基准：返回 {plan（可能已整体平移）, toPlan(x,y)}。 */
+function rhinoFrameFor(base, bbox) {
+  let frame = base.rhinoFrame && Number.isFinite(base.rhinoFrame.x0) && Number.isFinite(base.rhinoFrame.y0) ? { margin: RHINO_MARGIN, ...base.rhinoFrame } : null;
+  let plan = base;
+  if (!frame) frame = { x0: bbox.minX, y0: bbox.maxY, margin: RHINO_MARGIN };
+  else {
+    const dx = Math.max(0, frame.x0 - bbox.minX); // 新几何比基准更靠左 / 更靠北多少
+    const dy = Math.max(0, bbox.maxY - frame.y0);
+    if ((dx || dy) && !base.bgSrc) {
+      frame = { ...frame, x0: frame.x0 - dx, y0: frame.y0 + dy };
+      plan = shiftPlan(base, dx, dy);
+    }
+  }
+  const toPlan = (x, y) => ({ x: Math.round(x - frame.x0 + frame.margin), y: Math.round(frame.y0 - y + frame.margin) });
+  return { plan: { ...plan, rhinoFrame: frame }, toPlan, margin: frame.margin };
+}
+
+/* 没有底图时把画布撑大到装得下这些点（按 mmPerPx 换算成"像素"尺寸）；有底图时不动。 */
+function growCanvas(plan, pts, margin) {
+  if (plan.bgSrc || !pts.length) return plan;
+  const scale = Number(plan.mmPerPx) || 1;
+  const maxX = Math.max(...pts.map((p) => p.x)), maxY = Math.max(...pts.map((p) => p.y));
+  return {
+    ...plan,
+    naturalW: Math.max(Number(plan.naturalW) || 0, Math.ceil((maxX + margin) / scale)),
+    naturalH: Math.max(Number(plan.naturalH) || 0, Math.ceil((maxY + margin) / scale)),
+  };
+}
+
+const bboxOf = (pts) => ({ minX: Math.min(...pts.map((p) => p.x)), maxX: Math.max(...pts.map((p) => p.x)), minY: Math.min(...pts.map((p) => p.y)), maxY: Math.max(...pts.map((p) => p.y)) });
+
+/* 纯逻辑：把 Rhino 里读到的墙加进平面图工具的 plan（用上面的共用基准）。厚度用 Rhino 给的（没有就 defaultT），夹到 40–600。
    返回新的 plan 对象（不改入参）。plan 可以是 null / 不完整（平面图页从没打开过），缺的字段用 PLAN_DEFAULTS 补。 */
-export function wallsToPlan(walls, plan, { defaultT = 200, margin = 1000 } = {}) {
+export function wallsToPlan(walls, plan, { defaultT = 200 } = {}) {
   const base = { ...PLAN_DEFAULTS, ...(plan || {}) };
   const list = (walls || []).filter((w) => [w.x1, w.y1, w.x2, w.y2].every(Number.isFinite) && Math.hypot(w.x2 - w.x1, w.y2 - w.y1) > 1);
   if (!list.length) return { ...base, walls: [...(base.walls || [])] };
-  let minX = Infinity, maxY = -Infinity, maxX = -Infinity, minY = Infinity;
-  for (const w of list) {
-    minX = Math.min(minX, w.x1, w.x2);
-    maxX = Math.max(maxX, w.x1, w.x2);
-    minY = Math.min(minY, w.y1, w.y2);
-    maxY = Math.max(maxY, w.y1, w.y2);
-  }
-  let nextId = Number.isFinite(base.nextId) ? base.nextId : 1;
+  const ends = list.flatMap((w) => [{ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 }]);
+  const { plan: framed, toPlan, margin } = rhinoFrameFor(base, bboxOf(ends));
+  let nextId = Number.isFinite(framed.nextId) ? framed.nextId : 1;
   const added = list.map((w) => {
     const tRaw = Number.isFinite(w.thickness) && w.thickness > 0 ? w.thickness : defaultT;
-    const wall = {
-      id: nextId++,
-      x1: Math.round(w.x1 - minX + margin),
-      y1: Math.round(maxY - w.y1 + margin),
-      x2: Math.round(w.x2 - minX + margin),
-      y2: Math.round(maxY - w.y2 + margin),
-      t: Math.round(Math.min(600, Math.max(40, tRaw))),
-    };
+    const a = toPlan(w.x1, w.y1), b = toPlan(w.x2, w.y2);
+    const wall = { id: nextId++, x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: Math.round(Math.min(600, Math.max(40, tRaw))) };
     if (w.name) wall.label = w.name;
     return wall;
   });
-  const out = { ...base, walls: [...(base.walls || []), ...added], nextId };
-  if (!base.bgSrc) {
-    const scale = Number(base.mmPerPx) || 1;
-    out.naturalW = Math.max(Number(base.naturalW) || 0, Math.ceil((maxX - minX + 2 * margin) / scale));
-    out.naturalH = Math.max(Number(base.naturalH) || 0, Math.ceil((maxY - minY + 2 * margin) / scale));
+  const out = { ...framed, walls: [...(framed.walls || []), ...added], nextId };
+  return growCanvas(out, added.flatMap((w) => [{ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 }]), margin);
+}
+
+/* 读某个图层上的地板：返回 {floors:[{id,name,layer,type,closed,reason,outline:[[x,y]…],area(m²),holes,zBottom,thickness}]}，毫米。
+   closed 为 false 的（不是封闭多重曲面）也在列表里，带 reason，让界面标红提示。 */
+export async function readRhinoFloors(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
+  const f = fetchImpl || globalThis.fetch;
+  let res;
+  try {
+    res = await f(baseUrl + "/floors?layer=" + encodeURIComponent(layer), { cache: "no-store" });
+  } catch {
+    throw new Error(RHINO_NOT_RUNNING_HINT);
   }
-  return out;
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.ok) throw new Error(t("读取地板失败：{0}", [(j && j.error) || `HTTP ${res.status}`]));
+  return { floors: j.floors || [] };
+}
+
+/* 纯逻辑：把一块地板的轮廓（Rhino 毫米，[[x,y],…] 或 [{x,y},…]）设为平面图的楼层边界（替换原有边界），用共用基准。
+   首尾重合的点去掉一个；少于 3 个点返回原 plan。 */
+export function floorToPlan(outline, plan) {
+  const base = { ...PLAN_DEFAULTS, ...(plan || {}) };
+  let pts = (outline || []).map((p) => (Array.isArray(p) ? { x: p[0], y: p[1] } : { x: p && p.x, y: p && p.y })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (pts.length > 1 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < 1) pts = pts.slice(0, -1);
+  if (pts.length < 3) return base;
+  const { plan: framed, toPlan, margin } = rhinoFrameFor(base, bboxOf(pts));
+  const boundary = pts.map((p) => toPlan(p.x, p.y));
+  return growCanvas({ ...framed, boundary }, boundary, margin);
 }
 
 /* 纯逻辑：把 Rhino 里读到的长方体（length ≥ width，毫米）和计算结果里各区段需要的核心筒外包尺寸比。
