@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, matchCoreDoors, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -299,6 +299,55 @@ await test("readRhinoFloors / floorToPlan：请求地址；封闭与否原样带
   assert.deepEqual([out.naturalW, out.naturalH], [32000, 22000]);
   assert.deepEqual(floorToPlan([[0, 0], [1, 1]], withWalls).boundary, [], "少于 3 点：不改");
   assert.equal(floorToPlan(r.floors[0].outline, null).boundary.length, 4, "没有 plan 也能用");
+});
+
+await test("matchCoreDoors：门贴哪个核心筒的哪个面、在哪一层、哪一端；按参照层推应在的端；宽/高校核；缺门与游离的门", () => {
+  // 核心筒 13000 × 6000，x 10000–23000，y 20000–26000，底 0 高 20000；楼面 L1 0 / L2 9000 / L3 13200 / L4 17000
+  const core = { id: "core", name: "Core A", centerX: 16500, centerY: 23000, length: 13000, width: 6000, angleDeg: 0, zBottom: 0, height: 20000 };
+  const levels = [{ level: 1, z: 0 }, { level: 2, z: 9000 }, { level: 3, z: 13200 }, { level: 4, z: 17000 }, { level: 5, z: 20800 }];
+  const floorEnd = { 1: 0, 2: 1, 3: 0, 4: 1, 5: 0 };
+  const door = (name, cx, cy, span, thick, z, h, angle = 90) => ({ id: name, name, centerX: cx, centerY: cy, length: span, width: thick, angleDeg: angle, zBottom: z, height: h });
+  const doors = [
+    door("L1 left", 9900, 21500, 1000, 200, 0, 2100), // 贴左端面（x=10000 外侧 200 厚），参照门
+    door("L2 right", 23100, 21500, 1000, 200, 9000, 2100), // L2 平台换端 → 应在右端 ✓
+    door("L3 wrong", 23100, 21500, 1000, 200, 13200, 2100), // L3 平台回到左端 → 应在左端 ✗
+    door("L4 narrow low", 23100, 21500, 800, 200, 17000, 2000), // 端对，但宽 800 < 950、高 2000 < 2030
+    door("side door", 16500, 19900, 1000, 200, 0, 2100, 0), // 贴长边（y=20000 外侧），u<0? 中心 u=0 → 端 1；楼层 L1（重复的门）
+    door("far away", 40000, 40000, 1000, 200, 0, 2100), // 不贴任何核心筒
+  ];
+  const r = matchCoreDoors([core], doors, { levels, floorEnd, stairType: "dogleg", reqWidth: 950, reqHeight: 2030 });
+  assert.equal(r.unattached.length, 1);
+  assert.equal(r.unattached[0].name, "far away");
+  const c = r.cores[0];
+  assert.equal(c.doors.length, 5);
+  assert.equal(c.refLevel, 1);
+  assert.equal(c.refEnd, 0, "参照：L1 的门在 −x 端");
+  const byName = Object.fromEntries(c.doors.map((d) => [d.name, d]));
+  assert.deepEqual([byName["L1 left"].face, byName["L1 left"].level, byName["L1 left"].end, byName["L1 left"].ok], ["end", 1, 0, true]);
+  assert.deepEqual([byName["L2 right"].level, byName["L2 right"].end, byName["L2 right"].expectedEnd, byName["L2 right"].endOk, byName["L2 right"].ok], [2, 1, 1, true, true]);
+  assert.deepEqual([byName["L3 wrong"].level, byName["L3 wrong"].end, byName["L3 wrong"].expectedEnd, byName["L3 wrong"].endOk, byName["L3 wrong"].ok], [3, 1, 0, false, false]);
+  assert.deepEqual([byName["L4 narrow low"].endOk, byName["L4 narrow low"].widthOk, byName["L4 narrow low"].heightOk, byName["L4 narrow low"].ok], [true, false, false, false]);
+  assert.equal(byName["side door"].face, "side");
+  assert.equal(byName["side door"].doorWidth, 1000, "门宽取水平长边");
+  assert.deepEqual(c.missingLevels, [], "L1–L4 都有门；L5 楼面 20800 ≥ 核心筒顶 20000 不算");
+  assert.equal(c.ok, false);
+  // 少一层：去掉 L2 → missingLevels 含 2
+  const r2 = matchCoreDoors([core], doors.filter((d) => d.name !== "L2 right"), { levels, floorEnd, reqWidth: 950, reqHeight: 2030 });
+  assert.deepEqual(r2.cores[0].missingLevels, [2]);
+  // 剪刀梯：不判断端
+  const r3 = matchCoreDoors([core], doors, { levels, floorEnd, stairType: "scissor", reqWidth: 950, reqHeight: 2030 });
+  assert.equal(r3.cores[0].doors.find((d) => d.name === "L3 wrong").endOk, null);
+  // 核心筒转 30°：门也跟着转才算贴面
+  const rot = { ...core, angleDeg: 30 };
+  const rad = Math.PI / 6;
+  const px = 16500 + (-6600) * Math.cos(rad), py = 23000 + (-6600) * Math.sin(rad); // 局部 (−6600, 0) → 贴 −x 端面外 100
+  const r4 = matchCoreDoors([rot], [door("rot door", px, py, 1000, 200, 0, 2100, 120)], { levels, floorEnd });
+  assert.equal(r4.unattached.length, 0);
+  assert.deepEqual([r4.cores[0].doors[0].face, r4.cores[0].doors[0].end], ["end", 0]);
+  // 楼层不明：门底在两层中间
+  const r5 = matchCoreDoors([core], [door("mid", 9900, 21500, 1000, 200, 4500, 2100)], { levels, floorEnd });
+  assert.equal(r5.cores[0].doors[0].level, null);
+  assert.equal(r5.cores[0].doors[0].ok, false);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
 import { loadPlan, savePlan, otherAppHref } from "../planBridge.js";
-import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, matchCoreDoors, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
 const readSavedPort = () => {
@@ -38,7 +38,7 @@ const KIND_OPTIONS = [
 const fmtMm = (v) => Math.round(v).toLocaleString("en-US");
 const fmtM = (v) => (v / 1000).toFixed(2);
 
-export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
+export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = [], floorEnd = {}, stairType = "dogleg", doorReq = { width: 950, height: 2030 } }) {
   const [status, setStatus] = useState(null); // null | {checking} | {ok, rhino, doc, docPath, units, port, baseUrl} | {ok:false, error}
   // 连到哪个 Rhino 窗口 / 哪个文件
   const [instances, setInstances] = useState([]); // scanRhino 的结果
@@ -56,6 +56,12 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
   const cores = useMemo(() => (rawBoxes ? checkCoreBoxes(rawBoxes, zones, { perCore }) : null), [rawBoxes, zones, perCore]);
   const maxShafts = Math.max(1, ...(zones || []).map((z) => (z.shafts ? z.shafts.length : 1)));
   const shaftUnit = (zones || []).some((z) => (z.shafts || []).some((s) => s.stairs && s.stairs.length > 1)) ? t("个梯井（剪刀梯一井两梯）") : t("部楼梯");
+  // 核心筒的门
+  const [doorLayer, setDoorLayer] = useState("Core Doors");
+  const [doorsReading, setDoorsReading] = useState(false);
+  const [rawDoors, setRawDoors] = useState(null);
+  const [doorsError, setDoorsError] = useState(null);
+  const doorCheck = useMemo(() => (rawBoxes && rawDoors ? matchCoreDoors(rawBoxes, rawDoors, { levels, floorEnd, stairType, reqWidth: doorReq.width, reqHeight: doorReq.height }) : null), [rawBoxes, rawDoors, levels, floorEnd, stairType, doorReq.width, doorReq.height]);
   // 读墙体
   const [wallLayer, setWallLayer] = useState("Walls");
   const [wallsReading, setWallsReading] = useState(false);
@@ -95,6 +101,10 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       if (pickW && !ls.some((l) => l.path === wallLayer)) setWallLayer(pickW.path);
       const pickF = ls.find((l) => /floor|slab|地板|楼板/i.test(l.path) && l.objects > 0) || ls.find((l) => /floor|slab|地板|楼板/i.test(l.path));
       if (pickF && !ls.some((l) => l.path === floorLayer)) setFloorLayer(pickF.path);
+      const pickD = ls.find((l) => /door|门/i.test(l.path) && l.objects > 0) || ls.find((l) => /door|门/i.test(l.path));
+      if (pickD && !ls.some((l) => l.path === doorLayer)) setDoorLayer(pickD.path);
+      setRawDoors(null);
+      setDoorsError(null);
     } catch (err) {
       setReadError(err && err.message ? err.message : String(err));
     }
@@ -184,6 +194,20 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
       setReading(false);
     }
   };
+  /* 读门：门也是长方体，用 /cores 的最小外接矩形接口读；核心筒还没读过就顺便读一次 */
+  const readDoors = async () => {
+    setDoorsReading(true);
+    setDoorsError(null);
+    try {
+      if (!rawBoxes) setRawBoxes(await readRhinoCores(layer, opts));
+      setRawDoors(await readRhinoCores(doorLayer, opts));
+    } catch (err) {
+      setDoorsError(err && err.message ? err.message : String(err));
+    } finally {
+      setDoorsReading(false);
+    }
+  };
+  const endName = (e) => (e === 0 ? "A" : "B");
   const readWalls = async () => {
     setWallsReading(true);
     setWallsError(null);
@@ -382,6 +406,60 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones }) {
                 </div>
               ))}
               <div style={{ color: C.muted, fontSize: 11 }}>{t("比对规则：一个核心筒放 k 个梯井需要 宽向 = 最宽 k 个梯井内净宽之和 + (k+1) × 墙厚，梯段方向 = 最长梯井内净长 + 2 × 墙厚；长方体的长边对所需的长边、短边对短边（横放竖放都算）。各种组合的尺寸见下方“楼梯间核心筒尺寸”。")}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 1a. 核心筒的门：贴在核心筒长方体表面的小长方体 → 哪层、哪端、宽高是否满足 */}
+      {online && (
+        <div className="mt-3" data-testid="rhino-doors">
+          <div className="flex flex-wrap items-center gap-2">
+            <span style={{ fontWeight: 600 }}>{t("核心筒的门")}</span>
+            <span className="flex items-center gap-1">
+              {t("图层")}
+              <LayerTreePicker layers={layers} value={doorLayer} onChange={setDoorLayer} C={C} />
+            </span>
+            <button type="button" onClick={readDoors} disabled={doorsReading} className="rounded px-3 py-1" style={{ background: doorsReading ? C.rule : C.accent, color: doorsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-doors-btn">
+              {doorsReading ? t("读取中…") : t("读取门并校核")}
+            </button>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("门画成紧贴核心筒长方体表面的小长方体（厚度不限）；按门底标高判断楼层；以最低一层的门为参照，按各层楼层平台在哪一端判断门应在同侧还是对侧；宽 ≥ 设计门扇 {0}、高 ≥ 2 030（3.4.3.4.(4)）", [fmtMm(doorReq.width)])}</span>
+          </div>
+          {doorsError && <div className="mt-1" style={{ color: C.err }}>{doorsError}</div>}
+          {doorCheck && (
+            <div className="mt-2 flex flex-col gap-2" data-testid="rhino-doors-result">
+              {doorCheck.cores.map((c, i) => (
+                <div key={c.core.id || i} className="rounded p-2" style={{ border: `1px solid ${c.ok ? C.ok : C.err}`, background: c.ok ? "#F0F8F3" : "#FBEAEA" }} data-testid="rhino-doors-core">
+                  <div style={{ fontWeight: 700 }}>
+                    {c.ok ? "✓" : "✗"} {c.core.name || t("长方体 {0}", [i + 1])}
+                    <span style={{ color: C.muted, fontWeight: 400, fontSize: 11.5 }}>
+                      {" · "}
+                      {c.doors.length ? t("{0} 个门；参照 L{1} 的门在 {2} 端", [c.doors.length, c.refLevel, endName(c.refEnd)]) : t("没有贴在这个核心筒上的门")}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-col gap-0.5" style={{ fontSize: 11.5 }}>
+                    {c.doors.map((d, j) => (
+                      <div key={d.id || j} style={{ color: d.ok ? C.ok : C.err }} data-testid="rhino-door-row" data-ok={d.ok ? "1" : "0"}>
+                        {d.ok ? "✓" : "✗"} {d.level != null ? `L${d.level}` : t("楼层不明（底标高 {0} m）", [fmtM(d.dz)])}
+                        {d.name ? ` ${d.name}` : ""}：{t("在 {0} 端", [endName(d.end)])}
+                        {d.face === "side" ? t("（长边）") : t("（端墙）")}
+                        {d.endOk === false ? t("，应在 {0} 端（L{1} 的楼层平台在另一端）✗", [endName(d.expectedEnd), d.level]) : d.endOk === true ? t("，端正确") : ""}
+                        {t("；宽 {0}", [fmtMm(d.doorWidth)])}
+                        {d.widthOk ? " ✓" : t(" < {0} ✗", [fmtMm(doorReq.width)])}
+                        {t("，高 {0}", [fmtMm(d.doorHeight)])}
+                        {d.heightOk ? " ✓" : t(" < {0} ✗", [fmtMm(doorReq.height)])}
+                      </div>
+                    ))}
+                    {c.missingLevels.length > 0 && <div style={{ color: C.err }}>{t("✗ 缺门：L{0}", [c.missingLevels.join("、L")])}</div>}
+                  </div>
+                </div>
+              ))}
+              {doorCheck.unattached.length > 0 && (
+                <div style={{ color: C.warn || C.err, fontSize: 11.5 }} data-testid="rhino-doors-unattached">
+                  {t("⚠ {0} 个门没有贴在任何核心筒表面上（请把门长方体贴到核心筒长方体的面上）：{1}", [doorCheck.unattached.length, doorCheck.unattached.map((d) => d.name || "—").join("、")])}
+                </div>
+              )}
+              <div style={{ color: C.muted, fontSize: 11 }}>{t("A / B 端只是核心筒长度方向的两头（按长方体的局部坐标），不是左右；楼层由门底标高相对核心筒底的高度和各层层高推出。剪刀梯暂不判断端。")}</div>
             </div>
           )}
         </div>

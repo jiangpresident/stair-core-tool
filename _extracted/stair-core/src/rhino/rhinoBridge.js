@@ -169,6 +169,82 @@ export async function readRhinoCores(layer, { fetch: fetchImpl, baseUrl = RHINO_
   return j.cores || [];
 }
 
+/* ---------- 核心筒的门：Rhino 里门画成紧贴核心筒长方体表面的小长方体（厚度随意） ----------
+   cores / doors 都是 /cores 接口返回的最小外接矩形（毫米：centerX/Y、length ≥ width、angleDeg、zBottom、height）。
+   levels：[{level, z}]，z 是各层楼面相对核心筒底（L1 楼面）的高度；floorEnd：res.floorEnd（每层楼层平台在哪一端，0/1，折返梯会换端）；
+   以最低一层有门的那一层为参照：它的门在哪一端，其它层就按"楼层平台是否与参照层同端"推出应该在哪一端。
+   返回 { cores:[{ core, refEnd, refLevel, doors:[…], missingLevels:[…] }], unattached:[…] }。 */
+export function matchCoreDoors(cores, doors, { levels = [], floorEnd = {}, stairType = "dogleg", reqWidth = 950, reqHeight = 2030, tol = 100 } = {}) {
+  const toLocal = (core, x, y) => {
+    const a = (-(core.angleDeg || 0) * Math.PI) / 180;
+    const dx = x - core.centerX, dy = y - core.centerY;
+    return { u: dx * Math.cos(a) - dy * Math.sin(a), v: dx * Math.sin(a) + dy * Math.cos(a) };
+  };
+  const byCore = (cores || []).map((core) => ({ core, doors: [] }));
+  const unattached = [];
+  for (const d of doors || []) {
+    let best = null;
+    for (const entry of byCore) {
+      const { core } = entry;
+      const L = Math.max(core.length, core.width), W = Math.min(core.length, core.width);
+      const { u, v } = toLocal(core, d.centerX, d.centerY);
+      const half = Math.min(d.length, d.width) / 2; // 门的半厚
+      const du = Math.abs(u) - L / 2, dv = Math.abs(v) - W / 2;
+      let face = null, gap = Infinity;
+      if (dv >= -tol && dv <= half + tol && Math.abs(u) <= L / 2 + tol) { face = "side"; gap = Math.abs(dv); }
+      if (du >= -tol && du <= half + tol && Math.abs(v) <= W / 2 + tol && Math.abs(du) < gap) { face = "end"; gap = Math.abs(du); }
+      if (face && (!best || gap < best.gap)) best = { entry, face, gap, u, v, L, W };
+    }
+    if (!best) {
+      unattached.push({ ...d });
+      continue;
+    }
+    // 楼层：门底标高相对核心筒底，找最近的楼面；偏差超过该层层高的 40% 就算楼层不明
+    const dz = (d.zBottom || 0) - (best.entry.core.zBottom || 0);
+    let lv = null, bestDz = Infinity;
+    levels.forEach((f, i) => {
+      const next = levels[i + 1];
+      const storey = next ? next.z - f.z : (levels[i - 1] ? f.z - levels[i - 1].z : 3000);
+      const diff = Math.abs(dz - f.z);
+      if (diff < bestDz && diff <= 0.4 * storey) { bestDz = diff; lv = f.level; }
+    });
+    const width = Math.max(d.length, d.width), height = d.height || 0;
+    best.entry.doors.push({
+      ...d,
+      face: best.face,
+      end: best.u < 0 ? 0 : 1, // 门在核心筒长度方向的哪一半：0 = 局部 −x 端，1 = +x 端
+      level: lv,
+      dz,
+      doorWidth: width,
+      doorHeight: height,
+      widthOk: width + 1e-6 >= reqWidth,
+      heightOk: height + 1e-6 >= reqHeight,
+    });
+  }
+  const out = byCore.map(({ core, doors: list }) => {
+    list.sort((a, b) => (a.level ?? 999) - (b.level ?? 999) || a.dz - b.dz);
+    const ref = list.find((d) => d.level != null) || null;
+    const refEnd = ref ? ref.end : null, refLevel = ref ? ref.level : null;
+    for (const d of list) {
+      if (d.level == null || !ref || stairType !== "dogleg") {
+        d.expectedEnd = null;
+        d.endOk = null; // 不判断
+      } else {
+        const same = (floorEnd[d.level] || 0) === (floorEnd[refLevel] || 0);
+        d.expectedEnd = same ? refEnd : 1 - refEnd;
+        d.endOk = d.end === d.expectedEnd;
+      }
+      d.ok = d.widthOk && d.heightOk && d.endOk !== false && d.level != null;
+    }
+    // 核心筒高度范围内、但没有门的楼层
+    const coreTop = (core.zBottom || 0) + (core.height || 0);
+    const present = new Set(list.map((d) => d.level));
+    const missingLevels = levels.filter((f) => f.z + (core.zBottom || 0) < coreTop - 1 && !present.has(f.level)).map((f) => f.level);
+    return { core, refEnd, refLevel, doors: list, missingLevels, ok: list.length > 0 && list.every((d) => d.ok) && missingLevels.length === 0 };
+  });
+  return { cores: out, unattached };
+}
+
 /* 读某个图层上的墙体：返回 {walls:[{id,name,layer,type,x1,y1,x2,y2,thickness|null,zBottom,height}], skipped}，全部毫米。
    直线 / 多段线按线段拆（thickness 为 null，网页用默认厚度）；Brep / 挤出体 / 网格按最小外接矩形取中线和厚度；弧线等跳过计入 skipped。 */
 export async function readRhinoWalls(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {

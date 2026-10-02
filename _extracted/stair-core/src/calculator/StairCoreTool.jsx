@@ -5698,6 +5698,13 @@ export default function StairCoreTool() {
                 buildModel={() => buildSolids(res, inp, shaftIdx, 1, 999)}
                 shaftLabel={inp.stairType === "dogleg" ? t("楼梯 #{0}", [shaft.stairs[0].k]) : t("梯井 {0}", [shaftIdx + 1])}
                 zones={res.zones}
+                levels={inp.floors.reduce((acc, f, i) => {
+                  acc.push({ level: i + 1, z: i === 0 ? 0 : acc[i - 1].z + (Number(inp.floors[i - 1].ffh) || 0) });
+                  return acc;
+                }, [])}
+                floorEnd={res.floorEnd}
+                stairType={inp.stairType}
+                doorReq={{ width: inp.adv.doorLeaf, height: 2030 }}
               />
             </Panel>
 
