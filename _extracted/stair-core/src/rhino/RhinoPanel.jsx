@@ -370,7 +370,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
               </select>
               {shaftUnit}
             </label>
-            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("认 Brep / 挤出体 / 网格 / 封闭矩形曲线；斜放的按最小外接矩形算；含子图层")}</span>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("认 Brep / 挤出体 / 网格 / 封闭矩形曲线；斜放的按最小外接矩形算；只读这一层，不含子图层")}</span>
           </div>
           {readError && <div className="mt-1" style={{ color: C.err }}>{readError}</div>}
           {cores && cores.length === 0 && <div className="mt-1" style={{ color: C.muted }}>{t("这个图层上没有可识别的长方体")}</div>}
@@ -477,7 +477,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
             <button type="button" onClick={readWalls} disabled={wallsReading} className="rounded px-3 py-1" style={{ background: wallsReading ? C.rule : C.accent, color: wallsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-walls-btn">
               {wallsReading ? t("读取中…") : t("读取墙体")}
             </button>
-            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("直线 / 多段线按线段算（厚度用平面图默认值）；Brep / 挤出体按最小外接矩形取中线和厚度；弧线跳过；含子图层")}</span>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("直线 / 多段线按线段算（厚度用平面图默认值）；Brep / 挤出体按最小外接矩形取中线和厚度；弧线跳过；只读这一层，不含子图层")}</span>
           </div>
           {wallsError && <div className="mt-1" style={{ color: C.err }}>{wallsError}</div>}
           {walls && walls.walls.length === 0 && (
@@ -551,7 +551,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
             <button type="button" onClick={readFloors} disabled={floorsReading} className="rounded px-3 py-1" style={{ background: floorsReading ? C.rule : C.accent, color: floorsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-floors-btn">
               {floorsReading ? t("读取中…") : t("读取地板")}
             </button>
-            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("只认封闭多重曲面（closed polysurface）；轮廓取最大的水平面；含子图层")}</span>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("只认封闭多重曲面（closed polysurface）；轮廓取最大的水平面；只读这一层，不含子图层")}</span>
           </div>
           {floorsError && <div className="mt-1" style={{ color: C.err }}>{floorsError}</div>}
           {floors && floors.floors.length === 0 && <div className="mt-1" style={{ color: C.muted }}>{t("这个图层上没有对象")}</div>}

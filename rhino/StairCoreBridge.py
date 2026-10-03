@@ -219,10 +219,7 @@ def read_cores(layer_path):
     idx = doc.Layers.FindByFullPath(layer_path, -1)
     if idx < 0:
         return {"ok": False, "error": "layer not found: " + layer_path}
-    wanted = set([doc.Layers[idx].Id])
-    for layer in doc.Layers:
-        if not layer.IsDeleted and layer.ParentLayerId in wanted:
-            wanted.add(layer.Id)
+    wanted = set([doc.Layers[idx].Id])  # 只读这一层本身，不含子图层（要读子图层就在网页的图层树里直接选它）
     out = []
     for obj in doc.Objects:
         if obj.Attributes.LayerIndex < 0 or doc.Layers[obj.Attributes.LayerIndex].Id not in wanted:
@@ -255,10 +252,7 @@ def read_walls(layer_path):
     idx = doc.Layers.FindByFullPath(layer_path, -1)
     if idx < 0:
         return {"ok": False, "error": "layer not found: " + layer_path}
-    wanted = set([doc.Layers[idx].Id])
-    for layer in doc.Layers:
-        if not layer.IsDeleted and layer.ParentLayerId in wanted:
-            wanted.add(layer.Id)
+    wanted = set([doc.Layers[idx].Id])  # 只读这一层本身，不含子图层（要读子图层就在网页的图层树里直接选它）
     walls = []
     skipped = 0
     for obj in doc.Objects:
@@ -333,10 +327,7 @@ def read_floors(layer_path):
     idx = doc.Layers.FindByFullPath(layer_path, -1)
     if idx < 0:
         return {"ok": False, "error": "layer not found: " + layer_path}
-    wanted = set([doc.Layers[idx].Id])
-    for layer in doc.Layers:
-        if not layer.IsDeleted and layer.ParentLayerId in wanted:
-            wanted.add(layer.Id)
+    wanted = set([doc.Layers[idx].Id])  # 只读这一层本身，不含子图层（要读子图层就在网页的图层树里直接选它）
     floors = []
     for obj in doc.Objects:
         if obj.Attributes.LayerIndex < 0 or doc.Layers[obj.Attributes.LayerIndex].Id not in wanted:

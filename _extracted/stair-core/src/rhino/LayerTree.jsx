@@ -158,7 +158,7 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                 {node.visible === false && <span style={{ fontSize: 10, color: C.muted }}>{t("隐藏")}</span>}
                 <span style={{ color: C.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 18, textAlign: "right" }}>{node.objects ? node.objects : ""}</span>
                 {node.childObjects > 0 && (
-                  <span title={t("子图层上的对象（读取时一并计入）")} style={{ color: C.muted, fontSize: 10, fontVariantNumeric: "tabular-nums" }}>
+                  <span title={t("子图层上的对象（不计入；要读就在树里直接选那个子图层）")} style={{ color: C.muted, fontSize: 10, fontVariantNumeric: "tabular-nums" }}>
                     +{node.childObjects}
                   </span>
                 )}
