@@ -265,15 +265,11 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
     if (!cfg || !onPlanFromRhino) return;
     setLD(level, { building: true, msg: null });
     try {
-      const [fl, wl, cs, ds] = await Promise.all([
-        readRhinoFloors(cfg.floorLayer, opts),
-        readRhinoWalls(cfg.wallLayer, opts),
-        rawBoxes ? Promise.resolve(rawBoxes) : readRhinoCores(layer, opts),
-        rawDoors ? Promise.resolve(rawDoors) : readRhinoCores(doorLayer, opts).catch(() => []),
-      ]);
+      // 每次都从 Rhino 重新读核心筒和门（不用缓存）：用户在 Rhino 里挪了核心筒，再点生成就要是新位置
+      const [fl, wl, cs, ds] = await Promise.all([readRhinoFloors(cfg.floorLayer, opts), readRhinoWalls(cfg.wallLayer, opts), readRhinoCores(layer, opts), readRhinoCores(doorLayer, opts).catch(() => [])]);
       setLD(level, { floors: fl, walls: wl });
-      if (!rawBoxes) setRawBoxes(cs);
-      if (!rawDoors) setRawDoors(ds);
+      setRawBoxes(cs);
+      setRawDoors(ds);
       const dc = matchCoreDoors(cs, ds, { levels, floorEnd, stairType, reqWidth: doorReq.width, reqHeight: doorReq.height });
       const slab = fl.floors.find((f) => f.closed && f.outline && f.outline.length >= 3);
       let plan = null; // 每次从空白开始，不叠加
