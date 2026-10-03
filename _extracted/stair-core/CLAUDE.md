@@ -588,6 +588,15 @@
 - **验证**：浏览器浅色：`data-theme=light`、按钮字体 Share Tech Mono 已加载、有 text-shadow；点 ☾ → 刷新后 `data-theme=dark`、body / 面板底色变深、文字冷白、按钮发光 + 扫描线伪元素、Rhino 校核行底换成深色的 okBg/errBg、`__i18nMissing()` 为空；截图核对；验证时发现窗格里已经是深色（用户自己点过 ☾），测完保持用户的选择。
 - 注意：热力图的绿 / 红、楼梯编号色 `STAIR_COLORS`、平面图上门 / 墙的少数专用色没有做深色变体（深底上仍可辨）；三维视图（three.js）背景没改；CRT 字体只对拉丁字符生效。
 
+**2026-10-02 第四十七轮补丁：浅色模式完全恢复原样；深色模式改成琥珀色 CRT（照用户给的 OpenVMS 监视器截图）；主题做成可扩展的注册表（`test:calc`/`test:rhino`/`build` 过，词典 0 缺；浏览器两种模式核对）：**
+
+- 用户："白色模式和原来一样不要改，但是深色模式按照我上传图的色调来做。在代码层面保留以后可客制化的能力。"
+- **浅色模式**：CRT 的按钮字体 / 发光 / 扫描线只在 `<html data-crt="1">` 时生效，浅色主题 `crt: false`，按钮回到原来的 Avenir / Segoe 字体、无 text-shadow；配色就是原来的 LIGHT。
+- **琥珀色 CRT**（`THEME_DEFS.dark`）：底 #0A0805 / 面板 #110D07（近黑略带褐），文字、线框、标题全部琥珀 #FFB000，次要文字暗琥珀 #B47A1C，边线 #5C4214；强调（按钮、选中的语言 / 主题、选中行）用**反显**：琥珀底 + 黑字（新增配色键 `onAccent`，30 处写死的按钮白字 `color: "#fff"` 换成 `C.onAccent`）；通过 / 警告用亮琥珀 #FFD166 / #FFC84A，不通过用橙红 #FF5A3C 保证能分辨；发光色 rgba(255,176,0,.55) + 扫描线。图纸 / 平面图 SVG 里 15 处写死的白色（平台填充、文字描边光晕、门扇、热力图格线）换成 `C.panel`，深色下不再是白块；有底图时抠墙的白线保留。
+- **可客制化**（`src/theme.js`）：`THEME_DEFS = { light, dark }` 每项 `{label, title, palette, vars, crt, dark}`；加主题只加一项，右上角按钮自动出现，`index.css` 只认 CSS 变量和 `data-crt` / `data-dark` 属性不写主题名；`applyThemeToDocument()` 负责写属性和变量；不改代码也能微调：localStorage `stair-core:theme-overrides` = `{"dark": {"accent": "#00FF66"}}` 会盖在对应主题的 palette 上。
+- **验证**：浏览器深色：`data-theme=dark`、`data-crt=1`、body #0A0805、面板 #110D07、标题 / 按钮文字 #FFB000、按钮 text-shadow 琥珀发光、选中态琥珀底黑字；切浅色：`data-crt=0`、按钮字体回到 Avenir Next / Segoe UI、text-shadow none、无伪元素、body #F2F4F3、语言按钮蓝底白字（和原来一致）；切回深色（用户窗格原本的选择）。截图核对与 OpenVMS 截图色调一致。
+- 注意：三维视图背景、热力图绿 / 红、楼梯编号色没有做琥珀变体；CRT 字体只覆盖拉丁字符。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

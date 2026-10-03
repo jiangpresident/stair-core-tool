@@ -802,5 +802,5 @@ export const EN = {
   "最多到计算器里的层数（{0} 层）；核心筒和门不分层，用上面的设置": "Up to the number of storeys in the calculator ({0}); cores and doors are not per level and use the settings above",
   "<div style=\"padding:16px;font-size:12.5px;color:#5B6B7B\">当前浏览器无法创建 WebGL 上下文，三维模型不可用。</div>": "<div style=\"padding:16px;font-size:12.5px;color:#5B6B7B\">This browser cannot create a WebGL context; the 3D model is unavailable.</div>",
   "浅色模式": "Light mode",
-  "深色模式（CRT）": "Dark mode (CRT)",
+  "深色模式（琥珀色 CRT）": "Dark mode (amber CRT)",
 };

@@ -14,7 +14,7 @@ export default function LangToggle() {
     document.title = isPlan ? `${t("平面图工具")} · ${t("核心筒疏散楼梯计算器")}` : t("核心筒疏散楼梯计算器");
   }, []);
   const pill = { display: "flex", border: `1px solid ${C.rule}`, borderRadius: 999, background: C.panel, boxShadow: "0 1px 4px rgba(0,0,0,0.12)", overflow: "hidden", fontSize: 12, fontWeight: 600 };
-  const btn = (active) => ({ padding: "4px 10px", border: "none", cursor: active ? "default" : "pointer", background: active ? C.accent : "transparent", color: active ? "#fff" : C.ink });
+  const btn = (active) => ({ padding: "4px 10px", border: "none", cursor: active ? "default" : "pointer", background: active ? C.accent : "transparent", color: active ? C.onAccent : C.ink });
   return (
     <div style={{ position: "fixed", top: 10, right: 12, zIndex: 50, display: "flex", gap: 6 }} data-testid="top-toggles">
       <div role="group" aria-label="Theme / 主题" data-testid="theme-toggle" style={pill}>

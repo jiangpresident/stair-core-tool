@@ -2,42 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 主题变量：<html data-theme> 由 src/theme.js 在加载时写入 */
+/* 主题变量和 data-* 属性由 src/theme.js 的 applyThemeToDocument() 在加载时写到 <html> 上；
+   这里不写任何主题名，加新主题只改 theme.js */
 :root {
   --page-bg: #F2F4F3;
   --row-hover: #F1F5F9;
-  --crt-glow: rgba(31, 78, 121, 0.35);
-}
-html[data-theme="dark"] {
-  --page-bg: #0E1317;
-  --row-hover: #1E2A33;
-  --crt-glow: rgba(49, 200, 111, 0.65);
-  color-scheme: dark;
+  --crt-glow: transparent;
 }
 html, body { margin: 0; background: var(--page-bg); }
 
-/* 按钮文字：CRT 显示屏风格——等宽字体 + 荧光发光；深色模式下发光更强，加一层扫描线 */
-button {
+/* CRT 主题（data-crt="1"）的按钮文字：等宽字体 + 荧光发光 + 很淡的横向扫描线。浅色主题不受影响。 */
+html[data-crt="1"] button {
   font-family: "Share Tech Mono", ui-monospace, Consolas, "Courier New", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", monospace;
   letter-spacing: 0.04em;
-  text-shadow: 0 0 1px currentColor, 0 0 6px var(--crt-glow);
-}
-html[data-theme="dark"] button {
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 10px var(--crt-glow);
   position: relative;
 }
-html[data-theme="dark"] button::after {
-  /* 细扫描线：只在深色模式，很淡，不影响点击 */
+html[data-crt="1"] button::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0.14) 2px, rgba(0, 0, 0, 0.14) 3px);
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0.16) 2px, rgba(0, 0, 0, 0.16) 3px);
 }
-html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea {
-  color-scheme: dark;
-}
+/* 深色主题下的表单控件用深色外观（下拉箭头、滚动条等） */
+html[data-dark="1"] { color-scheme: dark; }
+html[data-dark="1"] input, html[data-dark="1"] select, html[data-dark="1"] textarea { color-scheme: dark; }
 
-/* 图层树等列表行的悬停色（Tailwind 的 slate 在深色下太亮，改用变量） */
+/* 列表行悬停色（图层树等） */
 .row-hover:hover { background: var(--row-hover); }

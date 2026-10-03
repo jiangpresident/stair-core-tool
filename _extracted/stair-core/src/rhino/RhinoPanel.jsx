@@ -406,7 +406,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
               {t("图层")}
               <LayerTreePicker layers={layers} value={layer} onChange={setLayer} C={C} />
             </span>
-            <button type="button" onClick={read} disabled={reading} className="rounded px-3 py-1" style={{ background: reading ? C.rule : C.accent, color: reading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-read-btn">
+            <button type="button" onClick={read} disabled={reading} className="rounded px-3 py-1" style={{ background: reading ? C.rule : C.accent, color: reading ? C.muted : C.onAccent, fontWeight: 600 }} data-testid="rhino-read-btn">
               {reading ? t("读取中…") : t("读取并校核")}
             </button>
             <label className="flex items-center gap-1" title={t("校核目标：Rhino 里这一个长方体要装下几个梯井。4 部疏散梯通常分在几个核心筒里，不必一个核心筒装全部。")}>
@@ -470,7 +470,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
               {t("图层")}
               <LayerTreePicker layers={layers} value={doorLayer} onChange={setDoorLayer} C={C} />
             </span>
-            <button type="button" onClick={readDoors} disabled={doorsReading} className="rounded px-3 py-1" style={{ background: doorsReading ? C.rule : C.accent, color: doorsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-doors-btn">
+            <button type="button" onClick={readDoors} disabled={doorsReading} className="rounded px-3 py-1" style={{ background: doorsReading ? C.rule : C.accent, color: doorsReading ? C.muted : C.onAccent, fontWeight: 600 }} data-testid="rhino-doors-btn">
               {doorsReading ? t("读取中…") : t("读取门并校核")}
             </button>
             <span style={{ color: C.muted, fontSize: 11.5 }}>{t("门画成紧贴核心筒长方体表面的小长方体（厚度不限）；按门底标高判断楼层（门底须落在楼面上，偏差 > 50 mm 报错）；以最低一层的门为参照，按各层楼层平台在哪一端判断门应在同侧还是对侧；宽 ≥ 设计门扇 {0}、高 ≥ 2 030（3.4.3.4.(4)）", [fmtMm(doorReq.width)])}</span>
@@ -609,7 +609,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
                   </div>
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => buildLevel(cfg.level)} disabled={d.building || !onPlanFromRhino} className="rounded px-3 py-1" style={{ background: d.building ? C.rule : C.accent, color: d.building ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-level-build">
+                  <button type="button" onClick={() => buildLevel(cfg.level)} disabled={d.building || !onPlanFromRhino} className="rounded px-3 py-1" style={{ background: d.building ? C.rule : C.accent, color: d.building ? C.muted : C.onAccent, fontWeight: 600 }} data-testid="rhino-level-build">
                     {d.building ? t("读取中…") : t("生成 {0} 的平面图（地板 + 墙 + 核心筒）", [`L${cfg.level}`])}
                   </button>
                   {d.msg && (
@@ -631,7 +631,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
           <summary style={{ cursor: "pointer", color: C.muted, fontSize: 12 }}>{t("反向：把计算出的楼梯实体发送到 Rhino（可选）")}</summary>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <input value={name} onChange={(e) => setName(e.target.value)} className="rounded px-2 py-0.5" style={{ border: `1px solid ${C.rule}`, width: 120, fontFamily: "monospace" }} title={t("Rhino 里的图层名（StairCore::<名字>）")} aria-label="Rhino layer name" />
-            <button type="button" onClick={send} disabled={sending} className="rounded px-3 py-1" style={{ background: sending ? C.rule : C.ok, color: sending ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-send">
+            <button type="button" onClick={send} disabled={sending} className="rounded px-3 py-1" style={{ background: sending ? C.rule : C.ok, color: sending ? C.muted : C.onAccent, fontWeight: 600 }} data-testid="rhino-send">
               {sending ? t("发送中…") : t("发送到 Rhino：{0}（整栋）", [shaftLabel])}
             </button>
           </div>

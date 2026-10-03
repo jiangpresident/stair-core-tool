@@ -988,7 +988,7 @@ function Seg({ options, value, onChange }) {
           type="button"
           onClick={() => onChange(o.value)}
           className="px-3 py-1"
-          style={{ fontSize: 12, background: value === o.value ? C.accent : C.panel, color: value === o.value ? "#fff" : C.ink, borderRight: `1px solid ${C.rule}` }}
+          style={{ fontSize: 12, background: value === o.value ? C.accent : C.panel, color: value === o.value ? C.onAccent : C.ink, borderRight: `1px solid ${C.rule}` }}
         >
           {o.label}
         </button>
@@ -1242,7 +1242,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
       const sweep = (d.side === "left") !== high ? 0 : 1;
       return (
         <g key={i}>
-          <rect x={d.side === "left" ? X(-wall) + 0.5 : X(innerL) - 0.5} y={Y(d.along)} width={wall * s} height={r} fill="#fff" />
+          <rect x={d.side === "left" ? X(-wall) + 0.5 : X(innerL) - 0.5} y={Y(d.along)} width={wall * s} height={r} fill={C.panel} />
           <line x1={xw} y1={yh} x2={xw + dirx * r} y2={yh} stroke={C.ink} strokeWidth="1.4" />
           <circle cx={xw} cy={yh} r="2" fill={C.ink} />
           <path d={`M ${xw} ${yc} A ${r} ${r} 0 0 ${sweep} ${xw + dirx * r} ${yh}`} stroke={C.lineSoft} strokeWidth="0.8" fill="none" strokeDasharray="3 2" />
@@ -1255,7 +1255,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
     const sweep = d.side === "top" ? 1 : 0;
     return (
       <g key={i}>
-        <rect x={xh} y={d.side === "top" ? Y(-wall) + 0.5 : Y(innerW) - 0.5} width={r} height={wall * s} fill="#fff" />
+        <rect x={xh} y={d.side === "top" ? Y(-wall) + 0.5 : Y(innerW) - 0.5} width={r} height={wall * s} fill={C.panel} />
         <line x1={xh} y1={yw} x2={xh} y2={yw + diry * r} stroke={C.ink} strokeWidth="1.4" />
         <path d={`M ${xh + r} ${yw} A ${r} ${r} 0 0 ${sweep} ${xh} ${yw + diry * r}`} stroke={C.lineSoft} strokeWidth="0.8" fill="none" strokeDasharray="3 2" />
       </g>
@@ -1278,7 +1278,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
       </text>
       {/* 墙体 */}
       <rect x={X(-wall)} y={Y(-wall)} width={outerL * s} height={outerW * s} fill="url(#hp)" stroke={C.ink} strokeWidth="1.2" />
-      <rect x={X(0)} y={Y(0)} width={innerL * s} height={innerW * s} fill="#fff" stroke={C.ink} strokeWidth="1.2" />
+      <rect x={X(0)} y={Y(0)} width={innerL * s} height={innerW * s} fill={C.panel} stroke={C.ink} strokeWidth="1.2" />
       {/* 平台 */}
       {landings.map((l, i) => (
         <g key={i}>
@@ -1307,7 +1307,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
               </g>
             )}
             <line x1={X(b.arrow[0])} y1={ym} x2={X(b.arrow[1])} y2={ym} stroke={C.ink} strokeWidth="1.2" markerEnd="url(#ah)" />
-            <text x={X((xmin + xmax) / 2)} y={ym - 6} fontSize="10" fill={C.ink} textAnchor="middle" style={{ paintOrder: "stroke", stroke: "#fff", strokeWidth: 3 }}>
+            <text x={X((xmin + xmax) / 2)} y={ym - 6} fontSize="10" fill={C.ink} textAnchor="middle" style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: 3 }}>
               {b.label}
             </text>
           </g>
@@ -1322,7 +1322,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
               <rect x={X(xa)} y={Y(d.y)} width={(xb - xa) * s} height={d.h * s} fill="url(#hp)" stroke={C.ink} strokeWidth="1" />
             ) : d.h > 0 ? (
               <g>
-                <rect x={X(xa)} y={Y(d.y)} width={(xb - xa) * s} height={d.h * s} fill="#fff" stroke={C.ink} strokeWidth="0.9" />
+                <rect x={X(xa)} y={Y(d.y)} width={(xb - xa) * s} height={d.h * s} fill={C.panel} stroke={C.ink} strokeWidth="0.9" />
                 <text x={X((xa + xb) / 2)} y={Y(d.y + d.h / 2)} fontSize="8" fill={C.muted} textAnchor="middle" dominantBaseline="middle">
                   {t("梯井 / 栏板")}
                 </text>
@@ -1516,7 +1516,7 @@ function SectionSVG({ res, inp, shaftIdx, secStart }) {
       {/* 门洞 */}
       {doorsDraw.map((d, i) => (
         <g key={i}>
-          <rect x={d.side === "left" ? X(-wall) - 0.5 : X(innerL) - 0.5} y={Zpx(d.z + 2100)} width={wall * s + 1} height={2100 * s} fill="#fff" />
+          <rect x={d.side === "left" ? X(-wall) - 0.5 : X(innerL) - 0.5} y={Zpx(d.z + 2100)} width={wall * s + 1} height={2100 * s} fill={C.panel} />
           <line x1={d.side === "left" ? X(-wall) : X(innerL)} y1={Zpx(d.z + 2100)} x2={d.side === "left" ? X(0) : X(innerL + wall)} y2={Zpx(d.z + 2100)} stroke={C.ink} strokeWidth="1" />
           <line x1={d.side === "left" ? X(-wall / 2) : X(innerL + wall / 2)} y1={Zpx(d.z + 2100)} x2={d.side === "left" ? X(-wall / 2) : X(innerL + wall / 2)} y2={Zpx(d.z)} stroke={C.ink} strokeWidth="2.2" />
           <text x={d.side === "left" ? X(-wall / 2) : X(innerL + wall / 2)} y={Zpx(d.z + 1050)} fontSize="9" fill={C.muted} textAnchor="middle" transform={`rotate(-90 ${d.side === "left" ? X(-wall / 2) : X(innerL + wall / 2)} ${Zpx(d.z + 1050)})`}>
@@ -2093,7 +2093,7 @@ function CoreStairPreview({ core, wallT, geometry }) {
               strokeDasharray={`${t * 0.6} ${t * 0.4}`}
             />
             {L.label && (
-              <text x={cx} y={cy} fontSize={font} fill={core.color} textAnchor="middle" dominantBaseline="middle" style={{ paintOrder: "stroke", stroke: "#fff", strokeWidth: font * 0.18 }}>
+              <text x={cx} y={cy} fontSize={font} fill={core.color} textAnchor="middle" dominantBaseline="middle" style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: font * 0.18 }}>
                 {L.label}
               </text>
             )}
@@ -2106,7 +2106,7 @@ function CoreStairPreview({ core, wallT, geometry }) {
           <polygon
             key={"dv" + i}
             points={poly.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
-            fill={d.hatched ? C.wallFill : "#fff"}
+            fill={d.hatched ? C.wallFill : C.panel}
             stroke={C.ink}
             strokeWidth={Math.max(4, t * 0.06)}
           />
@@ -2141,7 +2141,7 @@ function CoreStairPreview({ core, wallT, geometry }) {
               fill={C.ink}
               textAnchor="middle"
               dominantBaseline="middle"
-              style={{ paintOrder: "stroke", stroke: "#fff", strokeWidth: font * 0.22 }}
+              style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: font * 0.22 }}
             >
               {band.label}
             </text>
@@ -2240,7 +2240,7 @@ function CoreShape({ core, mmW, wallT, vb, svgRef, selected, undersized, tooClos
           style={{ pointerEvents: "none" }}
         />
       )}
-      <text x={center.x} y={center.y} fontSize={font} fill={core.color} textAnchor="middle" dominantBaseline="middle" style={{ pointerEvents: "none", paintOrder: "stroke", stroke: "#fff", strokeWidth: font * 0.18 }}>
+      <text x={center.x} y={center.y} fontSize={font} fill={core.color} textAnchor="middle" dominantBaseline="middle" style={{ pointerEvents: "none", paintOrder: "stroke", stroke: C.panel, strokeWidth: font * 0.18 }}>
         {core.label}
       </text>
     </g>
@@ -2466,7 +2466,7 @@ function WallEndHandle({ wall, end, mmW, vb, svgRef, walls, cores, panMode, grid
       y={y - r}
       width={r * 2}
       height={r * 2}
-      fill="#fff"
+      fill={C.panel}
       stroke={C.ink}
       strokeWidth={r / 5}
       onPointerDown={onDown}
@@ -3808,7 +3808,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-3" style={{ fontSize: 12.5 }}>
-        <button type="button" onClick={() => fileRef.current && fileRef.current.click()} className="rounded px-3 py-1.5" style={{ background: C.accent, color: "#fff", fontWeight: 600 }}>
+        <button type="button" onClick={() => fileRef.current && fileRef.current.click()} className="rounded px-3 py-1.5" style={{ background: C.accent, color: C.onAccent, fontWeight: 600 }}>
           {t("上传平面图")}
         </button>
         <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={onFile} style={{ display: "none" }} />
@@ -3841,10 +3841,10 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             <span>
               “{fileName}{t("” 是 Saved Plans 里的示例文件，确定要用当前画布覆盖它吗？")}
             </span>
-            <button type="button" onClick={() => doSavePlan(false, true)} className="rounded px-3 py-1" style={{ background: C.err, color: "#fff", fontWeight: 600 }} data-testid="overwrite-yes">
+            <button type="button" onClick={() => doSavePlan(false, true)} className="rounded px-3 py-1" style={{ background: C.err, color: C.onAccent, fontWeight: 600 }} data-testid="overwrite-yes">
               {t("确定覆盖示例")}
             </button>
-            <button type="button" onClick={() => doSavePlan(true)} className="rounded px-3 py-1" style={{ background: C.accent, color: "#fff", fontWeight: 600 }} data-testid="overwrite-saveas">
+            <button type="button" onClick={() => doSavePlan(true)} className="rounded px-3 py-1" style={{ background: C.accent, color: C.onAccent, fontWeight: 600 }} data-testid="overwrite-saveas">
               {t("另存为…")}
             </button>
             <button type="button" onClick={() => setOverwriteConfirm(false)} className="rounded px-3 py-1" style={{ border: `1px solid ${C.rule}` }} data-testid="overwrite-cancel">
@@ -3877,7 +3877,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               setPlan((p) => ({ ...p, mode: p.mode === "calibrate" ? "view" : "calibrate" }));
             }}
             className="rounded px-3 py-1.5"
-            style={{ background: plan.mode === "calibrate" ? C.accent : C.panel, color: plan.mode === "calibrate" ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+            style={{ background: plan.mode === "calibrate" ? C.accent : C.panel, color: plan.mode === "calibrate" ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
           >
             {t("标定比例")}
           </button>
@@ -3903,7 +3903,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                   aria-label={t("两点实际距离（mm）")}
                 />
                 <span>mm</span>
-                <button type="button" onClick={applyCalibration} className="rounded px-3 py-1" style={{ background: C.accent, color: "#fff", fontWeight: 600 }}>
+                <button type="button" onClick={applyCalibration} className="rounded px-3 py-1" style={{ background: C.accent, color: C.onAccent, fontWeight: 600 }}>
                   {t("确定")}
                 </button>
                 <button type="button" onClick={() => setCalibPts([])} className="rounded px-2 py-1" style={{ border: `1px solid ${C.rule}` }}>
@@ -3964,7 +3964,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                   </option>
                 ))}
               </select>
-              <button type="button" onClick={run} disabled={busy} className="rounded px-3 py-1.5" style={{ background: busy ? C.rule : C.accent, color: busy ? C.muted : "#fff", fontWeight: 600, fontSize: 12.5 }} data-testid="detect-run">
+              <button type="button" onClick={run} disabled={busy} className="rounded px-3 py-1.5" style={{ background: busy ? C.rule : C.accent, color: busy ? C.muted : C.onAccent, fontWeight: 600, fontSize: 12.5 }} data-testid="detect-run">
                 {busy ? t("识别中…") : t("识别{0}", [method.walls])}
               </button>
               {method.key === "marker" && (
@@ -4089,7 +4089,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               type="button"
               onClick={acceptAllCandidates}
               className="rounded px-3 py-1.5"
-              style={{ background: C.ok, color: "#fff", fontWeight: 600, fontSize: 12.5 }}
+              style={{ background: C.ok, color: C.onAccent, fontWeight: 600, fontSize: 12.5 }}
               title={t("墙候选→正式墙；楼梯框→核心筒（贴在框边上的门当它的门）；其余门→挂到最近的墙上，附近没墙的跳过")}
               data-testid="accept-all-candidates"
             >
@@ -4107,11 +4107,11 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
           <>
             <span style={{ color: C.accent, fontWeight: 600 }}>{t("识别到")} {plan.wallCandidates.length} {t("段可能的墙（蓝色虚线，点选中后双击接受，或按 Delete/Backspace 单独丢弃）")}</span>
             {selectedWallCandidateId != null && (
-              <button type="button" onClick={() => acceptWallCandidate(selectedWallCandidateId)} className="rounded px-3 py-1.5" style={{ background: C.accent, color: "#fff", fontWeight: 600 }}>
+              <button type="button" onClick={() => acceptWallCandidate(selectedWallCandidateId)} className="rounded px-3 py-1.5" style={{ background: C.accent, color: C.onAccent, fontWeight: 600 }}>
                 {t("接受选中的这一段")}
               </button>
             )}
-            <button type="button" onClick={acceptAllWallCandidates} className="rounded px-3 py-1.5" style={{ background: C.ok, color: "#fff", fontWeight: 600 }}>
+            <button type="button" onClick={acceptAllWallCandidates} className="rounded px-3 py-1.5" style={{ background: C.ok, color: C.onAccent, fontWeight: 600 }}>
               {t("全部接受为墙体")}
             </button>
             <button type="button" onClick={clearWallCandidates} className="rounded px-3 py-1.5" style={{ border: `1px solid ${C.rule}` }}>
@@ -4123,7 +4123,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
           type="button"
           onClick={() => setPlan((p) => ({ ...p, mode: p.mode === "boundary" ? "view" : "boundary" }))}
           className="rounded px-3 py-1.5"
-          style={{ background: plan.mode === "boundary" ? C.accent : C.panel, color: plan.mode === "boundary" ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+          style={{ background: plan.mode === "boundary" ? C.accent : C.panel, color: plan.mode === "boundary" ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
         >
           {t("绘制楼层边界")}
         </button>
@@ -4145,7 +4145,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             </option>
           ))}
         </select>
-        <button type="button" onClick={addCore} className="rounded px-3 py-1.5" style={{ background: C.ok, color: "#fff", fontWeight: 600 }}>
+        <button type="button" onClick={addCore} className="rounded px-3 py-1.5" style={{ background: C.ok, color: C.onAccent, fontWeight: 600 }}>
           {t("添加核心筒到平面图")}
         </button>
         <span style={{ color: C.muted }}>|</span>
@@ -4154,7 +4154,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             <button type="button" onClick={undoWallPoint} className="rounded px-2 py-1" style={{ border: `1px solid ${C.rule}` }}>
               {t("撤销上一点")}
             </button>
-            <button type="button" onClick={finishWall} className="rounded px-3 py-1.5" style={{ background: C.accent, color: "#fff" }}>
+            <button type="button" onClick={finishWall} className="rounded px-3 py-1.5" style={{ background: C.accent, color: C.onAccent }}>
               {t("完成墙体")}
             </button>
             <button type="button" onClick={cancelWall} className="rounded px-2 py-1" style={{ border: `1px solid ${C.rule}` }}>
@@ -4178,7 +4178,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
           type="button"
           onClick={() => setPlan((p) => ({ ...p, mode: p.mode === "door" ? "view" : "door" }))}
           className="rounded px-3 py-1.5"
-          style={{ background: plan.mode === "door" ? C.accent : C.panel, color: plan.mode === "door" ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+          style={{ background: plan.mode === "door" ? C.accent : C.panel, color: plan.mode === "door" ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
           disabled={plan.walls.length === 0}
         >
           {t("添加门")}
@@ -4189,7 +4189,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             <button type="button" onClick={undoPathPoint} className="rounded px-2 py-1" style={{ border: `1px solid ${C.rule}` }}>
               {t("撤销上一点")}
             </button>
-            <button type="button" onClick={finishPath} className="rounded px-3 py-1.5" style={{ background: C.accent, color: "#fff" }}>
+            <button type="button" onClick={finishPath} className="rounded px-3 py-1.5" style={{ background: C.accent, color: C.onAccent }}>
               {t("完成路径")}
             </button>
           </>
@@ -4200,7 +4200,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               type="button"
               onClick={() => setPlan((p) => ({ ...p, mode: p.mode === "autopath" ? "view" : "autopath" }))}
               className="rounded px-3 py-1.5"
-              style={{ background: plan.mode === "autopath" ? C.accent : C.panel, color: plan.mode === "autopath" ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+              style={{ background: plan.mode === "autopath" ? C.accent : C.panel, color: plan.mode === "autopath" ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
               disabled={plan.cores.length === 0}
             >
               {t("自动最短路径（避开墙体）")}
@@ -4209,7 +4209,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               type="button"
               onClick={() => setHeatmapOn((v) => !v)}
               className="rounded px-3 py-1.5"
-              style={{ background: heatmapOn ? C.accent : C.panel, color: heatmapOn ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+              style={{ background: heatmapOn ? C.accent : C.panel, color: heatmapOn ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
               disabled={plan.cores.length === 0}
               title={t("整层按格子算每格到最近核心筒门的最短路径（避墙、穿门），达标绿、超标红；限值在右侧“疏散路径 / 距离校核”面板里设")}
             >
@@ -4221,7 +4221,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
       {presetConfirm && (
         <div className="flex flex-wrap items-center gap-2 mb-3 rounded p-3" style={{ border: `1px solid ${C.warn}`, background: C.warnBg, fontSize: 12.5 }}>
           <span>{t("载入示例平面会清空当前的边界、核心筒、墙体、门与路径，确定继续吗？")}</span>
-          <button type="button" onClick={applyPreset} className="rounded px-3 py-1" style={{ background: C.accent, color: "#fff", fontWeight: 600 }}>
+          <button type="button" onClick={applyPreset} className="rounded px-3 py-1" style={{ background: C.accent, color: C.onAccent, fontWeight: 600 }}>
             {t("确定载入")}
           </button>
           <button type="button" onClick={() => setPresetConfirm(false)} className="rounded px-3 py-1" style={{ border: `1px solid ${C.rule}` }}>
@@ -4257,7 +4257,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               type="button"
               onClick={() => setPanMode((v) => !v)}
               className="rounded px-2 py-0.5"
-              style={{ background: panMode ? C.accent : C.panel, color: panMode ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+              style={{ background: panMode ? C.accent : C.panel, color: panMode ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
             >
               {t("✋ 平移")}
             </button>
@@ -4266,7 +4266,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               onClick={() => setGridSnap((v) => !v)}
               title={t("开启后，拖动核心筒 / 墙 / 门 / 边界顶点都会吸附到 10 cm 网格上")}
               className="rounded px-2 py-0.5"
-              style={{ background: gridSnap ? C.accent : C.panel, color: gridSnap ? "#fff" : C.ink, border: `1px solid ${C.rule}` }}
+              style={{ background: gridSnap ? C.accent : C.panel, color: gridSnap ? C.onAccent : C.ink, border: `1px solid ${C.rule}` }}
             >
               {t("▦ 网格吸附")}
             </button>
@@ -4319,7 +4319,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                   const unreachable = !Number.isFinite(c.dist);
                   const fill = unreachable ? "#6B7280" : c.dist <= heatmapLimit ? C.ok : C.err;
                   return (
-                    <rect key={c.key} x={c.x} y={c.y} width={c.w} height={c.h} fill={fill} fillOpacity={unreachable ? 0.45 : 0.32} stroke="#fff" strokeOpacity={0.35} strokeWidth={Math.max(4, mmW / 2500)} style={{ pointerEvents: "auto" }}>
+                    <rect key={c.key} x={c.x} y={c.y} width={c.w} height={c.h} fill={fill} fillOpacity={unreachable ? 0.45 : 0.32} stroke={C.panel} strokeOpacity={0.35} strokeWidth={Math.max(4, mmW / 2500)} style={{ pointerEvents: "auto" }}>
                       <title>{unreachable ? t("走不到任何核心筒的门（被墙围死或漏开门）") : t("到最近核心筒门 {0} m / 限值 {1} m {2}", [(c.dist / 1000).toFixed(1), (heatmapLimit / 1000).toFixed(0), c.dist <= heatmapLimit ? "✓" : "✗"])}</title>
                     </rect>
                   );
@@ -4397,7 +4397,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               <g key={"dim" + c.id} style={{ cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); applyDimensionCandidate(c); }}>
                 <line x1={c.segX1} y1={c.segY1} x2={c.segX2} y2={c.segY2} stroke="#8B5CF6" strokeWidth={Math.max(20, mmW / 400)} strokeDasharray={`${mmW / 200} ${mmW / 400}`} />
                 <circle cx={c.x} cy={c.y} r={Math.max(60, mmW / 180)} fill="#8B5CF6" fillOpacity={0.25} stroke="#8B5CF6" strokeWidth={Math.max(6, mmW / 1800)} />
-                <text x={c.x} y={c.y} fontSize={Math.max(90, mmW / 120)} fill="#6D28D9" textAnchor="middle" dominantBaseline="middle" style={{ paintOrder: "stroke", stroke: "#fff", strokeWidth: mmW / 700 }}>
+                <text x={c.x} y={c.y} fontSize={Math.max(90, mmW / 120)} fill="#6D28D9" textAnchor="middle" dominantBaseline="middle" style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: mmW / 700 }}>
                   {c.text}
                 </text>
               </g>
@@ -4456,7 +4456,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               return (
                 <g key={"sym" + d.id} style={{ pointerEvents: "none" }}>
                   <path d={geo.arcD} fill="none" stroke={C.ink} strokeWidth={Math.max(4, mmW / 2600)} />
-                  <path d={geo.leafD} fill="#fff" stroke={C.ink} strokeWidth={Math.max(6, mmW / 1800)} />
+                  <path d={geo.leafD} fill={C.panel} stroke={C.ink} strokeWidth={Math.max(6, mmW / 1800)} />
                 </g>
               );
             })}
@@ -4570,7 +4570,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                 <g key={"csym" + c.id} style={{ pointerEvents: "none" }}>
                   <line x1={g1.x} y1={g1.y} x2={g2.x} y2={g2.y} stroke={plan.bgSrc ? "#fff" : C.canvas} strokeWidth={inp.wall + 30} />
                   <path d={geo.arcD} fill="none" stroke={C.ink} strokeWidth={Math.max(4, mmW / 2600)} />
-                  <path d={geo.leafD} fill="#fff" stroke={C.ink} strokeWidth={Math.max(6, mmW / 1800)} />
+                  <path d={geo.leafD} fill={C.panel} stroke={C.ink} strokeWidth={Math.max(6, mmW / 1800)} />
                 </g>
               );
             })}
@@ -4980,7 +4980,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               {t("确定清空整张平面图吗？底图、比例、边界、")}{plan.cores.length} {t("个核心筒、")}{plan.walls.length} {t("面墙、")}{plan.doors.length} {t("个门和所有路径都会被清掉")}
               {fileName ? t("，并与文件“{0}”断开关联（文件本身不会被改）", [fileName]) : ""}{t("。清空后可按 Ctrl+Z 撤销。")}
             </span>
-            <button type="button" onClick={clearPlanAll} className="rounded px-3 py-1" style={{ background: C.err, color: "#fff", fontWeight: 600 }} data-testid="clear-confirm-yes">
+            <button type="button" onClick={clearPlanAll} className="rounded px-3 py-1" style={{ background: C.err, color: C.onAccent, fontWeight: 600 }} data-testid="clear-confirm-yes">
               {t("确定清空")}
             </button>
             <button type="button" onClick={() => setClearConfirm(false)} className="rounded px-3 py-1" style={{ border: `1px solid ${C.rule}` }} data-testid="clear-confirm-no">
@@ -5186,7 +5186,7 @@ export default function StairCoreTool() {
               ["NBC 2020", t("国家建筑规范")],
             ].map(([a, b], i) => (
               <div key={a} className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded" style={{ background: i === 0 ? C.accent : C.panel, color: i === 0 ? "#fff" : C.ink, border: `1px solid ${i === 0 ? C.accent : C.rule}` }}>
+                <div className="px-3 py-1 rounded" style={{ background: i === 0 ? C.accent : C.panel, color: i === 0 ? C.onAccent : C.ink, border: `1px solid ${i === 0 ? C.accent : C.rule}` }}>
                   <div style={{ fontWeight: 600 }}>{a}</div>
                   <div style={{ fontSize: 10.5, opacity: 0.8 }}>{b}</div>
                 </div>
@@ -5204,7 +5204,7 @@ export default function StairCoreTool() {
                 type="button"
                 onClick={apply}
                 className="w-full rounded px-4 py-2"
-                style={{ background: dirty ? C.accent : C.tag, color: dirty ? "#fff" : C.muted, fontSize: 14, fontWeight: 600, border: "none", cursor: dirty ? "pointer" : "default" }}
+                style={{ background: dirty ? C.accent : C.tag, color: dirty ? C.onAccent : C.muted, fontSize: 14, fontWeight: 600, border: "none", cursor: dirty ? "pointer" : "default" }}
               >
                 {dirty ? t("确认并计算") : t("结果已是最新")}
               </button>
@@ -5284,7 +5284,7 @@ export default function StairCoreTool() {
               <Num label={t("层高")} value={batch.ffh} onChange={(v) => setBatch({ ...batch, ffh: v })} unit="mm" step={50} />
               <Num label={t("楼板厚")} value={batch.slab} onChange={(v) => setBatch({ ...batch, slab: v })} unit="mm" step={10} />
               <Num label={t("卧室数（住宅用）")} value={batch.bedrooms} onChange={(v) => setBatch({ ...batch, bedrooms: v })} unit={t("间")} />
-              <button type="button" onClick={applyBatch} className="mt-2 w-full rounded py-2" style={{ background: C.accent, color: "#fff", fontSize: 13, fontWeight: 600 }}>
+              <button type="button" onClick={applyBatch} className="mt-2 w-full rounded py-2" style={{ background: C.accent, color: C.onAccent, fontSize: 13, fontWeight: 600 }}>
                 {t("应用到 L")}{Math.min(batch.from, batch.to)} – L{Math.max(batch.from, batch.to)}
               </button>
             </Panel>
@@ -5756,7 +5756,7 @@ export default function StairCoreTool() {
                 <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="rhino-plan-levels">
                   <span style={{ color: C.muted, fontSize: 12.5 }}>{t("楼层")}</span>
                   {rhinoLevels.map((L) => (
-                    <button key={L} type="button" onClick={() => selectRhinoLevel(L)} className="rounded px-3 py-1" style={{ border: `1px solid ${L === rhinoSelected ? C.accent : C.rule}`, background: L === rhinoSelected ? C.accent : C.panel, color: L === rhinoSelected ? "#fff" : C.ink, fontWeight: 600, fontSize: 12.5 }} data-testid="rhino-plan-level" data-level={L} data-selected={L === rhinoSelected ? "1" : "0"}>
+                    <button key={L} type="button" onClick={() => selectRhinoLevel(L)} className="rounded px-3 py-1" style={{ border: `1px solid ${L === rhinoSelected ? C.accent : C.rule}`, background: L === rhinoSelected ? C.accent : C.panel, color: L === rhinoSelected ? C.onAccent : C.ink, fontWeight: 600, fontSize: 12.5 }} data-testid="rhino-plan-level" data-level={L} data-selected={L === rhinoSelected ? "1" : "0"}>
                       L{L}
                     </button>
                   ))}
@@ -5859,7 +5859,7 @@ export default function StairCoreTool() {
             target="_blank"
             rel="noopener"
             className="inline-flex items-center gap-2 rounded px-4 py-2"
-            style={{ background: C.accent, color: "#fff", fontWeight: 600, textDecoration: "none" }}
+            style={{ background: C.accent, color: C.onAccent, fontWeight: 600, textDecoration: "none" }}
           >
             {t("在新标签页打开平面图工具 →")}
           </a>

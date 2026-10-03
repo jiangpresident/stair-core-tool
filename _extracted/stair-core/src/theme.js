@@ -1,39 +1,15 @@
-// 主题（浅色 / 深色）：跟语言切换一样，存 localStorage 后整页刷新——配色常量 C 在各模块加载时就定下来了，热切换覆盖不到。
-// 两套调色板都在这里；StairCoreTool.jsx 的 `C` 按当前主题取其中一套，其它模块从那里 import C。
+// 主题注册表：浅色（原样）和深色（琥珀色 CRT，照 OpenVMS 监视器那种橙黄荧光屏）。
+// 机制跟语言切换一样：存 localStorage 后整页刷新——配色常量 C 在各模块加载时就定下来了，热切换覆盖不到。
+//
+// 以后要加 / 改主题，只动这个文件：
+//   1. 在 THEME_DEFS 里加一项：{ label, title, palette（C 的全部键）, vars（CSS 变量）, crt（按钮要不要 CRT 字体 + 发光 + 扫描线）, dark（表单控件用深色外观）}
+//   2. 右上角的切换按钮会自动多一个；index.css 只读 CSS 变量和 data-crt / data-dark 属性，不用改。
+//   3. 临时微调不改代码：localStorage 里放 stair-core:theme-overrides = {"dark": {"accent": "#00FF66"}}，会盖在对应主题的 palette 上。
 export const THEME_KEY = "stair-core:theme";
-export const THEMES = [
-  { key: "light", label: "☀", title: "浅色模式" },
-  { key: "dark", label: "☾", title: "深色模式（CRT）" },
-];
+export const THEME_OVERRIDES_KEY = "stair-core:theme-overrides";
 
-export function getTheme() {
-  try {
-    if (typeof localStorage === "undefined") return "light"; // Node（测试）
-    const v = localStorage.getItem(THEME_KEY);
-    return v === "dark" ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-}
-export const isDark = () => getTheme() === "dark";
-
-export function setTheme(key) {
-  try {
-    localStorage.setItem(THEME_KEY, key === "dark" ? "dark" : "light");
-  } catch {
-    /* 隐私模式等 */
-  }
-  if (typeof window !== "undefined") window.location.reload();
-}
-
-/* 把主题写到 <html data-theme>，index.css 里按它切 body 背景、按钮 CRT 发光强度、悬停色 */
-export function applyThemeToDocument() {
-  if (typeof document === "undefined") return;
-  document.documentElement.dataset.theme = getTheme();
-}
-
-/* 浅色：原来的配色，加了几个以前写死在代码里的底色 */
-export const LIGHT_C = {
+/* 浅色：原来的配色，加了几个以前写死在代码里的底色；onAccent 是强调色按钮上的文字色 */
+const LIGHT = {
   ink: "#1B2733",
   muted: "#5B6B7B",
   paper: "#F2F4F3",
@@ -44,42 +20,117 @@ export const LIGHT_C = {
   hatch: "#7A8A99",
   flightFill: "#EEF2F5",
   accent: "#1F4E79",
+  onAccent: "#FFFFFF",
   warn: "#B7791F",
   ok: "#2F855A",
   err: "#B83A3A",
   rule: "#D3DBE2",
   tag: "#EDF2F6",
-  okBg: "#F0F8F3", // 通过 / 够 的行底
-  errBg: "#FBEAEA", // 不通过 的行底
-  warnBg: "#FFF8E8", // 提醒条底
-  selBg: "#D6E6F7", // 选中行底
-  canvas: "#F3F6F8", // 平面图画布 / 图纸底
-  canvasBg: "#FBFCFD", // 画布外框、表头等更浅的一层
+  okBg: "#F0F8F3",
+  errBg: "#FBEAEA",
+  warnBg: "#FFF8E8",
+  selBg: "#D6E6F7",
+  canvas: "#F3F6F8",
+  canvasBg: "#FBFCFD",
 };
 
-/* 深色（CRT 风）：近黑的底、荧光绿的强调色，文字偏冷白 */
-export const DARK_C = {
-  ink: "#DCE7E0",
-  muted: "#8A9BA3",
-  paper: "#0E1317",
-  panel: "#151C22",
-  line: "#7FB3E6",
-  lineSoft: "#4F6B84",
-  wallFill: "#2A3844",
-  hatch: "#6F8290",
-  flightFill: "#1B252D",
-  accent: "#31C86F",
-  warn: "#E6B04F",
-  ok: "#4FD182",
-  err: "#FF6B6B",
-  rule: "#2A3842",
-  tag: "#1C262E",
-  okBg: "#10261B",
-  errBg: "#2C1518",
-  warnBg: "#2A2213",
-  selBg: "#174232",
-  canvas: "#111820",
-  canvasBg: "#0F151B",
+/* 琥珀色 CRT：近黑略带褐的底，文字 / 线框都是琥珀色，强调（按钮、选中）用"反显"——琥珀底黑字 */
+const AMBER = {
+  ink: "#FFB000",
+  muted: "#B47A1C",
+  paper: "#0A0805",
+  panel: "#110D07",
+  line: "#FFB000",
+  lineSoft: "#8A6420",
+  wallFill: "#2A1F0C",
+  hatch: "#8A6420",
+  flightFill: "#17110A",
+  accent: "#FFB000",
+  onAccent: "#0A0805",
+  warn: "#FFC84A",
+  ok: "#FFD166",
+  err: "#FF5A3C",
+  rule: "#5C4214",
+  tag: "#1C150A",
+  okBg: "#1A1407",
+  errBg: "#2A0F08",
+  warnBg: "#1F1708",
+  selBg: "#3A2A08",
+  canvas: "#0F0B07",
+  canvasBg: "#0C0906",
 };
 
-export const C_FOR_THEME = () => (isDark() ? DARK_C : LIGHT_C);
+export const THEME_DEFS = {
+  light: {
+    label: "☀",
+    title: "浅色模式",
+    palette: LIGHT,
+    vars: { "--page-bg": LIGHT.paper, "--row-hover": "#F1F5F9", "--crt-glow": "transparent" },
+    crt: false,
+    dark: false,
+  },
+  dark: {
+    label: "☾",
+    title: "深色模式（琥珀色 CRT）",
+    palette: AMBER,
+    vars: { "--page-bg": AMBER.paper, "--row-hover": "#1E1609", "--crt-glow": "rgba(255, 176, 0, 0.55)" },
+    crt: true,
+    dark: true,
+  },
+};
+export const THEMES = Object.entries(THEME_DEFS).map(([key, d]) => ({ key, label: d.label, title: d.title }));
+
+export function getTheme() {
+  try {
+    if (typeof localStorage === "undefined") return "light"; // Node（测试）
+    const v = localStorage.getItem(THEME_KEY);
+    return v && THEME_DEFS[v] ? v : "light";
+  } catch {
+    return "light";
+  }
+}
+export const isDark = () => !!THEME_DEFS[getTheme()].dark;
+
+export function setTheme(key) {
+  try {
+    localStorage.setItem(THEME_KEY, THEME_DEFS[key] ? key : "light");
+  } catch {
+    /* 隐私模式等 */
+  }
+  if (typeof window !== "undefined") window.location.reload();
+}
+
+function overridesFor(key) {
+  try {
+    if (typeof localStorage === "undefined") return {};
+    const all = JSON.parse(localStorage.getItem(THEME_OVERRIDES_KEY) || "{}");
+    const o = all && all[key];
+    return o && typeof o === "object" ? o : {};
+  } catch {
+    return {};
+  }
+}
+
+/* 当前主题的配色（含 localStorage 里的微调覆盖） */
+export const C_FOR_THEME = () => {
+  const key = getTheme();
+  return { ...THEME_DEFS[key].palette, ...overridesFor(key) };
+};
+
+/* 把主题写到 <html>：data-theme / data-crt / data-dark + CSS 变量；index.css 只认这些 */
+export function applyThemeToDocument() {
+  if (typeof document === "undefined") return;
+  const key = getTheme();
+  const def = THEME_DEFS[key];
+  const el = document.documentElement;
+  el.dataset.theme = key;
+  el.dataset.crt = def.crt ? "1" : "0";
+  el.dataset.dark = def.dark ? "1" : "0";
+  for (const [k, v] of Object.entries(def.vars)) el.style.setProperty(k, v);
+  const pal = C_FOR_THEME();
+  el.style.setProperty("--page-bg", pal.paper);
+}
+
+// 兼容旧引用
+export const LIGHT_C = LIGHT;
+export const DARK_C = AMBER;
