@@ -208,6 +208,11 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
     }
   };
   const endName = (e) => (e === 0 ? "A" : "B");
+  // "L2（9.00 m）"：楼层号 + 括号里该层楼面相对 L1 的标高
+  const lvLabel = (L) => {
+    const f = levels.find((x) => x.level === L);
+    return f ? `L${L}（${fmtM(f.z)} m）` : `L${L}`;
+  };
   const readWalls = async () => {
     setWallsReading(true);
     setWallsError(null);
@@ -423,7 +428,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
             <button type="button" onClick={readDoors} disabled={doorsReading} className="rounded px-3 py-1" style={{ background: doorsReading ? C.rule : C.accent, color: doorsReading ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-doors-btn">
               {doorsReading ? t("读取中…") : t("读取门并校核")}
             </button>
-            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("门画成紧贴核心筒长方体表面的小长方体（厚度不限）；按门底标高判断楼层；以最低一层的门为参照，按各层楼层平台在哪一端判断门应在同侧还是对侧；宽 ≥ 设计门扇 {0}、高 ≥ 2 030（3.4.3.4.(4)）", [fmtMm(doorReq.width)])}</span>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("门画成紧贴核心筒长方体表面的小长方体（厚度不限）；按门底标高判断楼层（门底须落在楼面上，偏差 > 50 mm 报错）；以最低一层的门为参照，按各层楼层平台在哪一端判断门应在同侧还是对侧；宽 ≥ 设计门扇 {0}、高 ≥ 2 030（3.4.3.4.(4)）", [fmtMm(doorReq.width)])}</span>
           </div>
           {doorsError && <div className="mt-1" style={{ color: C.err }}>{doorsError}</div>}
           {doorCheck && (
@@ -434,14 +439,16 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
                     {c.ok ? "✓" : "✗"} {c.core.name || t("长方体 {0}", [i + 1])}
                     <span style={{ color: C.muted, fontWeight: 400, fontSize: 11.5 }}>
                       {" · "}
-                      {c.doors.length ? t("{0} 个门；参照 L{1} 的门在 {2} 端", [c.doors.length, c.refLevel, endName(c.refEnd)]) : t("没有贴在这个核心筒上的门")}
+                      {c.doors.length ? t("{0} 个门；参照 {1} 的门在 {2} 端", [c.doors.length, lvLabel(c.refLevel), endName(c.refEnd)]) : t("没有贴在这个核心筒上的门")}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-col gap-0.5" style={{ fontSize: 11.5 }}>
                     {c.doors.map((d, j) => (
                       <div key={d.id || j} style={{ color: d.ok ? C.ok : C.err }} data-testid="rhino-door-row" data-ok={d.ok ? "1" : "0"}>
-                        {d.ok ? "✓" : "✗"} {d.level != null ? `L${d.level}` : t("楼层不明（底标高 {0} m）", [fmtM(d.dz)])}
-                        {d.name ? ` ${d.name}` : ""}：{t("在 {0} 端", [endName(d.end)])}
+                        {d.ok ? "✓" : "✗"} {d.level != null ? lvLabel(d.level) : t("楼层不明（底标高 {0} m）", [fmtM(d.dz)])}
+                        {d.name ? ` ${d.name}` : ""}：
+                        {d.level != null && !d.zOk ? t("门底在 {0} m，比楼面{1} {2} mm ✗；", [fmtM(d.dz), d.zOffset > 0 ? t("高") : t("低"), fmtMm(Math.abs(d.zOffset))]) : ""}
+                        {t("在 {0} 端", [endName(d.end)])}
                         {d.face === "side" ? t("（长边）") : t("（端墙）")}
                         {d.endOk === false ? t("，应在 {0} 端（L{1} 的楼层平台在另一端）✗", [endName(d.expectedEnd), d.level]) : d.endOk === true ? t("，端正确") : ""}
                         {t("；宽 {0}", [fmtMm(d.doorWidth)])}
@@ -450,7 +457,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
                         {d.heightOk ? " ✓" : t(" < {0} ✗", [fmtMm(doorReq.height)])}
                       </div>
                     ))}
-                    {c.missingLevels.length > 0 && <div style={{ color: C.err }}>{t("✗ 缺门：L{0}", [c.missingLevels.join("、L")])}</div>}
+                    {c.missingLevels.length > 0 && <div style={{ color: C.err }}>{t("✗ 缺门：{0}", [c.missingLevels.map(lvLabel).join("、")])}</div>}
                   </div>
                 </div>
               ))}

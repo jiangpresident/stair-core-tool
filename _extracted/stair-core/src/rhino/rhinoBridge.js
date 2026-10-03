@@ -174,7 +174,7 @@ export async function readRhinoCores(layer, { fetch: fetchImpl, baseUrl = RHINO_
    levels：[{level, z}]，z 是各层楼面相对核心筒底（L1 楼面）的高度；floorEnd：res.floorEnd（每层楼层平台在哪一端，0/1，折返梯会换端）；
    以最低一层有门的那一层为参照：它的门在哪一端，其它层就按"楼层平台是否与参照层同端"推出应该在哪一端。
    返回 { cores:[{ core, refEnd, refLevel, doors:[…], missingLevels:[…] }], unattached:[…] }。 */
-export function matchCoreDoors(cores, doors, { levels = [], floorEnd = {}, stairType = "dogleg", reqWidth = 950, reqHeight = 2030, tol = 100 } = {}) {
+export function matchCoreDoors(cores, doors, { levels = [], floorEnd = {}, stairType = "dogleg", reqWidth = 950, reqHeight = 2030, tol = 100, zTol = 50 } = {}) {
   const toLocal = (core, x, y) => {
     const a = (-(core.angleDeg || 0) * Math.PI) / 180;
     const dx = x - core.centerX, dy = y - core.centerY;
@@ -199,22 +199,27 @@ export function matchCoreDoors(cores, doors, { levels = [], floorEnd = {}, stair
       unattached.push({ ...d });
       continue;
     }
-    // 楼层：门底标高相对核心筒底，找最近的楼面；偏差超过该层层高的 40% 就算楼层不明
+    // 楼层：门底标高相对核心筒底，找最近的楼面（偏差在该层层高 40% 以内才认，不然"楼层不明"）；
+    // 认了之后还要看门底是不是真的落在楼面上：偏差超过 zTol（默认 50 mm）就 zOk=false，报"门底不在楼面"
     const dz = (d.zBottom || 0) - (best.entry.core.zBottom || 0);
-    let lv = null, bestDz = Infinity;
+    let lv = null, levelZ = null, bestDz = Infinity;
     levels.forEach((f, i) => {
       const next = levels[i + 1];
       const storey = next ? next.z - f.z : (levels[i - 1] ? f.z - levels[i - 1].z : 3000);
       const diff = Math.abs(dz - f.z);
-      if (diff < bestDz && diff <= 0.4 * storey) { bestDz = diff; lv = f.level; }
+      if (diff < bestDz && diff <= 0.4 * storey) { bestDz = diff; lv = f.level; levelZ = f.z; }
     });
+    const zOffset = lv == null ? null : dz - levelZ;
     const width = Math.max(d.length, d.width), height = d.height || 0;
     best.entry.doors.push({
       ...d,
       face: best.face,
       end: best.u < 0 ? 0 : 1, // 门在核心筒长度方向的哪一半：0 = 局部 −x 端，1 = +x 端
       level: lv,
+      levelZ,
       dz,
+      zOffset,
+      zOk: lv != null && Math.abs(zOffset) <= zTol,
       doorWidth: width,
       doorHeight: height,
       widthOk: width + 1e-6 >= reqWidth,
@@ -234,7 +239,7 @@ export function matchCoreDoors(cores, doors, { levels = [], floorEnd = {}, stair
         d.expectedEnd = same ? refEnd : 1 - refEnd;
         d.endOk = d.end === d.expectedEnd;
       }
-      d.ok = d.widthOk && d.heightOk && d.endOk !== false && d.level != null;
+      d.ok = d.widthOk && d.heightOk && d.endOk !== false && d.level != null && d.zOk;
     }
     // 核心筒高度范围内、但没有门的楼层
     const coreTop = (core.zBottom || 0) + (core.height || 0);

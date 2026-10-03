@@ -348,6 +348,12 @@ await test("matchCoreDoors：门贴哪个核心筒的哪个面、在哪一层、
   const r5 = matchCoreDoors([core], [door("mid", 9900, 21500, 1000, 200, 4500, 2100)], { levels, floorEnd });
   assert.equal(r5.cores[0].doors[0].level, null);
   assert.equal(r5.cores[0].doors[0].ok, false);
+  // 门底 8000：能认出是 L2（9000）的门，但偏离楼面 −1000 → zOk=false、ok=false；偏 30 mm 在容差内算过
+  const r6 = matchCoreDoors([core], [door("low door", 23100, 21500, 1000, 200, 8000, 2100), door("ok door", 9900, 21500, 1000, 200, 30, 2100)], { levels, floorEnd });
+  const low = r6.cores[0].doors.find((d) => d.name === "low door"), okd = r6.cores[0].doors.find((d) => d.name === "ok door");
+  assert.deepEqual([low.level, low.levelZ, low.zOffset, low.zOk, low.ok], [2, 9000, -1000, false, false]);
+  assert.deepEqual([okd.level, okd.zOffset, okd.zOk], [1, 30, true]);
+  assert.equal(byName["L1 left"].zOk, true);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);
