@@ -381,6 +381,11 @@ await test("coresToPlan：核心筒按共用基准落到平面图（原点角、
   assert.deepEqual(a.doorLocal, { x: 0, y: 4500 });
   assert.equal(a.doorWidth, 1000);
   assert.equal(a.doorLevel, 1, "用的是最低一层（L1）的门，不是 L2");
+  // 指定楼层：L2 用 L2 的门（贴右端面 → x = L）；L3 没有门 → 默认左端中点、doorLevel 空
+  const out2 = coresToPlan([coreA], dc, withWalls, { level: 2 });
+  assert.deepEqual([out2.cores[0].doorLocal.x, out2.cores[0].doorLevel], [13000, 2]);
+  const out3 = coresToPlan([coreA], dc, withWalls, { level: 3 });
+  assert.deepEqual([out3.cores[0].doorLocal, out3.cores[0].doorLevel], [{ x: 0, y: 3000 }, undefined]);
   const b = out.cores[1];
   assert.equal(b.rot, 330, "Rhino 逆时针 30° → 平面图（y 朝下）330°");
   assert.deepEqual(b.doorLocal, { x: 0, y: 3000 }, "没门：左端中点");

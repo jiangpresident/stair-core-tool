@@ -4,15 +4,25 @@ import { saveInp, otherAppHref } from "../planBridge.js";
 import { AI_PROVIDERS, readAiSettingsFromBrowser, writeAiSettingsToBrowser } from "../plan/aiSettings.js";
 import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample, PLAN_DEFAULTS } from "../plan/planFile.js";
 
-/* 计算器页里"Rhino 平面图"面板用的 plan（由 Rhino 面板「生成平面图」填入），跟 /plan 页的平面图互相独立，单独存一份 */
-const RHINO_PLAN_KEY = "stair-core:rhino-plan";
-const readRhinoPlan = () => {
+/* 计算器页里"Rhino 平面图"面板用的平面图：按楼层存 {byLevel: {1: plan, 2: plan…}, selected}，由 Rhino 面板每层的「生成平面图」填入，
+   跟 /plan 页的平面图互相独立。旧版只存一张（stair-core:rhino-plan）的话迁移成 L1。 */
+const RHINO_PLANS_KEY = "stair-core:rhino-plans";
+const readRhinoPlans = () => {
   try {
-    const v = JSON.parse(localStorage.getItem(RHINO_PLAN_KEY) || "null");
-    return { ...PLAN_DEFAULTS, ...(v && typeof v === "object" ? v : {}) };
+    const v = JSON.parse(localStorage.getItem(RHINO_PLANS_KEY) || "null");
+    if (v && typeof v === "object" && v.byLevel && typeof v.byLevel === "object") {
+      const byLevel = {};
+      for (const [k, p] of Object.entries(v.byLevel)) byLevel[Number(k)] = { ...PLAN_DEFAULTS, ...(p || {}) };
+      return { byLevel, selected: Number(v.selected) || Number(Object.keys(byLevel)[0]) || 1 };
+    }
+    const old = JSON.parse(localStorage.getItem("stair-core:rhino-plan") || "null");
+    if (old && typeof old === "object" && ((old.walls && old.walls.length) || (old.cores && old.cores.length) || (old.boundary && old.boundary.length))) {
+      return { byLevel: { 1: { ...PLAN_DEFAULTS, ...old } }, selected: 1 };
+    }
   } catch {
-    return { ...PLAN_DEFAULTS };
+    /* 坏数据就从空开始 */
   }
+  return { byLevel: {}, selected: 1 };
 };
 import { t } from "../i18n.js";
 import LangToggle from "../LangToggle.jsx";
@@ -5133,17 +5143,34 @@ export default function StairCoreTool() {
 
   const scissorRelax = inp.stairType === "scissor" && res.allRes && inp.nFloors <= 6 && inp.buildingArea <= 600;
 
-  /* Rhino 平面图（见 RHINO_PLAN_KEY）：有自己的撤销历史，每次变化存回 localStorage */
-  const [rhinoPlanInit] = useState(readRhinoPlan);
-  const rhinoHist = usePlanHistory(rhinoPlanInit);
+  /* Rhino 平面图（见 RHINO_PLANS_KEY）：按楼层一组 plan，共用一条撤销历史，每次变化存回 localStorage */
+  const [rhinoPlansInit] = useState(readRhinoPlans);
+  const rhinoHist = usePlanHistory(rhinoPlansInit);
   useEffect(() => {
     try {
-      localStorage.setItem(RHINO_PLAN_KEY, JSON.stringify(rhinoHist.plan));
+      localStorage.setItem(RHINO_PLANS_KEY, JSON.stringify(rhinoHist.plan));
     } catch {
       /* 隐私模式等 */
     }
   }, [rhinoHist.plan]);
-  const rhinoPlanHasContent = rhinoHist.plan.walls.length > 0 || rhinoHist.plan.cores.length > 0 || rhinoHist.plan.boundary.length > 0;
+  const rhinoLevels = Object.keys(rhinoHist.plan.byLevel || {}).map(Number).sort((a, b) => a - b);
+  const rhinoSelected = rhinoLevels.includes(rhinoHist.plan.selected) ? rhinoHist.plan.selected : rhinoLevels[0];
+  const rhinoPlan = rhinoSelected != null ? rhinoHist.plan.byLevel[rhinoSelected] : null;
+  // 给 PlanEditor 的 setPlan：只改当前选中楼层那张
+  const setRhinoPlan = (updater) =>
+    rhinoHist.setPlan((prev) => {
+      const cur = prev.byLevel[rhinoSelected];
+      const next = typeof updater === "function" ? updater(cur) : updater;
+      return { ...prev, byLevel: { ...prev.byLevel, [rhinoSelected]: next } };
+    });
+  const selectRhinoLevel = (L) => rhinoHist.setPlan((prev) => ({ ...prev, selected: L }));
+  const removeRhinoLevel = (L) =>
+    rhinoHist.setPlan((prev) => {
+      const byLevel = { ...prev.byLevel };
+      delete byLevel[L];
+      const rest = Object.keys(byLevel).map(Number).sort((a, b) => a - b);
+      return { ...prev, byLevel, selected: rest.includes(prev.selected) ? prev.selected : rest[0] || 1 };
+    });
 
   /* 平面图工具现在是独立页面（/plan），靠 localStorage 拿这里"确认并计算"后的 inp——
      每次 inp 变化（点确认并计算）就写一份，平面图页面（同一浏览器的另一个标签页）
@@ -5731,17 +5758,32 @@ export default function StairCoreTool() {
                 stairType={inp.stairType}
                 doorReq={{ width: inp.adv.doorLeaf, height: 2030 }}
                 shaftKeys={res.zones.length ? res.zones[0].shafts.map((_, si) => `0-${si}`) : []}
-                onPlanFromRhino={(p) => rhinoHist.setPlan(() => p)}
+                onPlanFromRhino={(level, p) => rhinoHist.setPlan((prev) => ({ ...prev, byLevel: { ...prev.byLevel, [level]: p }, selected: level }))}
               />
             </Panel>
 
-            {/* Rhino 平面图：从 Rhino 读的地板 / 墙 / 核心筒拼成的平面图，直接在这里开热力图（与 /plan 页互相独立） */}
-            <Panel id="rhinoPlan" title={t("Rhino 平面图 · 疏散距离热力图")} sub={t("由上方 Rhino 面板「生成平面图」填入；与平面图工具页的平面图互相独立")}>
-              {rhinoPlanHasContent ? (
-                <PlanEditor res={res} inp={inp} plan={rhinoHist.plan} setPlan={rhinoHist.setPlan} scissorRelax={scissorRelax} undoPlan={rhinoHist.undo} redoPlan={rhinoHist.redo} canUndoPlan={rhinoHist.canUndo} canRedoPlan={rhinoHist.canRedo} initialHeatmap />
+            {/* Rhino 平面图：每层一张（地板 / 墙按层、核心筒全局），按楼层按钮切换，直接在这里开热力图（与 /plan 页互相独立） */}
+            <Panel id="rhinoPlan" title={t("Rhino 平面图 · 疏散距离热力图")} sub={t("由上方 Rhino 面板各层的「生成平面图」填入；与平面图工具页的平面图互相独立")}>
+              {rhinoLevels.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="rhino-plan-levels">
+                  <span style={{ color: C.muted, fontSize: 12.5 }}>{t("楼层")}</span>
+                  {rhinoLevels.map((L) => (
+                    <button key={L} type="button" onClick={() => selectRhinoLevel(L)} className="rounded px-3 py-1" style={{ border: `1px solid ${L === rhinoSelected ? C.accent : C.rule}`, background: L === rhinoSelected ? C.accent : C.panel, color: L === rhinoSelected ? "#fff" : C.ink, fontWeight: 600, fontSize: 12.5 }} data-testid="rhino-plan-level" data-level={L} data-selected={L === rhinoSelected ? "1" : "0"}>
+                      L{L}
+                    </button>
+                  ))}
+                  {rhinoSelected != null && (
+                    <button type="button" onClick={() => removeRhinoLevel(rhinoSelected)} className="rounded px-2 py-1" style={{ border: `1px solid ${C.rule}`, color: C.muted, fontSize: 11.5 }} title={t("删掉当前这一层的平面图（Rhino 面板里重新生成即可恢复）")} data-testid="rhino-plan-remove">
+                      {t("删掉 L{0} 的平面图", [rhinoSelected])}
+                    </button>
+                  )}
+                </div>
+              )}
+              {rhinoPlan ? (
+                <PlanEditor key={rhinoSelected} res={res} inp={inp} plan={rhinoPlan} setPlan={setRhinoPlan} scissorRelax={scissorRelax} undoPlan={rhinoHist.undo} redoPlan={rhinoHist.redo} canUndoPlan={rhinoHist.canUndo} canRedoPlan={rhinoHist.canRedo} initialHeatmap />
               ) : (
                 <div style={{ color: C.muted, fontSize: 12.5 }} data-testid="rhino-plan-empty">
-                  {t("还没有内容：先在上方 Rhino 面板连接 Rhino，选好地板 / 墙 / 核心筒 / 门的图层，点「生成平面图」。")}
+                  {t("还没有内容：先在上方 Rhino 面板连接 Rhino，选好核心筒 / 门的图层和每层的地板 / 墙图层，点该层的「生成平面图」。")}
                 </div>
               )}
             </Panel>

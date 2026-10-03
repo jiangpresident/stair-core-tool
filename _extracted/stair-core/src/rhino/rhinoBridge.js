@@ -345,7 +345,7 @@ export function wallsToPlan(walls, plan, { defaultT = 200 } = {}) {
    plan 核心筒：x,y 是局部原点角、l 沿局部 x、w 沿局部 y、rot 为角度（SVG y 朝下）。Rhino y 朝上 → 平面图 y 朝下：转角取 −angle，
    局部原点取 Rhino 局部 (−L/2, +W/2) 那个角（Rhino 的"左上角"），门的局部 y 也翻过来。没有门的核心筒门放在左端中点。
    shaftKeys：按顺序给核心筒分配计算器里的梯井 key（"zi-si"），用来画梯段预览和尺寸校核；不够就 null。 */
-export function coresToPlan(cores, doorCheck, plan, { shaftKeys = [], colors = ["#2B5C8A", "#C0703A", "#3E8E6E", "#8A5CB0", "#B8862B", "#5C7F99"], defaultDoorWidth = 1000 } = {}) {
+export function coresToPlan(cores, doorCheck, plan, { shaftKeys = [], colors = ["#2B5C8A", "#C0703A", "#3E8E6E", "#8A5CB0", "#B8862B", "#5C7F99"], defaultDoorWidth = 1000, level = null } = {}) {
   const base = { ...PLAN_DEFAULTS, ...(plan || {}) };
   const list = (cores || []).filter((c) => [c.centerX, c.centerY, c.length, c.width].every(Number.isFinite) && c.length > 1 && c.width > 1);
   if (!list.length) return { ...base, cores: [...(base.cores || [])] };
@@ -376,7 +376,9 @@ export function coresToPlan(cores, doorCheck, plan, { shaftKeys = [], colors = [
       fromRhino: c.id,
     };
     const entry = byId.get(c.id);
-    const door = entry && entry.doors.find((d) => d.level != null) ? entry.doors.filter((d) => d.level != null).sort((p, q) => p.level - q.level)[0] : null;
+    // 指定了楼层就只用这一层的门（没有 → 默认门位）；没指定用最低一层的门
+    const withLevel = entry ? entry.doors.filter((d) => d.level != null) : [];
+    const door = level != null ? withLevel.find((d) => d.level === level) || null : withLevel.sort((p, q) => p.level - q.level)[0] || null;
     if (door) {
       // 门中心在核心筒局部坐标 (u, v)（Rhino 方向）→ 平面图局部 (u + L/2, W/2 − v)，再贴到所在的边上
       const dx = door.centerX - c.centerX, dy = door.centerY - c.centerY;
