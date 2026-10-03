@@ -319,7 +319,9 @@ def _section_pieces(geo, z):
     if not ok or not curves or len(list(curves)) == 0:
         return None
     joined = Rhino.Geometry.Curve.JoinCurves(list(curves), tol * 10) or []
-    out = []
+    to_mm = Rhino.RhinoMath.UnitScale(Rhino.RhinoDoc.ActiveDoc.ModelUnitSystem, Rhino.UnitSystem.Millimeters)
+    max_thick = 1000.0 / to_mm  # 墙厚上限 1 m（文档单位）：比这还"胖"的矩形轮廓不是一段墙，而是房间 / 外墙圈的轮廓
+    loops = []
     for crv in joined:
         okp, pl = crv.TryGetPolyline()
         if okp:
@@ -334,19 +336,60 @@ def _section_pieces(geo, z):
             continue
         amp = Rhino.Geometry.AreaMassProperties.Compute(crv) if crv.IsClosed else None
         area = amp.Area if amp is not None else 0.0
-        rect_area = length * width
-        if rect_area > 0 and area / rect_area >= 0.85:
-            rad = math.radians(deg)
-            hx, hy = math.cos(rad) * length / 2.0, math.sin(rad) * length / 2.0
-            out.append((cx - hx, cy - hy, cx + hx, cy + hy, width, False))
+        if pts[0].DistanceTo(pts[-1]) < tol * 10:
+            pts = pts[:-1]
+        loops.append({"pts": pts, "cx": cx, "cy": cy, "length": length, "width": width, "deg": deg, "area": area, "used": False})
+    out = []
+    # 1) 细长的矩形轮廓 = 一段墙（长边中线 + 短边厚度）
+    for lp in loops:
+        rect_area = lp["length"] * lp["width"]
+        if rect_area > 0 and lp["area"] / rect_area >= 0.85 and lp["width"] <= max_thick:
+            rad = math.radians(lp["deg"])
+            hx, hy = math.cos(rad) * lp["length"] / 2.0, math.sin(rad) * lp["length"] / 2.0
+            out.append((lp["cx"] - hx, lp["cy"] - hy, lp["cx"] + hx, lp["cy"] + hy, lp["width"], False))
+            lp["used"] = True
+    # 2) 一圈外墙剖出来是"外轮廓 + 内轮廓"两个套着的环：按外轮廓每条边出墙，中线往里挪半个墙厚，厚度 = 两环之间的距离
+    rest = sorted([lp for lp in loops if not lp["used"]], key=lambda l: -l["area"])
+    for i, outer in enumerate(rest):
+        if outer["used"]:
+            continue
+        inner = None
+        for cand in rest[i + 1:]:
+            if cand["used"]:
+                continue
+            # 候选内环：中心落在外环矩形内、两边都比外环小、且不细长
+            dx, dy = abs(cand["cx"] - outer["cx"]), abs(cand["cy"] - outer["cy"])
+            if dx < outer["length"] / 2.0 and dy < outer["width"] / 2.0 and cand["length"] < outer["length"] and cand["width"] < outer["width"] and cand["width"] > max_thick:
+                inner = cand
+                break
+        pts = outer["pts"]
+        if inner is not None:
+            t = max((outer["width"] - inner["width"]) / 2.0, (outer["length"] - inner["length"]) / 2.0)
+            t = max(t, tol * 10)
+            inner["used"] = True
+            # 多边形的内外侧：用有向面积判断绕向，法线统一指向内部
+            signed = 0.0
+            for k in range(len(pts)):
+                a, b = pts[k], pts[(k + 1) % len(pts)]
+                signed += a.X * b.Y - b.X * a.Y
+            ccw = signed > 0
+            for k in range(len(pts)):
+                a, b = pts[k], pts[(k + 1) % len(pts)]
+                ex, ey = b.X - a.X, b.Y - a.Y
+                ln = math.hypot(ex, ey)
+                if ln <= tol * 10:
+                    continue
+                # 逆时针多边形的内法线 = 边向量左转 90°；顺时针则右转
+                nx, ny = (-ey / ln, ex / ln) if ccw else (ey / ln, -ex / ln)
+                sx, sy = nx * t / 2.0, ny * t / 2.0
+                out.append((a.X + sx, a.Y + sy, b.X + sx, b.Y + sy, t, False))
         else:
-            # 去掉首尾重合点，按边输出
-            if pts[0].DistanceTo(pts[-1]) < tol * 10:
-                pts = pts[:-1]
+            # 孤立的"胖"轮廓（房间轮廓、墩子等）：按边出零厚度线，网页用默认厚度
             for k in range(len(pts)):
                 a, b = pts[k], pts[(k + 1) % len(pts)]
                 if a.DistanceTo(b) > tol * 10:
                     out.append((a.X, a.Y, b.X, b.Y, None, True))
+        outer["used"] = True
     return out if out else None
 
 

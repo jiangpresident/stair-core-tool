@@ -2881,7 +2881,9 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
     if (panMode) return; // 平移模式下单纯点击不触发画点 / 选中等操作
     handleCanvasClick(e);
   };
-  const CELL = clamp(Math.min(mmW, mmH) / 200, 100, 400);
+  const rawCell = clamp(Math.min(mmW, mmH) / 200, 100, 400);
+  // 热力图开着时让细格正好整除粗格（1 m / 0.5 m / 2 m），否则粗格会变成 1.05 m 之类、跟 1 m 网格对不上
+  const CELL = heatmapOn ? (heatmapCellM * 1000) / Math.ceil((heatmapCellM * 1000) / rawCell) : rawCell;
   const grid = useMemo(() => buildObstacleGrid(mmW, mmH, plan.boundary, plan.walls, plan.doors, plan.cores, CELL), [mmW, mmH, plan.boundary, plan.walls, plan.doors, plan.cores, CELL]);
   const autoResults = useMemo(() => {
     const map = {};

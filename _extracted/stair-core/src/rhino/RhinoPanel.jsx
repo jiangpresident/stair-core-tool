@@ -95,14 +95,16 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
     try {
       const ls = await listRhinoLayers(o);
       setLayers(ls);
-      const pick = ls.find((l) => /core|核心/i.test(l.path) && l.objects > 0) || ls.find((l) => /core|核心/i.test(l.path)) || ls.find((l) => l.objects > 0);
-      if (pick && !ls.some((l) => l.path === layer)) setLayer(pick.path);
-      const pickW = ls.find((l) => /wall|墙/i.test(l.path) && l.objects > 0) || ls.find((l) => /wall|墙/i.test(l.path));
-      if (pickW && !ls.some((l) => l.path === wallLayer)) setWallLayer(pickW.path);
-      const pickF = ls.find((l) => /floor|slab|地板|楼板/i.test(l.path) && l.objects > 0) || ls.find((l) => /floor|slab|地板|楼板/i.test(l.path));
-      if (pickF && !ls.some((l) => l.path === floorLayer)) setFloorLayer(pickF.path);
-      const pickD = ls.find((l) => /door|门/i.test(l.path) && l.objects > 0) || ls.find((l) => /door|门/i.test(l.path));
-      if (pickD && !ls.some((l) => l.path === doorLayer)) setDoorLayer(pickD.path);
+      // 自动选图层：当前选的层不在列表里、或者当前层上没有对象而候选层上有，就换成候选（名字含关键词且有对象的优先）
+      const keepOrPick = (cur, re, set, fallbackAny = false) => {
+        const pick = ls.find((l) => re.test(l.path) && l.objects > 0) || ls.find((l) => re.test(l.path)) || (fallbackAny ? ls.find((l) => l.objects > 0) : null);
+        const curL = ls.find((l) => l.path === cur);
+        if (pick && (!curL || (curL.objects === 0 && pick.objects > 0))) set(pick.path);
+      };
+      keepOrPick(layer, /core|核心/i, setLayer, true);
+      keepOrPick(wallLayer, /wall|墙/i, setWallLayer);
+      keepOrPick(floorLayer, /floor|slab|地板|楼板/i, setFloorLayer);
+      keepOrPick(doorLayer, /door|门/i, setDoorLayer);
       setRawDoors(null);
       setDoorsError(null);
     } catch (err) {

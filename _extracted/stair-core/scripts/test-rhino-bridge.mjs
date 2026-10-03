@@ -270,6 +270,10 @@ await test("共用基准：第二批几何沿用第一批的基准（位置对�
   assert.deepEqual(shifted.walls[0], { x1: 100, y1: -50, x2: 101, y2: -49 });
   assert.deepEqual(shifted.paths[0].src, { x: 101, y: -49 });
   assert.deepEqual(shifted.paths[1].pts, [{ x: 102, y: -48 }]);
+  // 基准取整到 1 m：Rhino (1173, 40381) 的墙 → x0=1000, y0=41000 → 小数部分保留，1 m 网格对齐
+  const snapped = wallsToPlan([{ x1: 1173, y1: 40381, x2: 40973, y2: 40381 }], null);
+  assert.deepEqual(snapped.rhinoFrame, { x0: 1000, y0: 41000, margin: 1000 });
+  assert.deepEqual([snapped.walls[0].x1, snapped.walls[0].y1], [1173, 1619]);
   // 有底图：基准不外扩、不平移，新墙允许落到负坐标
   const withBg = wallsToPlan([{ x1: -3000, y1: 0, x2: 0, y2: 0 }], { ...first, bgSrc: "data:..." });
   assert.deepEqual(withBg.rhinoFrame, first.rhinoFrame);

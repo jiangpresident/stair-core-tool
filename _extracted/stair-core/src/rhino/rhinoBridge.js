@@ -292,10 +292,12 @@ export function shiftPlan(plan, dx, dy) {
 function rhinoFrameFor(base, bbox) {
   let frame = base.rhinoFrame && Number.isFinite(base.rhinoFrame.x0) && Number.isFinite(base.rhinoFrame.y0) ? { margin: RHINO_MARGIN, ...base.rhinoFrame } : null;
   let plan = base;
-  if (!frame) frame = { x0: bbox.minX, y0: bbox.maxY, margin: RHINO_MARGIN };
+  // 基准取整到 1 m：Rhino 坐标的小数部分原样保留，Rhino 里对齐 1 m 网格的东西到了平面图里仍然对齐 1 m 热力图格子
+  const snapLo = (v) => Math.floor(v / 1000) * 1000, snapHi = (v) => Math.ceil(v / 1000) * 1000;
+  if (!frame) frame = { x0: snapLo(bbox.minX), y0: snapHi(bbox.maxY), margin: RHINO_MARGIN };
   else {
-    const dx = Math.max(0, frame.x0 - bbox.minX); // 新几何比基准更靠左 / 更靠北多少
-    const dy = Math.max(0, bbox.maxY - frame.y0);
+    const dx = Math.max(0, frame.x0 - snapLo(bbox.minX)); // 新几何比基准更靠左 / 更靠北多少（整米）
+    const dy = Math.max(0, snapHi(bbox.maxY) - frame.y0);
     if ((dx || dy) && !base.bgSrc) {
       frame = { ...frame, x0: frame.x0 - dx, y0: frame.y0 + dy };
       plan = shiftPlan(base, dx, dy);
