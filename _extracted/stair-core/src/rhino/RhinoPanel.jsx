@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
 import { loadPlan, savePlan, otherAppHref } from "../planBridge.js";
-import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, matchCoreDoors, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
 const readSavedPort = () => {
@@ -38,7 +38,7 @@ const KIND_OPTIONS = [
 const fmtMm = (v) => Math.round(v).toLocaleString("en-US");
 const fmtM = (v) => (v / 1000).toFixed(2);
 
-export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = [], floorEnd = {}, stairType = "dogleg", doorReq = { width: 950, height: 2030 } }) {
+export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = [], floorEnd = {}, stairType = "dogleg", doorReq = { width: 950, height: 2030 }, shaftKeys = [], onPlanFromRhino = null }) {
   const [status, setStatus] = useState(null); // null | {checking} | {ok, rhino, doc, docPath, units, port, baseUrl} | {ok:false, error}
   // 连到哪个 Rhino 窗口 / 哪个文件
   const [instances, setInstances] = useState([]); // scanRhino 的结果
@@ -250,6 +250,40 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
     const next = floorToPlan(f.outline, loadPlan());
     savePlan(next);
     setFloorsMsg(t("已把「{0}」设为平面图的楼层边界（{1} 个顶点）。平面图页开着会自动刷新。", [f.name || f.type, next.boundary.length]));
+  };
+  /* 一键生成平面图：按所选图层读地板（第一个封闭的当楼层边界）、墙、核心筒 + 门，拼成一张全新的 plan 交给计算器页的"Rhino 平面图"面板 */
+  const [building, setBuilding] = useState(false);
+  const [buildMsg, setBuildMsg] = useState(null);
+  const buildPlan = async () => {
+    if (!onPlanFromRhino) return;
+    setBuilding(true);
+    setBuildMsg(null);
+    try {
+      const [fl, wl, cs, ds] = await Promise.all([readRhinoFloors(floorLayer, opts), readRhinoWalls(wallLayer, opts), readRhinoCores(layer, opts), readRhinoCores(doorLayer, opts).catch(() => [])]);
+      setFloors(fl);
+      setWalls(wl);
+      setRawBoxes(cs);
+      setRawDoors(ds);
+      const dc = matchCoreDoors(cs, ds, { levels, floorEnd, stairType, reqWidth: doorReq.width, reqHeight: doorReq.height });
+      const slab = fl.floors.find((f) => f.closed && f.outline && f.outline.length >= 3);
+      let plan = null; // 每次都从空白开始，不叠加
+      if (slab) plan = floorToPlan(slab.outline, plan);
+      plan = wallsToPlan(wl.walls, plan);
+      plan = coresToPlan(cs, dc, plan, { shaftKeys });
+      onPlanFromRhino(plan);
+      setBuildMsg({
+        text: t("已生成：{0} 段墙、{1} 个核心筒{2}{3}。往下滚到「Rhino 平面图 · 疏散距离热力图」面板查看。", [
+          plan.walls.length,
+          plan.cores.length,
+          slab ? t("、楼层边界 {0} 个顶点", [plan.boundary.length]) : t("、没有封闭的地板（没有楼层边界，热力图会铺满画布）"),
+          wl.skipped ? t("；跳过 {0} 个非直线对象", [wl.skipped]) : "",
+        ]),
+      });
+    } catch (err) {
+      setBuildMsg({ text: err && err.message ? err.message : String(err), error: true });
+    } finally {
+      setBuilding(false);
+    }
   };
   const send = async () => {
     setSending(true);
@@ -598,6 +632,24 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
                 </div>
               )}
               <div style={{ color: C.muted, fontSize: 11 }}>{t("楼层边界会替换平面图里原有的边界，位置和之前从 Rhino 加进去的墙用同一个坐标基准，所以互相对得上。")}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 1d. 一键生成平面图（地板 + 墙 + 核心筒/门）→ 计算器页的 Rhino 平面图面板 */}
+      {online && onPlanFromRhino && (
+        <div className="mt-3 rounded p-2" style={{ border: `1px dashed ${C.accent}` }} data-testid="rhino-build">
+          <div className="flex flex-wrap items-center gap-2">
+            <span style={{ fontWeight: 600 }}>{t("生成平面图")}</span>
+            <button type="button" onClick={buildPlan} disabled={building} className="rounded px-3 py-1" style={{ background: building ? C.rule : C.accent, color: building ? C.muted : "#fff", fontWeight: 600 }} data-testid="rhino-build-btn">
+              {building ? t("读取中…") : t("用上面选的图层生成平面图（地板 + 墙 + 核心筒）")}
+            </button>
+            <span style={{ color: C.muted, fontSize: 11.5 }}>{t("实体墙在墙底以上 500 mm 处剖切，门洞处自然断开；核心筒按最低一层的门定门位；结果放在下方「Rhino 平面图」面板，可直接开热力图")}</span>
+          </div>
+          {buildMsg && (
+            <div className="mt-1" style={{ color: buildMsg.error ? C.err : C.ok, fontWeight: 600 }} data-testid="rhino-build-msg">
+              {buildMsg.text}
             </div>
           )}
         </div>

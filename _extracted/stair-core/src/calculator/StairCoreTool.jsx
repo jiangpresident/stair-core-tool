@@ -2,7 +2,18 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { saveInp, otherAppHref } from "../planBridge.js";
 import { AI_PROVIDERS, readAiSettingsFromBrowser, writeAiSettingsToBrowser } from "../plan/aiSettings.js";
-import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample } from "../plan/planFile.js";
+import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample, PLAN_DEFAULTS } from "../plan/planFile.js";
+
+/* 计算器页里"Rhino 平面图"面板用的 plan（由 Rhino 面板「生成平面图」填入），跟 /plan 页的平面图互相独立，单独存一份 */
+const RHINO_PLAN_KEY = "stair-core:rhino-plan";
+const readRhinoPlan = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(RHINO_PLAN_KEY) || "null");
+    return { ...PLAN_DEFAULTS, ...(v && typeof v === "object" ? v : {}) };
+  } catch {
+    return { ...PLAN_DEFAULTS };
+  }
+};
 import { t } from "../i18n.js";
 import LangToggle from "../LangToggle.jsx";
 import RhinoPanel from "../rhino/RhinoPanel.jsx";
@@ -2641,7 +2652,7 @@ function DoorHandle({ wall, door, mmW, vb, svgRef, panMode, gridSnap, onMove, on
   );
 }
 
-function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan, canUndoPlan, canRedoPlan }) {
+function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan, canUndoPlan, canRedoPlan, initialHeatmap = false }) {
   const svgRef = useRef(null);
   const fileRef = useRef(null);
   const clipboardRef = useRef(null);
@@ -2676,7 +2687,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
   /* 行走距离热力图：整层按 1 m（可选 0.5/1/2 m）打格，每格按"到最近核心筒门的最短路径"判达标绿/超标红，
      用途分组 + 是否喷淋决定限值（跟单条路径的校核用同一张 TRAVEL_GROUPS 表）。是组件内 state，不进
      plan（只是一种显示方式，不是设计数据；关掉再开重新算就行）。 */
-  const [heatmapOn, setHeatmapOn] = useState(false);
+  const [heatmapOn, setHeatmapOn] = useState(!!initialHeatmap);
   const [heatmapGroup, setHeatmapGroup] = useState("other");
   const [heatmapSprinklered, setHeatmapSprinklered] = useState(true);
   const [heatmapCellM, setHeatmapCellM] = useState(1);
@@ -5120,6 +5131,18 @@ export default function StairCoreTool() {
 
   const scissorRelax = inp.stairType === "scissor" && res.allRes && inp.nFloors <= 6 && inp.buildingArea <= 600;
 
+  /* Rhino 平面图（见 RHINO_PLAN_KEY）：有自己的撤销历史，每次变化存回 localStorage */
+  const [rhinoPlanInit] = useState(readRhinoPlan);
+  const rhinoHist = usePlanHistory(rhinoPlanInit);
+  useEffect(() => {
+    try {
+      localStorage.setItem(RHINO_PLAN_KEY, JSON.stringify(rhinoHist.plan));
+    } catch {
+      /* 隐私模式等 */
+    }
+  }, [rhinoHist.plan]);
+  const rhinoPlanHasContent = rhinoHist.plan.walls.length > 0 || rhinoHist.plan.cores.length > 0 || rhinoHist.plan.boundary.length > 0;
+
   /* 平面图工具现在是独立页面（/plan），靠 localStorage 拿这里"确认并计算"后的 inp——
      每次 inp 变化（点确认并计算）就写一份，平面图页面（同一浏览器的另一个标签页）
      通过 storage 事件监听到变化后会自动重新计算 res，不需要手动导入导出。 */
@@ -5705,7 +5728,20 @@ export default function StairCoreTool() {
                 floorEnd={res.floorEnd}
                 stairType={inp.stairType}
                 doorReq={{ width: inp.adv.doorLeaf, height: 2030 }}
+                shaftKeys={res.zones.length ? res.zones[0].shafts.map((_, si) => `0-${si}`) : []}
+                onPlanFromRhino={(p) => rhinoHist.setPlan(() => p)}
               />
+            </Panel>
+
+            {/* Rhino 平面图：从 Rhino 读的地板 / 墙 / 核心筒拼成的平面图，直接在这里开热力图（与 /plan 页互相独立） */}
+            <Panel id="rhinoPlan" title={t("Rhino 平面图 · 疏散距离热力图")} sub={t("由上方 Rhino 面板「生成平面图」填入；与平面图工具页的平面图互相独立")}>
+              {rhinoPlanHasContent ? (
+                <PlanEditor res={res} inp={inp} plan={rhinoHist.plan} setPlan={rhinoHist.setPlan} scissorRelax={scissorRelax} undoPlan={rhinoHist.undo} redoPlan={rhinoHist.redo} canUndoPlan={rhinoHist.canUndo} canRedoPlan={rhinoHist.canRedo} initialHeatmap />
+              ) : (
+                <div style={{ color: C.muted, fontSize: 12.5 }} data-testid="rhino-plan-empty">
+                  {t("还没有内容：先在上方 Rhino 面板连接 Rhino，选好地板 / 墙 / 核心筒 / 门的图层，点「生成平面图」。")}
+                </div>
+              )}
             </Panel>
 
             {/* 核心筒尺寸 */}

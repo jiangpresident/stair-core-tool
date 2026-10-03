@@ -339,6 +339,57 @@ export function wallsToPlan(walls, plan, { defaultT = 200 } = {}) {
   return growCanvas(out, added.flatMap((w) => [{ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 }]), margin);
 }
 
+/* 纯逻辑：把 Rhino 核心筒长方体（/cores 的最小外接矩形）连同 matchCoreDoors 找到的最低一层的门，生成平面图里的核心筒（共用基准）。
+   plan 核心筒：x,y 是局部原点角、l 沿局部 x、w 沿局部 y、rot 为角度（SVG y 朝下）。Rhino y 朝上 → 平面图 y 朝下：转角取 −angle，
+   局部原点取 Rhino 局部 (−L/2, +W/2) 那个角（Rhino 的"左上角"），门的局部 y 也翻过来。没有门的核心筒门放在左端中点。
+   shaftKeys：按顺序给核心筒分配计算器里的梯井 key（"zi-si"），用来画梯段预览和尺寸校核；不够就 null。 */
+export function coresToPlan(cores, doorCheck, plan, { shaftKeys = [], colors = ["#2B5C8A", "#C0703A", "#3E8E6E", "#8A5CB0", "#B8862B", "#5C7F99"], defaultDoorWidth = 1000 } = {}) {
+  const base = { ...PLAN_DEFAULTS, ...(plan || {}) };
+  const list = (cores || []).filter((c) => [c.centerX, c.centerY, c.length, c.width].every(Number.isFinite) && c.length > 1 && c.width > 1);
+  if (!list.length) return { ...base, cores: [...(base.cores || [])] };
+  const corners = list.flatMap((c) => {
+    const L = Math.max(c.length, c.width), W = Math.min(c.length, c.width), a = ((c.angleDeg || 0) * Math.PI) / 180;
+    return [[-L / 2, -W / 2], [L / 2, -W / 2], [L / 2, W / 2], [-L / 2, W / 2]].map(([u, v]) => ({ x: c.centerX + u * Math.cos(a) - v * Math.sin(a), y: c.centerY + u * Math.sin(a) + v * Math.cos(a) }));
+  });
+  const { plan: framed, toPlan, margin } = rhinoFrameFor(base, bboxOf(corners));
+  let nextId = Number.isFinite(framed.nextId) ? framed.nextId : 1;
+  const byId = new Map(((doorCheck && doorCheck.cores) || []).map((e) => [e.core.id, e]));
+  const added = list.map((c, i) => {
+    const L = Math.max(c.length, c.width), W = Math.min(c.length, c.width), a = ((c.angleDeg || 0) * Math.PI) / 180;
+    const origin = toPlan(c.centerX + (-L / 2) * Math.cos(a) - (W / 2) * Math.sin(a), c.centerY + (-L / 2) * Math.sin(a) + (W / 2) * Math.cos(a));
+    const core = {
+      id: nextId++,
+      label: c.name || `Rhino ${i + 1}`,
+      shaftKey: shaftKeys[i] || null,
+      color: colors[i % colors.length],
+      rot: ((-(c.angleDeg || 0)) % 360 + 360) % 360,
+      l: Math.round(L),
+      w: Math.round(W),
+      x: origin.x,
+      y: origin.y,
+      doorLocal: { x: 0, y: Math.round(W / 2) },
+      doorSwing: 1,
+      doorHinge: 1,
+      doorWidth: defaultDoorWidth,
+      fromRhino: c.id,
+    };
+    const entry = byId.get(c.id);
+    const door = entry && entry.doors.find((d) => d.level != null) ? entry.doors.filter((d) => d.level != null).sort((p, q) => p.level - q.level)[0] : null;
+    if (door) {
+      // 门中心在核心筒局部坐标 (u, v)（Rhino 方向）→ 平面图局部 (u + L/2, W/2 − v)，再贴到所在的边上
+      const dx = door.centerX - c.centerX, dy = door.centerY - c.centerY;
+      const u = dx * Math.cos(-a) - dy * Math.sin(-a), v = dx * Math.sin(-a) + dy * Math.cos(-a);
+      const clampN = (val, lo, hi) => Math.min(hi, Math.max(lo, val));
+      core.doorLocal = door.face === "end" ? { x: u < 0 ? 0 : Math.round(L), y: Math.round(clampN(W / 2 - v, 0, W)) } : { x: Math.round(clampN(u + L / 2, 0, L)), y: v < 0 ? Math.round(W) : 0 };
+      core.doorWidth = Math.round(door.doorWidth || defaultDoorWidth);
+      core.doorLevel = door.level;
+    }
+    return core;
+  });
+  const out = { ...framed, cores: [...(framed.cores || []), ...added], nextId };
+  return growCanvas(out, corners.map((p) => toPlan(p.x, p.y)), margin);
+}
+
 /* 读某个图层上的地板：返回 {floors:[{id,name,layer,type,closed,reason,outline:[[x,y]…],area(m²),holes,zBottom,thickness}]}，毫米。
    closed 为 false 的（不是封闭多重曲面）也在列表里，带 reason，让界面标红提示。 */
 export async function readRhinoFloors(layer, { fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {

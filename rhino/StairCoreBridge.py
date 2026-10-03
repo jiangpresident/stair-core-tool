@@ -242,7 +242,7 @@ def read_cores(layer_path):
     return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "cores": out}
 
 
-def read_walls(layer_path):
+def read_walls(layer_path, cut_mm=500.0):
     """UI 线程里执行：读某个图层（含子图层）上的墙体，返回毫米单位的中线段列表。
     直线 / 多段线：每一段一面墙，thickness 为 None（网页用默认厚度）；Brep / 挤出体 / 网格：最小外接矩形的长边中线 + 短边当厚度；
     其它（弧线、圆等）跳过并计入 skipped。"""
@@ -275,6 +275,19 @@ def read_walls(layer_path):
                           "thickness": None, "zBottom": min(a.Z, b.Z) * to_mm, "height": 0.0})
                 walls.append(w)
             continue
+        bb = geo.GetBoundingBox(True)
+        zinfo = {"zBottom": bb.Min.Z * to_mm, "height": (bb.Max.Z - bb.Min.Z) * to_mm}
+        # 实体墙：在墙底以上 cut_mm 处水平剖切，剖出来的每个封闭轮廓是一段墙，轮廓之间的空档就是门洞（墙上真的开了洞的情况）
+        pieces = _section_pieces(geo, bb.Min.Z + cut_mm / to_mm) if cut_mm > 0 else None
+        if pieces:
+            for pc in pieces:
+                w = dict(base)
+                w.update(zinfo)
+                w.update({"x1": pc[0] * to_mm, "y1": pc[1] * to_mm, "x2": pc[2] * to_mm, "y2": pc[3] * to_mm,
+                          "thickness": (pc[4] * to_mm) if pc[4] is not None else None, "section": True, "approx": bool(pc[5])})
+                walls.append(w)
+            continue
+        # 剖不到（墙太矮等）：退回整体最小外接矩形
         pts = _footprint_points(geo)
         if len(pts) < 3:
             skipped += 1
@@ -285,12 +298,56 @@ def read_walls(layer_path):
             continue
         rad = math.radians(deg)
         hx, hy = math.cos(rad) * length / 2.0, math.sin(rad) * length / 2.0
-        bb = geo.GetBoundingBox(True)
         w = dict(base)
-        w.update({"x1": (cx - hx) * to_mm, "y1": (cy - hy) * to_mm, "x2": (cx + hx) * to_mm, "y2": (cy + hy) * to_mm,
-                  "thickness": width * to_mm, "zBottom": bb.Min.Z * to_mm, "height": (bb.Max.Z - bb.Min.Z) * to_mm})
+        w.update(zinfo)
+        w.update({"x1": (cx - hx) * to_mm, "y1": (cy - hy) * to_mm, "x2": (cx + hx) * to_mm, "y2": (cy + hy) * to_mm, "thickness": width * to_mm})
         walls.append(w)
-    return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "walls": walls, "skipped": skipped}
+    return {"ok": True, "layer": layer_path, "units": str(doc.ModelUnitSystem), "walls": walls, "skipped": skipped, "cutMm": cut_mm}
+
+
+def _section_pieces(geo, z):
+    """把实体（Brep / 挤出体）在高度 z 水平剖切，返回每个封闭轮廓对应的墙段列表 [(x1, y1, x2, y2, thickness|None, approx)]（文档单位）。
+    轮廓接近矩形（面积 ≥ 最小外接矩形面积的 85%）→ 一段墙：长边中线 + 短边厚度；
+    不像矩形（转角处连成 L 形等）→ 退化成按轮廓的每条边各出一段零厚度的线（approx=True，网页用默认厚度）。剖不到返回 None。"""
+    import math
+    brep = geo.ToBrep() if isinstance(geo, Rhino.Geometry.Extrusion) else geo
+    if not isinstance(brep, Rhino.Geometry.Brep):
+        return None
+    plane = Rhino.Geometry.Plane(Rhino.Geometry.Point3d(0, 0, z), Rhino.Geometry.Vector3d.ZAxis)
+    tol = Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance or 0.001
+    ok, curves, _pts = Rhino.Geometry.Intersect.Intersection.BrepPlane(brep, plane, tol)
+    if not ok or not curves or len(list(curves)) == 0:
+        return None
+    joined = Rhino.Geometry.Curve.JoinCurves(list(curves), tol * 10) or []
+    out = []
+    for crv in joined:
+        okp, pl = crv.TryGetPolyline()
+        if okp:
+            pts = list(pl)
+        else:
+            n = 64
+            pts = [crv.PointAt(crv.Domain.ParameterAt(float(i) / n)) for i in range(n + 1)]
+        if len(pts) < 3:
+            continue
+        cx, cy, length, width, deg = _min_rect(pts)
+        if length < 1e-9:
+            continue
+        amp = Rhino.Geometry.AreaMassProperties.Compute(crv) if crv.IsClosed else None
+        area = amp.Area if amp is not None else 0.0
+        rect_area = length * width
+        if rect_area > 0 and area / rect_area >= 0.85:
+            rad = math.radians(deg)
+            hx, hy = math.cos(rad) * length / 2.0, math.sin(rad) * length / 2.0
+            out.append((cx - hx, cy - hy, cx + hx, cy + hy, width, False))
+        else:
+            # 去掉首尾重合点，按边输出
+            if pts[0].DistanceTo(pts[-1]) < tol * 10:
+                pts = pts[:-1]
+            for k in range(len(pts)):
+                a, b = pts[k], pts[(k + 1) % len(pts)]
+                if a.DistanceTo(b) > tol * 10:
+                    out.append((a.X, a.Y, b.X, b.Y, None, True))
+    return out if out else None
 
 
 def _slab_outline(brep):
@@ -539,7 +596,14 @@ class Handler(BaseHTTPRequestHandler):
                         params[k] = _unquote(v)
                 fn, default_layer = readers[path]
                 layer = params.get("layer") or default_layer
-                result = run_on_ui_thread(lambda: fn(layer))
+                if path == "/walls":
+                    try:
+                        cut = float(params.get("cut", "500"))
+                    except ValueError:
+                        cut = 500.0
+                    result = run_on_ui_thread(lambda: read_walls(layer, cut))
+                else:
+                    result = run_on_ui_thread(lambda: fn(layer))
                 self._send(200 if result.get("ok") else 404, result)
                 return
         except Exception as exc:  # noqa: BLE001

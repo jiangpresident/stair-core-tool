@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, matchCoreDoors, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -354,6 +354,36 @@ await test("matchCoreDoors：门贴哪个核心筒的哪个面、在哪一层、
   assert.deepEqual([low.level, low.levelZ, low.zOffset, low.zOk, low.ok], [2, 9000, -1000, false, false]);
   assert.deepEqual([okd.level, okd.zOffset, okd.zOk], [1, 30, true]);
   assert.equal(byName["L1 left"].zOk, true);
+});
+
+await test("coresToPlan：核心筒按共用基准落到平面图（原点角、转角取负、门按最低层的门贴边并翻 y）；没门的默认左端中点；分配 shaftKey", () => {
+  // 先导入墙定基准：x0=0, y0=30000
+  const withWalls = wallsToPlan([{ x1: 0, y1: 30000, x2: 40000, y2: 30000 }], null);
+  const coreA = { id: "A", name: "Core A", centerX: 16500, centerY: 23000, length: 13000, width: 6000, angleDeg: 0, zBottom: 0, height: 20000 };
+  const coreB = { id: "B", name: "Core B", centerX: 40000, centerY: 10000, length: 7000, width: 6000, angleDeg: 30, zBottom: 0, height: 18000 };
+  const levels = [{ level: 1, z: 0 }, { level: 2, z: 9000 }];
+  const doors = [
+    { id: "d2", name: "L2", centerX: 23100, centerY: 21500, length: 1000, width: 200, angleDeg: 90, zBottom: 9000, height: 2100 },
+    { id: "d1", name: "L1", centerX: 9900, centerY: 21500, length: 1000, width: 200, angleDeg: 90, zBottom: 0, height: 2100 },
+  ];
+  const dc = matchCoreDoors([coreA, coreB], doors, { levels, floorEnd: { 1: 0, 2: 1 } });
+  const out = coresToPlan([coreA, coreB], dc, withWalls, { shaftKeys: ["0-0", "0-1"] });
+  assert.equal(out.cores.length, 2);
+  const a = out.cores[0];
+  // Rhino 左上角 (10000, 26000) → 平面图 (10000 − 0 + 1000, 30000 − 26000 + 1000) = (11000, 5000)
+  assert.deepEqual([a.x, a.y, a.l, a.w, a.rot], [11000, 5000, 13000, 6000, 0]);
+  assert.deepEqual([a.label, a.shaftKey, a.id], ["Core A", "0-0", withWalls.nextId]);
+  // L1 的门贴左端面，Rhino 局部 (−6600, −1500)（y=21500 在中心 23000 以南）→ 平面图局部 (0, 3000 + 1500 = 4500)
+  assert.deepEqual(a.doorLocal, { x: 0, y: 4500 });
+  assert.equal(a.doorWidth, 1000);
+  assert.equal(a.doorLevel, 1, "用的是最低一层（L1）的门，不是 L2");
+  const b = out.cores[1];
+  assert.equal(b.rot, 330, "Rhino 逆时针 30° → 平面图（y 朝下）330°");
+  assert.deepEqual(b.doorLocal, { x: 0, y: 3000 }, "没门：左端中点");
+  assert.equal(b.shaftKey, "0-1");
+  assert.equal(out.rhinoFrame.x0, 0, "基准沿用墙的");
+  assert.equal(out.walls.length, 1, "墙还在");
+  assert.equal(coresToPlan([], dc, withWalls).cores.length, 0);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);
