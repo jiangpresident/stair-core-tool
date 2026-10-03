@@ -75,6 +75,10 @@ Clauses implemented (identical across the three levels unless tagged otherwise i
 - Not covered: smoke control (3.2.6), accessibility beyond the door-clearance notes, fire-separation ratings, exterior exits, ramps, and room-to-corridor travel-distance segments.
 - Occupancies are simplified to the groups in Table 3.1.17.1; design occupant loads must be posted (3.1.17.1.(2)).
 
+## Appearance
+
+The top-right corner has two toggles: **☀ / ☾** switches between the light theme and a dark CRT-style theme (phosphor-green accents, glowing button text with faint scanlines), and **EN / 中** switches the interface language. Both are remembered in the browser. Button text uses the monospaced Share Tech Mono face (Latin characters) with a soft glow in both themes.
+
 ## Rhino connection (1.1, local version only)
 
 The calculator page has a **Rhino** panel under the 3D model. Its main job is to **check the core boxes you drew in Rhino**: draw each stair core as a box (Brep, extrusion, mesh or closed rectangular curve) on a layer of your choice, and the tool reads its length × width and compares it with the required outer core size of every zone it computed.

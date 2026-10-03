@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { saveInp, otherAppHref } from "../planBridge.js";
+import { C_FOR_THEME, applyThemeToDocument } from "../theme.js";
 import { AI_PROVIDERS, readAiSettingsFromBrowser, writeAiSettingsToBrowser } from "../plan/aiSettings.js";
 import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample, PLAN_DEFAULTS } from "../plan/planFile.js";
 
@@ -34,23 +35,10 @@ import RhinoPanel from "../rhino/RhinoPanel.jsx";
 /*  2026-01-20 VBBL 修订：新增 3.4.2.3.(5)(6) 剪刀梯条款，删除 3.4.1.2.(3) */
 /* ------------------------------------------------------------------ */
 
-const C = {
-  ink: "#1B2733",
-  muted: "#5B6B7B",
-  paper: "#F2F4F3",
-  panel: "#FFFFFF",
-  line: "#2B5C8A",
-  lineSoft: "#93A8BD",
-  wallFill: "#DDE4EA",
-  hatch: "#7A8A99",
-  flightFill: "#EEF2F5",
-  accent: "#1F4E79",
-  warn: "#B7791F",
-  ok: "#2F855A",
-  err: "#B83A3A",
-  rule: "#D3DBE2",
-  tag: "#EDF2F6",
-};
+/* 配色：按当前主题（浅色 / 深色 CRT）在模块加载时取一套（见 src/theme.js；切换主题会整页刷新）。
+   其它模块（RhinoPanel、LayerTree、PlanApp）从这里 import C，所以一处切换处处生效。 */
+const C = C_FOR_THEME();
+applyThemeToDocument();
 const FONT =
   '"Avenir Next","Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif';
 
@@ -985,7 +973,7 @@ function Toggle({ label, checked, onChange, hint }) {
         aria-checked={checked}
         style={{ width: 36, height: 20, borderRadius: 10, background: checked ? C.accent : C.rule, position: "relative", transition: "background .15s", flexShrink: 0 }}
       >
-        <span style={{ position: "absolute", top: 2, left: checked ? 18 : 2, width: 16, height: 16, borderRadius: 8, background: "#fff", transition: "left .15s" }} />
+        <span style={{ position: "absolute", top: 2, left: checked ? 18 : 2, width: 16, height: 16, borderRadius: 8, background: C.panel, transition: "left .15s" }} />
       </span>
     </label>
   );
@@ -1294,7 +1282,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
       {/* 平台 */}
       {landings.map((l, i) => (
         <g key={i}>
-          <rect x={X(l.x1)} y={Y(l.y1)} width={(l.x2 - l.x1) * s} height={(l.y2 - l.y1) * s} fill="#F7F9FB" />
+          <rect x={X(l.x1)} y={Y(l.y1)} width={(l.x2 - l.x1) * s} height={(l.y2 - l.y1) * s} fill={C.canvasBg} />
           <text x={X((l.x1 + l.x2) / 2)} y={Y((l.y1 + l.y2) / 2)} fontSize="10" fill={C.muted} textAnchor="middle" dominantBaseline="middle">
             {l.label}
           </text>
@@ -1760,7 +1748,7 @@ function buildSolids(res, inp, shaftIdx, fromLevel, nLevels) {
   return { boxes, figures, innerL, innerW, zBase: zb, zTop: zt, from, to, topL };
 }
 
-const STAIR_COLORS = ["#2B5C8A", "#C0703A", "#3E8E6E", "#8A5CB0", "#B8862B", "#5C7F99"];
+const STAIR_COLORS = [C.line, "#C0703A", "#3E8E6E", "#8A5CB0", "#B8862B", "#5C7F99"];
 
 function Stair3D({ res, inp, shaftIdx, fromLevel, nLevels }) {
   const ref = useRef(null);
@@ -1784,7 +1772,7 @@ function Stair3D({ res, inp, shaftIdx, fromLevel, nLevels }) {
     renderer.setSize(W, H);
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#F7F9FA");
+    scene.background = new THREE.Color(C.canvasBg);
     const camera = new THREE.PerspectiveCamera(38, W / H, 0.05, 1000);
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     const sun = new THREE.DirectionalLight(0xffffff, 0.75);
@@ -1803,7 +1791,7 @@ function Stair3D({ res, inp, shaftIdx, fromLevel, nLevels }) {
       if (matCache[key]) return matCache[key];
       let m;
       if (kind === "step") m = new THREE.MeshLambertMaterial({ color: STAIR_COLORS[(stair - 1) % STAIR_COLORS.length] });
-      else if (kind === "landing") m = new THREE.MeshLambertMaterial({ color: new THREE.Color(STAIR_COLORS[(stair - 1) % STAIR_COLORS.length]).lerp(new THREE.Color("#ffffff"), 0.35) });
+      else if (kind === "landing") m = new THREE.MeshLambertMaterial({ color: new THREE.Color(STAIR_COLORS[(stair - 1) % STAIR_COLORS.length]).lerp(new THREE.Color(C.panel), 0.35) });
       else if (kind === "slab") m = new THREE.MeshLambertMaterial({ color: "#C3CCD4" });
       else if (kind === "door") m = new THREE.MeshLambertMaterial({ color: "#E2A33C", transparent: true, opacity: 0.9 });
       else if (kind === "centerWall") m = new THREE.MeshLambertMaterial({ color: "#8E9AA6", transparent: true, opacity: 0.35, depthWrite: false });
@@ -1812,8 +1800,8 @@ function Stair3D({ res, inp, shaftIdx, fromLevel, nLevels }) {
       mats.push(m);
       return m;
     };
-    const edgeMat = new THREE.LineBasicMaterial({ color: "#1B2733", transparent: true, opacity: 0.55 });
-    const wallEdgeMat = new THREE.LineBasicMaterial({ color: "#5B6B7B", transparent: true, opacity: 0.6 });
+    const edgeMat = new THREE.LineBasicMaterial({ color: C.ink, transparent: true, opacity: 0.55 });
+    const wallEdgeMat = new THREE.LineBasicMaterial({ color: C.muted, transparent: true, opacity: 0.6 });
     mats.push(edgeMat, wallEdgeMat);
     const k = 1 / 1000;
     model.boxes.forEach((b) => {
@@ -1959,7 +1947,7 @@ function Stair3D({ res, inp, shaftIdx, fromLevel, nLevels }) {
 
   return (
     <div>
-      <div ref={ref} style={{ width: "100%", height: 500, touchAction: "none", cursor: "grab", borderRadius: 6, overflow: "hidden", background: "#F7F9FA" }} />
+      <div ref={ref} style={{ width: "100%", height: 500, touchAction: "none", cursor: "grab", borderRadius: 6, overflow: "hidden", background: C.canvasBg }} />
       <div className="flex flex-wrap items-center gap-4 mt-2" style={{ fontSize: 11.5, color: C.muted }}>
         <span>{t("拖动旋转 · 滚轮缩放 · 右键 / Shift+拖动平移")}</span>
         <span>{t("显示 L")}{model.from}–L{model.topL}{t("，")}{model.boxes.filter((b) => b.kind === "step").length} {t("个踏步实体")}</span>
@@ -2606,7 +2594,7 @@ function WallBody({ wall, mmW, vb, svgRef, drawMode, panMode, gridSnap, onMove, 
       y1={wall.y1}
       x2={wall.x2}
       y2={wall.y2}
-      stroke="#5B6B7B"
+      stroke={C.muted}
       strokeWidth={wall.t}
       strokeLinecap="square"
       onPointerDown={onDown}
@@ -3849,7 +3837,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
         )}
         {/* 示例文件的覆盖确认：保存 / Ctrl+S 打到受保护的示例时弹出，二次确认才真的覆盖 */}
         {overwriteConfirm && (
-          <span className="flex flex-wrap items-center gap-2 rounded px-2 py-1" style={{ border: `1px solid ${C.warn}`, background: "#FFF8E8", fontSize: 12.5 }} data-testid="overwrite-confirm">
+          <span className="flex flex-wrap items-center gap-2 rounded px-2 py-1" style={{ border: `1px solid ${C.warn}`, background: C.warnBg, fontSize: 12.5 }} data-testid="overwrite-confirm">
             <span>
               “{fileName}{t("” 是 Saved Plans 里的示例文件，确定要用当前画布覆盖它吗？")}
             </span>
@@ -3896,7 +3884,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
         )}
         {/* 标定比例的输入放在按钮旁边（原来在右侧栏里，侧栏一收起就找不到了）：点够两个点才出现距离输入框 */}
         {plan.bgSrc && plan.mode === "calibrate" && (
-          <span className="flex flex-wrap items-center gap-2 rounded px-2 py-1" style={{ border: `1px solid ${C.warn}`, background: "#FFF8E8", fontSize: 12.5 }} data-testid="calib-bar">
+          <span className="flex flex-wrap items-center gap-2 rounded px-2 py-1" style={{ border: `1px solid ${C.warn}`, background: C.warnBg, fontSize: 12.5 }} data-testid="calib-bar">
             {calibPts.length < 2 ? (
               <span>{t("在底图上点击第")} {calibPts.length + 1} {t("个点（选一段已知长度的线，比如一个尺寸标注的两端）")}</span>
             ) : (
@@ -4231,7 +4219,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
         )}
       </div>
       {presetConfirm && (
-        <div className="flex flex-wrap items-center gap-2 mb-3 rounded p-3" style={{ border: `1px solid ${C.warn}`, background: "#FFF8E8", fontSize: 12.5 }}>
+        <div className="flex flex-wrap items-center gap-2 mb-3 rounded p-3" style={{ border: `1px solid ${C.warn}`, background: C.warnBg, fontSize: 12.5 }}>
           <span>{t("载入示例平面会清空当前的边界、核心筒、墙体、门与路径，确定继续吗？")}</span>
           <button type="button" onClick={applyPreset} className="rounded px-3 py-1" style={{ background: C.accent, color: "#fff", fontWeight: 600 }}>
             {t("确定载入")}
@@ -4304,7 +4292,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
             </button>
             <span style={{ color: C.muted }}>{t("滚轮缩放 · 空白处直接拖动平移；放大后核心筒等图形挡住空白处时，点\"平移\"再拖动 · Ctrl+Z 撤销 / Ctrl+Y 重做 · \"网格吸附\"开启后拖动一律落在 10 cm 网格上")}</span>
           </div>
-          <div className="rounded" style={{ border: `1px solid ${C.rule}`, background: "#FBFCFD" }}>
+          <div className="rounded" style={{ border: `1px solid ${C.rule}`, background: C.canvasBg }}>
           <svg
             ref={svgRef}
             viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
@@ -4313,7 +4301,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               width: "100%",
               height: "auto",
               aspectRatio: "16 / 9",
-              background: plan.bgSrc ? "#fff" : "#F3F6F8",
+              background: plan.bgSrc ? "#fff" : C.canvas,
               touchAction: "none",
               cursor: panMode ? (dragState.current && dragState.current.moved ? "grabbing" : "grab") : dragState.current && dragState.current.moved ? "grabbing" : "default",
             }}
@@ -4339,9 +4327,9 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               </g>
             )}
             {!plan.bgSrc &&
-              Array.from({ length: Math.ceil(mmW / 1000) + 1 }, (_, i) => <line key={"gx" + i} x1={i * 1000} y1={0} x2={i * 1000} y2={mmH} stroke="#E3E8ED" strokeWidth={mmW / 2000} />)}
+              Array.from({ length: Math.ceil(mmW / 1000) + 1 }, (_, i) => <line key={"gx" + i} x1={i * 1000} y1={0} x2={i * 1000} y2={mmH} stroke={C.rule} strokeWidth={mmW / 2000} />)}
             {!plan.bgSrc &&
-              Array.from({ length: Math.ceil(mmH / 1000) + 1 }, (_, i) => <line key={"gy" + i} x1={0} y1={i * 1000} x2={mmW} y2={i * 1000} stroke="#E3E8ED" strokeWidth={mmW / 2000} />)}
+              Array.from({ length: Math.ceil(mmH / 1000) + 1 }, (_, i) => <line key={"gy" + i} x1={0} y1={i * 1000} x2={mmW} y2={i * 1000} stroke={C.rule} strokeWidth={mmW / 2000} />)}
             {plan.boundary.length > 0 && (
               <polygon points={plan.boundary.map((p) => `${p.x},${p.y}`).join(" ")} fill={C.accent + "10"} stroke={C.accent} strokeDasharray={`${mmW / 100} ${mmW / 200}`} strokeWidth={Math.max(15, mmW / 1200)} />
             )}
@@ -4448,7 +4436,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                   y1={wall.y1 + uy * a}
                   x2={wall.x1 + ux * b}
                   y2={wall.y1 + uy * b}
-                  stroke={plan.bgSrc ? "#fff" : "#F3F6F8"}
+                  stroke={plan.bgSrc ? "#fff" : C.canvas}
                   strokeWidth={wall.t + 30}
                 />
               );
@@ -4580,7 +4568,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
               const geo = doorSymbolGeometry(info.hinge, info.closedDir, info.swingDir, doorW, Math.max(24, inp.wall * 0.4));
               return (
                 <g key={"csym" + c.id} style={{ pointerEvents: "none" }}>
-                  <line x1={g1.x} y1={g1.y} x2={g2.x} y2={g2.y} stroke={plan.bgSrc ? "#fff" : "#F3F6F8"} strokeWidth={inp.wall + 30} />
+                  <line x1={g1.x} y1={g1.y} x2={g2.x} y2={g2.y} stroke={plan.bgSrc ? "#fff" : C.canvas} strokeWidth={inp.wall + 30} />
                   <path d={geo.arcD} fill="none" stroke={C.ink} strokeWidth={Math.max(4, mmW / 2600)} />
                   <path d={geo.leafD} fill="#fff" stroke={C.ink} strokeWidth={Math.max(6, mmW / 1800)} />
                 </g>
@@ -4688,7 +4676,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
                     type="button"
                     onClick={() => openExampleByName(f.name)}
                     className="flex items-center justify-between gap-2 rounded px-2 py-1 text-left"
-                    style={{ border: `1px solid ${fileName === f.name ? C.accent : C.rule}`, background: fileName === f.name ? "#FBEEE9" : C.panel, fontSize: 12 }}
+                    style={{ border: `1px solid ${fileName === f.name ? C.accent : C.rule}`, background: fileName === f.name ? C.errBg : C.panel, fontSize: 12 }}
                     title={t("打开 {0}", [f.name])}
                     data-testid="example-item"
                   >
@@ -4973,7 +4961,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
           )}
 
           {planWarnings.length > 0 && (
-            <div className="rounded p-3" style={{ background: "#FBEAEA", border: `1px solid ${C.err}` }}>
+            <div className="rounded p-3" style={{ background: C.errBg, border: `1px solid ${C.err}` }}>
               {planWarnings.map((w, i) => (
                 <div key={i} style={{ fontSize: 12, color: C.err }}>
                   ✗ {w}
@@ -4987,7 +4975,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
       {/* "清空平面图"放在整个平面图区域的最下面（用户要求不要放在上面的工具栏里）：按钮靠右，点了在它上方出确认条 */}
       <div className="flex flex-col items-end gap-2" style={{ marginTop: 12 }} data-testid="clear-plan-area">
         {clearConfirm && (
-          <div className="flex flex-wrap items-center gap-2 rounded p-3" style={{ border: `1px solid ${C.err}`, background: "#FBEAEA", fontSize: 12.5, alignSelf: "stretch" }} data-testid="clear-confirm">
+          <div className="flex flex-wrap items-center gap-2 rounded p-3" style={{ border: `1px solid ${C.err}`, background: C.errBg, fontSize: 12.5, alignSelf: "stretch" }} data-testid="clear-confirm">
             <span style={{ flex: 1, minWidth: 240 }}>
               {t("确定清空整张平面图吗？底图、比例、边界、")}{plan.cores.length} {t("个核心筒、")}{plan.walls.length} {t("面墙、")}{plan.doors.length} {t("个门和所有路径都会被清掉")}
               {fileName ? t("，并与文件“{0}”断开关联（文件本身不会被改）", [fileName]) : ""}{t("。清空后可按 Ctrl+Z 撤销。")}
@@ -5004,7 +4992,7 @@ function PlanEditor({ res, inp, plan, setPlan, scissorRelax, undoPlan, redoPlan,
           type="button"
           onClick={() => setClearConfirm((v) => !v)}
           className="rounded px-3 py-1.5"
-          style={{ border: `1px solid ${C.err}`, color: C.err, fontWeight: 600, background: clearConfirm ? "#FBEAEA" : C.panel, fontSize: 12.5 }}
+          style={{ border: `1px solid ${C.err}`, color: C.err, fontWeight: 600, background: clearConfirm ? C.errBg : C.panel, fontSize: 12.5 }}
           title={t("把底图、比例、边界、核心筒、墙、门、路径全部清掉，回到空白画布（会先让你确认）")}
           data-testid="clear-plan"
         >
@@ -5211,7 +5199,7 @@ export default function StairCoreTool() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* ================= 左：输入 ================= */}
           <aside className="flex flex-col gap-5 lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-screen lg:overflow-y-auto" style={{ paddingRight: 4 }}>
-            <section className="rounded-lg p-4" style={{ background: dirty ? "#FFF8E8" : C.panel, border: `1px solid ${dirty ? C.warn : C.rule}` }}>
+            <section className="rounded-lg p-4" style={{ background: dirty ? C.warnBg : C.panel, border: `1px solid ${dirty ? C.warn : C.rule}` }}>
               <button
                 type="button"
                 onClick={apply}
@@ -5350,7 +5338,7 @@ export default function StairCoreTool() {
             {/* 概要 */}
             <Panel id="summary" className="rounded-lg p-5" title={t("结果概要")} sub={t("出口层 L1；计入楼梯疏散的楼层 L{0}–L{1}", [res.lvl0, inp.nFloors])}>
               {dirty && (
-                <div className="mb-3 rounded px-3 py-2" style={{ background: "#FFF8E8", border: `1px solid ${C.warn}`, color: C.warn, fontSize: 12.5 }}>
+                <div className="mb-3 rounded px-3 py-2" style={{ background: C.warnBg, border: `1px solid ${C.warn}`, color: C.warn, fontSize: 12.5 }}>
                   {t("以下结果对应上一次确认的输入；左栏有未确认的修改。")}
                 </div>
               )}
@@ -5426,7 +5414,7 @@ export default function StairCoreTool() {
               </div>
 
               {res.warnings.length > 0 && (
-                <div className="mt-4 rounded p-3" style={{ background: "#FBF4E6", border: `1px solid #EAD3A2` }}>
+                <div className="mt-4 rounded p-3" style={{ background: C.warnBg, border: `1px solid #EAD3A2` }}>
                   {res.warnings.map((w, i) => (
                     <div key={i} style={{ fontSize: 12.5, color: C.warn }}>
                       ⚠ {w}
@@ -5630,13 +5618,13 @@ export default function StairCoreTool() {
                 </label>
               </div>
               <div className="grid gap-6" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-                <div className="rounded p-3" style={{ border: `1px solid ${C.rule}`, background: "#FBFCFD" }}>
+                <div className="rounded p-3" style={{ border: `1px solid ${C.rule}`, background: C.canvasBg }}>
                   <PlanSVG res={res} inp={inp} shaftIdx={shaftIdx} level={level} />
                   <p style={{ fontSize: 11.5, color: C.muted, margin: "8px 0 0" }}>
                     {t("门开向楼梯间")} <Ref k="SWING" />{t("；门前缘距踢面 ≥300")} <Ref k="DOOR300" />{t("；门扇摆动后平台保留 ≥750")} <Ref k="DOOR750" />{t("；扶手凸出 ≤100 不计入净宽")} <Ref k="DOOR750" />{t("。")}
                   </p>
                 </div>
-                <div className="rounded p-3" style={{ border: `1px solid ${C.rule}`, background: "#FBFCFD" }}>
+                <div className="rounded p-3" style={{ border: `1px solid ${C.rule}`, background: C.canvasBg }}>
                   <SectionSVG res={res} inp={inp} shaftIdx={shaftIdx} secStart={secStart} />
                   <p style={{ fontSize: 11.5, color: C.muted, margin: "8px 0 0" }}>
                     {t("每跑垂直高度 ≤3 700")} <Ref k="RISE37" />{t("；踢面 125–180、踏面 ≥280")} <Ref k="TREAD" />{t("；扶手 865–1 070")} <Ref k="HAND" />{t("；护栏 ≥1 070")} <Ref k="GUARD" />{t("；楼梯间墙耐火极限 ≥ 楼板（45 min – 2 h）")}<Ref k="FRR" />{t("。")}

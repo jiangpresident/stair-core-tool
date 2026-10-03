@@ -123,8 +123,8 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                 aria-selected={sel}
                 aria-expanded={has ? exp : undefined}
                 aria-level={depth + 1}
-                className="flex items-center gap-1 pr-2 hover:bg-slate-100"
-                style={{ height: 28, paddingLeft: 4 + depth * 18, background: sel ? "#D6E6F7" : undefined, cursor: "pointer", fontWeight: sel || node.current ? 600 : 400, color: node.visible === false ? C.muted : C.ink, userSelect: "none" }}
+                className="flex items-center gap-1 pr-2 row-hover"
+                style={{ height: 28, paddingLeft: 4 + depth * 18, background: sel ? C.selBg : undefined, cursor: "pointer", fontWeight: sel || node.current ? 600 : 400, color: node.visible === false ? C.muted : C.ink, userSelect: "none" }}
                 onClick={() => {
                   onChange(node.path);
                   setOpen(false);
@@ -141,7 +141,7 @@ export default function LayerTreePicker({ layers, value, onChange, C, disabled }
                     e.stopPropagation();
                     if (has) toggleNode(node.path);
                   }}
-                  className={has ? "rounded hover:bg-slate-200" : ""}
+                  className={has ? "rounded row-hover" : ""}
                   style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: C.ink, flexShrink: 0, visibility: has ? "visible" : "hidden", cursor: has ? "pointer" : "default" }}
                   data-testid="layer-caret"
                   data-expanded={exp ? "1" : "0"}

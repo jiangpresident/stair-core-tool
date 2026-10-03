@@ -427,7 +427,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
           {cores && cores.length > 0 && (
             <div className="mt-2 flex flex-col gap-2" data-testid="rhino-cores">
               {cores.map((c, i) => (
-                <div key={c.id} className="rounded p-2" style={{ border: `1px solid ${c.fitsAll ? C.ok : C.err}`, background: c.fitsAll ? "#F0F8F3" : "#FBEAEA" }} data-testid="rhino-core-row">
+                <div key={c.id} className="rounded p-2" style={{ border: `1px solid ${c.fitsAll ? C.ok : C.err}`, background: c.fitsAll ? C.okBg : C.errBg }} data-testid="rhino-core-row">
                   <div className="flex flex-wrap items-center gap-3">
                     <span style={{ fontWeight: 700 }}>
                       {c.fitsAll ? "✓" : "✗"} {c.name || t("长方体 {0}", [i + 1])}
@@ -479,7 +479,7 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
           {doorCheck && (
             <div className="mt-2 flex flex-col gap-2" data-testid="rhino-doors-result">
               {doorCheck.cores.map((c, i) => (
-                <div key={c.core.id || i} className="rounded p-2" style={{ border: `1px solid ${c.ok ? C.ok : C.err}`, background: c.ok ? "#F0F8F3" : "#FBEAEA" }} data-testid="rhino-doors-core">
+                <div key={c.core.id || i} className="rounded p-2" style={{ border: `1px solid ${c.ok ? C.ok : C.err}`, background: c.ok ? C.okBg : C.errBg }} data-testid="rhino-doors-core">
                   <div style={{ fontWeight: 700 }}>
                     {c.ok ? "✓" : "✗"} {c.core.name || t("长方体 {0}", [i + 1])}
                     <span style={{ color: C.muted, fontWeight: 400, fontSize: 11.5 }}>

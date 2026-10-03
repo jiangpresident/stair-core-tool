@@ -578,6 +578,16 @@
 
 **2026-10-02 第四十六轮补丁：「生成平面图」每次都重新从 Rhino 读核心筒和门**——用户："我核心筒的位置在 Rhino 移动了，可是为啥平面图没移动？"原因：`buildLevel` 为了少请求复用了 `rawBoxes` / `rawDoors` 缓存（读过一次就不再读），Rhino 里挪了核心筒再点生成用的还是旧坐标。改成每次生成都重新读核心筒和门（顺带刷新上面校核区的缓存）。平面图本身不与 Rhino 实时联动，改完 Rhino 要再点一次该层的「生成」。验证：Rhino 里把核心筒和门整体 +3 m → 生成 → 平面图核心筒 x 19423 → 22423；再挪回 −3 m、不点"读取并校核"直接生成 → 回到 19423（旧代码会停在 22423）。
 
+**2026-10-02 第四十七轮：深色模式（CRT 风）+ 按钮文字 CRT 显示屏风格（`npm run test:calc`/`test:rhino`/`build` 过，词典 0 缺；浏览器两种模式都截图核对）：**
+
+- 用户："功能部分先不动。先改改 UI。给我个深色模式 UI 的选项。然后按钮文字都是 CRT 显示屏风格。"
+- **主题机制**（`src/theme.js`）：跟语言切换同一套路——存 localStorage `stair-core:theme`，切换后整页刷新（配色常量 `C` 在各模块加载时就定下来，热切换覆盖不到）。两套调色板 `LIGHT_C`（原配色 + 新增 okBg / errBg / warnBg / selBg / canvas / canvasBg 六个以前写死在代码里的底色）和 `DARK_C`（近黑底、荧光绿强调色 #31C86F、冷白文字）；`StairCoreTool.jsx` 里 `const C = C_FOR_THEME()`，其它模块照旧从那里 import C。`applyThemeToDocument()` 把主题写到 `<html data-theme>`，`index.css` 按它切 body 背景、悬停色、发光强度，并给表单控件 `color-scheme: dark`。
+- **写死颜色清理**：`scratchpad/codemod-colors.mjs` 把 33 处写死的浅色十六进制（提醒条 #FFF8E8、通过/不通过行底 #F0F8F3 / #FBEAEA、选中行 #D6E6F7、画布 #F3F6F8 / #FBFCFD、墨色 / 灰字 / 线色等）换成 `C.xxx`（JSX 属性换成 `{C.xxx}`）；`"#fff"`（彩色按钮上的白字）保留。LayerTree 的 Tailwind `hover:bg-slate-*` 换成 CSS 变量 `.row-hover`。
+- **CRT 按钮文字**（`index.css` 全局 `button` 规则）：等宽字体 Share Tech Mono（Google Fonts，只覆盖拉丁字符，中文回退系统字体）+ 字距 0.04em + `text-shadow` 荧光发光（浅色模式淡蓝微光，深色模式用强调色的强光）；深色模式再叠一层很淡的横向扫描线（`button::after`，`pointer-events: none`）。
+- **切换按钮**：`LangToggle.jsx` 右上角变成两组胶囊：☀ / ☾（主题）和 EN / 中（语言），颜色跟主题走。词典 +2（"浅色模式" / "深色模式（CRT）"，动态键，和构件名一样算"多余"但实际在用）。
+- **验证**：浏览器浅色：`data-theme=light`、按钮字体 Share Tech Mono 已加载、有 text-shadow；点 ☾ → 刷新后 `data-theme=dark`、body / 面板底色变深、文字冷白、按钮发光 + 扫描线伪元素、Rhino 校核行底换成深色的 okBg/errBg、`__i18nMissing()` 为空；截图核对；验证时发现窗格里已经是深色（用户自己点过 ☾），测完保持用户的选择。
+- 注意：热力图的绿 / 红、楼梯编号色 `STAIR_COLORS`、平面图上门 / 墙的少数专用色没有做深色变体（深底上仍可辨）；三维视图（three.js）背景没改；CRT 字体只对拉丁字符生效。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

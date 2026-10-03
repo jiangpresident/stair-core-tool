@@ -69,7 +69,7 @@ export default function PlanApp() {
           </a>
         </header>
         {!hasSavedInp && (
-          <div className="rounded p-3 mb-4" style={{ border: `1px solid ${C.warn}`, background: "#FFF8E8", fontSize: 12.5 }}>
+          <div className="rounded p-3 mb-4" style={{ border: `1px solid ${C.warn}`, background: C.warnBg, fontSize: 12.5 }}>
             {t("还没有在核心筒计算器里\"确认并计算\"过，当前用的是默认参数（5 层、折返梯）。去核心筒计算器确认一次后，这里会自动换成你的实际计算结果。")}
           </div>
         )}
