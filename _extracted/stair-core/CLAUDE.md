@@ -597,6 +597,15 @@
 - **验证**：浏览器深色：`data-theme=dark`、`data-crt=1`、body #0A0805、面板 #110D07、标题 / 按钮文字 #FFB000、按钮 text-shadow 琥珀发光、选中态琥珀底黑字；切浅色：`data-crt=0`、按钮字体回到 Avenir Next / Segoe UI、text-shadow none、无伪元素、body #F2F4F3、语言按钮蓝底白字（和原来一致）；切回深色（用户窗格原本的选择）。截图核对与 OpenVMS 截图色调一致。
 - 注意：三维视图背景、热力图绿 / 红、楼梯编号色没有做琥珀变体；CRT 字体只覆盖拉丁字符。
 
+**2026-10-02 第四十七轮补丁 2：深色 CRT 模式的字体和线条也照参照图——全等宽终端字体、方角细线框、面板标题嵌在上框线上（`test:calc`/`test:rhino`/`build` 过；浏览器两种模式核对，浅色不受影响）：**
+
+- 用户："深色模式的时候字体和线条可能改成我发的图的样式吗"。
+- **字体**：`theme.js` 每个主题多一个 `font`（浅色 = 原来的无衬线栈 `SANS_FONT`；CRT = `CRT_FONT`：Share Tech Mono → Cascadia Mono → Consolas → 中文回退系统字体），`StairCoreTool.jsx` 的 `FONT = FONT_FOR_THEME()`，根容器用它，表单控件靠 Tailwind 的 `font-family: inherit` 跟着走；`index.css` 再给 body / 表单控件 / `svg text` 兜底成 `--crt-font`。
+- **线条**（全部只在 `html[data-crt="1"]` 下，用 `!important` 盖过内联 style）：`.rounded` / `.rounded-lg` / section / details / 表单控件一律方角；面板、面板里的框、输入框的边框色换成更亮的琥珀 `--crt-frame`（#C8891A），去掉阴影；输入框底色 = 面板色。
+- **标题嵌框线**：`section[data-panel]` 相对定位、上内边距加大，标题行（`> div:first-child`）绝对定位到 `top: -12px`、去掉原来的下划线，标题和折叠按钮各自垫面板色底，于是上框线从标题文字处"断开"，像终端里 `┌ CPU Busy ┐` 的画法；标题行容器 `pointer-events: none`（空白处不挡点击），子元素恢复可点；折叠时上下内边距收小。
+- **验证**：深色：h1 字体 Share Tech Mono、面板 `border-radius: 0`、边框 #C8891A、标题行 `position: absolute; top: -12px`、输入框方角 + 深底；截图整体像参照图（琥珀线框、标题在框线上、等宽字）。切浅色：字体回到 Avenir Next、面板圆角 8px、边框原色、标题行 static、按钮无发光——完全是原来的样子。切回深色。
+- 注意：Share Tech Mono 没有中文字形，中文仍是系统字体（看起来是"等宽拉丁 + 普通中文"混排）；要全等宽中文得自带像素字体文件；折叠状态下面板只剩一条 30px 高的框，看起来像双线，是设计使然。
+
 待用户确认的两个前置问题（原始，供参考——已在上面的会话里问过一版并记录了回答）：
 1. 平面图格式：PDF / DWG-DXF / 图片？（决定用 pdf.js、dxf-parser 还是仅图片）
 2. 走廊与墙体：手动画折线，还是从 DXF 图层自动读墙线？（决定路径算法：可见图 vs 网格搜索）

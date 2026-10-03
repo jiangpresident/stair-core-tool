@@ -77,7 +77,7 @@ Clauses implemented (identical across the three levels unless tagged otherwise i
 
 ## Appearance
 
-The top-right corner has two toggles: **☀ / ☾** switches between the light theme (unchanged) and an **amber CRT** dark theme modelled on old phosphor terminals (near-black background, amber text and rules, inverse-video buttons with a soft glow and faint scanlines), and **EN / 中** switches the interface language. Both are remembered in the browser. Themes are a small registry in `src/theme.js`: add an entry (palette + CSS variables + flags) and the toggle picks it up; for quick experiments, a `stair-core:theme-overrides` JSON in localStorage overrides individual palette colours without touching code.
+The top-right corner has two toggles: **☀ / ☾** switches between the light theme (unchanged) and an **amber CRT** dark theme modelled on old phosphor terminals (near-black background, monospaced terminal type throughout, square 1 px amber frames with panel titles set into the top edge, inverse-video buttons with a soft glow and faint scanlines), and **EN / 中** switches the interface language. Both are remembered in the browser. Themes are a small registry in `src/theme.js`: add an entry (palette + CSS variables + flags) and the toggle picks it up; for quick experiments, a `stair-core:theme-overrides` JSON in localStorage overrides individual palette colours without touching code.
 
 ## Rhino connection (1.1, local version only)
 

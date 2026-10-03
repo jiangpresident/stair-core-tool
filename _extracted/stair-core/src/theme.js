@@ -60,12 +60,17 @@ const AMBER = {
   canvasBg: "#0C0906",
 };
 
+/* 字体：浅色用原来的无衬线栈；CRT 用等宽终端字体（Share Tech Mono 只有拉丁字符，中文回退到系统字体） */
+export const SANS_FONT = '"Avenir Next","Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif';
+export const CRT_FONT = '"Share Tech Mono","Cascadia Mono",Consolas,"Courier New","PingFang SC","Noto Sans SC","Microsoft YaHei",monospace';
+
 export const THEME_DEFS = {
   light: {
     label: "☀",
     title: "浅色模式",
     palette: LIGHT,
-    vars: { "--page-bg": LIGHT.paper, "--row-hover": "#F1F5F9", "--crt-glow": "transparent" },
+    font: SANS_FONT,
+    vars: { "--page-bg": LIGHT.paper, "--row-hover": "#F1F5F9", "--crt-glow": "transparent", "--crt-frame": LIGHT.rule, "--panel": LIGHT.panel, "--crt-font": SANS_FONT },
     crt: false,
     dark: false,
   },
@@ -73,11 +78,14 @@ export const THEME_DEFS = {
     label: "☾",
     title: "深色模式（琥珀色 CRT）",
     palette: AMBER,
-    vars: { "--page-bg": AMBER.paper, "--row-hover": "#1E1609", "--crt-glow": "rgba(255, 176, 0, 0.55)" },
+    font: CRT_FONT,
+    // --crt-frame：面板 / 输入框的线框色（比 rule 亮，像终端的线框）；--panel：标题"嵌"在框线上时垫在文字后面的底色
+    vars: { "--page-bg": AMBER.paper, "--row-hover": "#1E1609", "--crt-glow": "rgba(255, 176, 0, 0.55)", "--crt-frame": "#C8891A", "--panel": AMBER.panel, "--crt-font": CRT_FONT },
     crt: true,
     dark: true,
   },
 };
+export const FONT_FOR_THEME = () => THEME_DEFS[getTheme()].font || SANS_FONT;
 export const THEMES = Object.entries(THEME_DEFS).map(([key, d]) => ({ key, label: d.label, title: d.title }));
 
 export function getTheme() {

@@ -8,12 +8,24 @@
   --page-bg: #F2F4F3;
   --row-hover: #F1F5F9;
   --crt-glow: transparent;
+  --crt-frame: #D3DBE2;
+  --panel: #FFFFFF;
+  --crt-font: "Avenir Next", "Segoe UI", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
 }
 html, body { margin: 0; background: var(--page-bg); }
 
-/* CRT 主题（data-crt="1"）的按钮文字：等宽字体 + 荧光发光 + 很淡的横向扫描线。浅色主题不受影响。 */
+/* ============ CRT 主题（data-crt="1"）：照老式琥珀色终端 ============ */
+/* 1) 全部等宽终端字体（根容器的 fontFamily 已由 theme.js 切换，这里兜底表单控件和 SVG 文字） */
+html[data-crt="1"] body,
+html[data-crt="1"] input,
+html[data-crt="1"] select,
+html[data-crt="1"] textarea,
+html[data-crt="1"] button,
+html[data-crt="1"] svg text {
+  font-family: var(--crt-font);
+}
+/* 2) 按钮文字：荧光发光 + 很淡的横向扫描线 */
 html[data-crt="1"] button {
-  font-family: "Share Tech Mono", ui-monospace, Consolas, "Courier New", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", monospace;
   letter-spacing: 0.04em;
   text-shadow: 0 0 1px currentColor, 0 0 4px currentColor, 0 0 10px var(--crt-glow);
   position: relative;
@@ -26,7 +38,64 @@ html[data-crt="1"] button::after {
   border-radius: inherit;
   background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0.16) 2px, rgba(0, 0, 0, 0.16) 3px);
 }
-/* 深色主题下的表单控件用深色外观（下拉箭头、滚动条等） */
+/* 3) 线条：方角、1px 细线框、线框用更亮的琥珀色（内联 style 写的圆角 / 边框色在这里被覆盖） */
+html[data-crt="1"] .rounded,
+html[data-crt="1"] .rounded-lg,
+html[data-crt="1"] section,
+html[data-crt="1"] details,
+html[data-crt="1"] input,
+html[data-crt="1"] select,
+html[data-crt="1"] textarea,
+html[data-crt="1"] button {
+  border-radius: 0 !important;
+}
+html[data-crt="1"] section[data-panel],
+html[data-crt="1"] section[data-panel] details,
+html[data-crt="1"] section[data-panel] .rounded,
+html[data-crt="1"] input,
+html[data-crt="1"] select,
+html[data-crt="1"] textarea {
+  border-color: var(--crt-frame) !important;
+  box-shadow: none !important;
+}
+html[data-crt="1"] input,
+html[data-crt="1"] select,
+html[data-crt="1"] textarea {
+  background-color: var(--panel) !important;
+  color: inherit;
+}
+/* 4) 面板标题"嵌"在上框线上（像终端里 ┌ CPU Busy ┐ 的写法）：标题行绝对定位到上边框，底色垫住线 */
+html[data-crt="1"] section[data-panel] {
+  position: relative;
+  margin-top: 14px;
+  padding-top: 26px !important;
+}
+html[data-crt="1"] section[data-panel] > div:first-child {
+  position: absolute;
+  top: -12px;
+  left: 14px;
+  right: 14px;
+  width: auto;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+  pointer-events: none; /* 空白处不挡点击；标题文字和按钮自己重新打开 */
+}
+html[data-crt="1"] section[data-panel] > div:first-child > * {
+  pointer-events: auto;
+  background: var(--panel);
+  padding: 0 6px;
+}
+html[data-crt="1"] section[data-panel] > div:first-child h2 {
+  font-size: 14px !important;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 6px var(--crt-glow);
+}
+html[data-crt="1"] section[data-panel][data-open="0"] {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+/* 5) 深色主题下的表单控件用深色外观 */
 html[data-dark="1"] { color-scheme: dark; }
 html[data-dark="1"] input, html[data-dark="1"] select, html[data-dark="1"] textarea { color-scheme: dark; }
 

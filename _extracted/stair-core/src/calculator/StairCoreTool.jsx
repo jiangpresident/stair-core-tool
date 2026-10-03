@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { saveInp, otherAppHref } from "../planBridge.js";
-import { C_FOR_THEME, applyThemeToDocument } from "../theme.js";
+import { C_FOR_THEME, FONT_FOR_THEME, applyThemeToDocument } from "../theme.js";
 import { AI_PROVIDERS, readAiSettingsFromBrowser, writeAiSettingsToBrowser } from "../plan/aiSettings.js";
 import { savePlanFile, openPlanFile, supportsFilePicker, bridgeAvailable, listExamples, openExample, PLAN_DEFAULTS } from "../plan/planFile.js";
 
@@ -39,8 +39,7 @@ import RhinoPanel from "../rhino/RhinoPanel.jsx";
    其它模块（RhinoPanel、LayerTree、PlanApp）从这里 import C，所以一处切换处处生效。 */
 const C = C_FOR_THEME();
 applyThemeToDocument();
-const FONT =
-  '"Avenir Next","Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif';
+const FONT = FONT_FOR_THEME(); // 浅色：无衬线；深色 CRT：等宽终端字体（见 theme.js）
 
 /* Table 3.1.17.1 人员荷载（m²/人）。NBC 2020 = BCBC 2024 = VBBL 2025 */
 const USES = [
