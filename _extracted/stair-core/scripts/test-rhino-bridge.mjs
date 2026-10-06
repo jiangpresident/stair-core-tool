@@ -1,7 +1,7 @@
 // Rhino 桥客户端（src/rhino/rhinoBridge.js）的回归测试：不需要 Rhino，用假 fetch 冒充桥接脚本。
 // 验证 payload 整理（类别过滤、原点平移字段、计数、毫米单位）、health 的在线/离线/异常返回、bake 的请求形状与错误翻译。
 import assert from "node:assert/strict";
-import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT } from "../src/rhino/rhinoBridge.js";
+import { buildRhinoPayload, checkRhino, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, shiftPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, buildLayerTree, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, rhinoUrl, RHINO_PORTS, RHINO_URL, RHINO_NOT_RUNNING_HINT, pageMayBeBlocked } from "../src/rhino/rhinoBridge.js";
 
 let passed = 0;
 const test = async (name, fn) => {
@@ -393,6 +393,21 @@ await test("coresToPlan：核心筒按共用基准落到平面图（原点角、
   assert.equal(out.rhinoFrame.x0, 0, "基准沿用墙的");
   assert.equal(out.walls.length, 1, "墙还在");
   assert.equal(coresToPlan([], dc, withWalls).cores.length, 0);
+});
+
+await test("线上版访问本机：health 请求声明 targetAddressSpace=loopback；pageMayBeBlocked 只对 https 非本机页面为真", async () => {
+  const inits = [];
+  const fetch = async (url, init) => { inits.push(init); return json({ ok: true, rhino: "8" }); };
+  await scanRhino({ fetch, ports: [8790], timeoutMs: 50 });
+  await checkRhino({ fetch });
+  assert.equal(inits.length, 2);
+  for (const i of inits) assert.deepEqual([i.cache, i.targetAddressSpace], ["no-store", "loopback"]);
+  assert.equal(pageMayBeBlocked({ protocol: "https:", hostname: "jiangpresident.github.io" }), true);
+  assert.equal(pageMayBeBlocked({ protocol: "http:", hostname: "localhost" }), false);
+  assert.equal(pageMayBeBlocked({ protocol: "https:", hostname: "localhost" }), false);
+  assert.equal(pageMayBeBlocked({ protocol: "http:", hostname: "127.0.0.1" }), false);
+  assert.equal(pageMayBeBlocked({ protocol: "https:", hostname: "app.localhost" }), false);
+  assert.equal(pageMayBeBlocked(null), false);
 });
 
 console.log(process.exitCode ? "有测试失败" : `全部通过（${passed} 项）`);

@@ -6,6 +6,8 @@ rem (This file is kept ASCII-only on purpose: cmd.exe mis-parses UTF-8 batch fil
 setlocal
 set "HERE=%~dp0"
 set "SCRIPT=%HERE%rhino\StairCoreBridge.py"
+rem In the downloadable bridge package the script sits next to this .bat instead of in rhino\.
+if not exist "%SCRIPT%" set "SCRIPT=%HERE%StairCoreBridge.py"
 if not exist "%SCRIPT%" (
   echo Cannot find "%SCRIPT%"
   pause

@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/pack-rhino-bridge.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/pack-rhino-bridge.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "build:single": "node scripts/build-standalone.mjs",
@@ -19,7 +21,8 @@
     "test:plan-bridge": "node scripts/test-plan-bridge.mjs",
     "test:marker-service": "node scripts/test-marker-service.mjs",
     "i18n:keys": "node scripts/i18n-keys.mjs",
-    "test:rhino": "node scripts/test-rhino-bridge.mjs"
+    "test:rhino": "node scripts/test-rhino-bridge.mjs",
+    "pack:rhino": "node scripts/pack-rhino-bridge.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

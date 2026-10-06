@@ -7,9 +7,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { t } from "../i18n.js";
 import LayerTreePicker from "./LayerTree.jsx";
-import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS } from "./rhinoBridge.js";
+import { buildRhinoPayload, sendToRhino, listRhinoLayers, readRhinoCores, readRhinoWalls, wallsToPlan, readRhinoFloors, floorToPlan, matchCoreDoors, coresToPlan, checkCoreBoxes, scanRhino, listRecentFiles, openRhinoFile, openRhinoFileDialog, RHINO_SCRIPT_PATH, RHINO_NOT_RUNNING_HINT, RHINO_PORTS, pageMayBeBlocked, RHINO_BROWSER_BLOCK_HINT } from "./rhinoBridge.js";
 
 const PORT_KEY = "stair-core:rhino-port"; // 上次选的 Rhino 窗口（端口），下次连接优先用它
+// 桥接脚本的可下载包所在目录（scripts/pack-rhino-bridge.mjs 在 dev / build 前生成到 public/rhino-bridge/；线上版带子路径，所以用 BASE_URL）
+const BRIDGE_DOWNLOAD_BASE = `${(typeof import.meta !== "undefined" && import.meta.env && import.meta.env.BASE_URL) || "/"}rhino-bridge/`;
 const readSavedPort = () => {
   try {
     const v = Number(localStorage.getItem(PORT_KEY));
@@ -339,8 +341,23 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
           {status.error}
           {status.offline && (
             <div className="mt-1 flex flex-col gap-1">
+              {pageMayBeBlocked() && (
+                <div style={{ color: C.warn || C.err, fontWeight: 600 }} data-testid="rhino-browser-block">
+                  {RHINO_BROWSER_BLOCK_HINT}
+                </div>
+              )}
               <div>{t("脚本路径：项目根目录 {0}。它只监听本机 127.0.0.1:8790，不联网；运行一次后一直在后台监听，直到关闭 Rhino。", [RHINO_SCRIPT_PATH])}</div>
-              <div style={{ fontWeight: 600, color: C.ink }}>{t("省事的办法（二选一）：")}</div>
+              <div className="flex flex-wrap items-center gap-1" data-testid="rhino-bridge-download">
+                <span style={{ fontWeight: 600, color: C.ink }}>{t("电脑上没有这个脚本（线上版）？从这里下载：")}</span>
+                <a href={`${BRIDGE_DOWNLOAD_BASE}StairCoreRhinoBridge.zip`} download className="rounded px-2" style={{ border: `1px solid ${C.accent}`, color: C.accent, fontWeight: 600 }}>
+                  {t("下载 Rhino 桥接包（zip）")}
+                </a>
+                <a href={`${BRIDGE_DOWNLOAD_BASE}StairCoreBridge.py`} download style={{ color: C.accent }}>
+                  {t("只要脚本 .py")}
+                </a>
+                <span>{t("解压到任意位置，双击里面的 Start Rhino with bridge.bat；或在 Rhino 的 ScriptEditor（Rhino 7：EditPythonScript）里打开并运行 StairCoreBridge.py。")}</span>
+              </div>
+              <div style={{ fontWeight: 600, color: C.ink }}>{t("有仓库（本机开发版）的省事办法（二选一）：")}</div>
               <div>{t("① 用项目根目录的「启动 Rhino（带桥接）.bat」打开 Rhino，桥会随 Rhino 自动启动；")}</div>
               <div>
                 {t("② 在 Rhino 选项 → 常规 → “每次 Rhino 启动时运行这些命令” 里加一行（点右边复制）：")}

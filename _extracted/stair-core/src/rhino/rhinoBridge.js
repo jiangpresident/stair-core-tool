@@ -37,6 +37,23 @@ export function buildRhinoPayload(model, { name = "StairCore", kinds = null, ori
 export const RHINO_PORTS = Array.from({ length: 10 }, (_, i) => 8790 + i);
 export const rhinoUrl = (port) => "http://127.0.0.1:" + port;
 
+/* 线上版（https://…github.io）去请求本机 http://127.0.0.1 时，Chrome 把它当"公网页面访问本地网络"（Local Network Access）：
+   第一次会弹权限提示，用户点"允许"才放行；拒绝过就一直 Failed to fetch。fetch 里带 targetAddressSpace: "loopback" 是
+   Chrome 规定的声明方式（也顺带绕开 https 页面请求 http 的混合内容拦截）；不认识这个字段的浏览器会忽略它。 */
+const LOOPBACK_INIT = { targetAddressSpace: "loopback" };
+
+/* 当前页面是不是会被浏览器按"公网页面访问本地网络"对待：https 且不是本机地址。本机开发服务器（localhost / 127.0.0.1）不会。 */
+export function pageMayBeBlocked(loc = typeof location !== "undefined" ? location : null) {
+  if (!loc || !loc.protocol) return false;
+  const host = String(loc.hostname || "").toLowerCase();
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1" || host.endsWith(".localhost");
+  return loc.protocol === "https:" && !isLocal;
+}
+
+export const RHINO_BROWSER_BLOCK_HINT = t(
+  "这是 https 线上版页面：浏览器会把它访问本机 127.0.0.1 的请求当成“访问本地网络”。Chrome 第一次会弹权限提示，请点「允许」；没弹出或以前点过拒绝的话，点地址栏左侧的图标 → 网站设置 → 本地网络访问 → 允许，然后刷新页面再点「连接 Rhino」。",
+);
+
 async function fetchWithTimeout(f, url, init, ms) {
   const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timer = setTimeout(() => ctl && ctl.abort(), ms);
@@ -53,7 +70,7 @@ export async function scanRhino({ fetch: fetchImpl, ports = RHINO_PORTS, timeout
   const found = await Promise.all(
     ports.map(async (port) => {
       try {
-        const res = await fetchWithTimeout(f, rhinoUrl(port) + "/health", { cache: "no-store" }, timeoutMs);
+        const res = await fetchWithTimeout(f, rhinoUrl(port) + "/health", { cache: "no-store", ...LOOPBACK_INIT }, timeoutMs);
         if (!res.ok) return null;
         const j = await res.json();
         return j && j.ok ? { ...j, port, baseUrl: rhinoUrl(port) } : null;
@@ -107,7 +124,7 @@ async function postOpen(route, body, fetchImpl, baseUrl) {
 export async function checkRhino({ fetch: fetchImpl, baseUrl = RHINO_URL } = {}) {
   const f = fetchImpl || globalThis.fetch;
   try {
-    const res = await f(baseUrl + "/health", { cache: "no-store" });
+    const res = await f(baseUrl + "/health", { cache: "no-store", ...LOOPBACK_INIT });
     if (!res.ok) return { ok: false, error: t("Rhino 桥返回 {0}", [res.status]) };
     const j = await res.json();
     return j && j.ok ? j : { ok: false, error: t("Rhino 桥返回的数据不对") };
