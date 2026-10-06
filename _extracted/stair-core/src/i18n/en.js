@@ -826,4 +826,11 @@ export const EN = {
   "NBC / BCBC / VBBL 没有规定单扇出口门的最大宽度。这里按常见做法设上限（NFPA 101 与门五金惯例为 1 220 mm，约 48 in），可在参数里修改。": "NBC / BCBC / VBBL set no maximum width for a single exit door leaf. This limit follows common practice (NFPA 101 and door hardware convention: 1 220 mm, about 48 in) and can be changed in the parameters.",
   "USER：规范无单扇上限；超过则自动分两扇": "USER: the code has no single-leaf limit; above it the door becomes a pair",
   "，两扇仍超上限，需另设门洞或放宽上限": ", still over the limit even as a pair: add another doorway or raise the limit",
+  "单扇需平台 {0} > {1} → 已分两扇各 {2}，平台回到 {3}": "a single leaf would need a {0} landing > {1} → split into two leaves of {2}, landing back to {3}",
+  "门的摆动不侵占通行范围：楼梯只需平台 {0}，门不该把它顶得更深（否则分扇）": "The door swing must not eat into the walking zone: the stair itself needs a {0} landing and the door should not force it deeper (otherwise split the leaf)",
+  "门需平台 {0} > {1}，平台加深到 {2}": "the door needs a {0} landing > {1}; landing deepened to {2}",
+  "门需平台 {0} > {1}；分两扇每扇只有 {2} < {3} 不实用，保持单扇、平台加深到 {4}": "the door needs a {0} landing > {1}; splitting would give {2} per leaf < {3}, impractical, so one leaf is kept and the landing is deepened to {4}",
+  "平台 {0} 由楼梯决定，门不侵占": "landing {0} is set by the stair; the door does not intrude",
+  "通行范围 {0}": "walking zone {0}",
+  "门后余 {0}": "after the door {0}",
 };

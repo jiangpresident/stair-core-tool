@@ -83,6 +83,17 @@ test("出口门太宽自动分两扇：每扇 ≥610，总门洞仍满足人数�
   const r3 = compute(mk({ floors, maxStairW: 6000 }));
   assert.equal(r3.c[2], 2);
   assert.deepEqual([r3.stairs[0].door.leaves, r3.stairs[0].door.overflow], [2, true]);
+  // 默认例子：单扇 1 070 要平台 1 420 > 梯宽 1 350（侵占 70），分两扇每扇只有 540 < 800 → 不分，平台加深
+  const d0 = compute(mk()).stairs[0].door;
+  assert.deepEqual([d0.landingBase, d0.doorMinSingle, d0.intrudes, d0.splitReason, d0.swingTry && d0.swingTry.leafW], [1350, 1420, true, undefined, 610]);
+  // 居中开门 + 单扇上限放到 3 000 + 每梯 300 人：单扇 1 880 要平台 2 630 > 梯宽 2 400 → 分两扇各 940（≥800），平台回到 2 400
+  const floors2 = defaultFloors(5);
+  floors2[1] = { ...floors2[1], ol: "1200" };
+  const rs = compute(mk({ floors: floors2, maxStairW: 3000, adv: { ...baseAdv, doorHinge: "center", doorLeafMax: 3000 } }));
+  const ds = rs.stairs[0].door;
+  assert.equal(rs.c[2], 4);
+  assert.deepEqual([ds.leaves, ds.leafW, ds.splitReason, ds.intrudes, ds.doorMinSingle], [2, 940, "swing", false, 1880 + 750]);
+  assert.equal(rs.stairs[0].geos[0].Lf, rs.stairs[0].W);
   // 两扇门的三维门盒子宽 = 门洞总宽
   const solids = buildSolids(r, mk({ floors, maxStairW: 3000 }), 0, 1, 1);
   const doorBox = solids.boxes.find((bx) => bx.kind === "door");

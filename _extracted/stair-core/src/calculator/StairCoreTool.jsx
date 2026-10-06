@@ -701,6 +701,7 @@ const JAMB = 50; // 门框/铰链侧留缝（门扇贴侧墙时）
 /* 出口门尺寸（每部楼梯）：门口按 3.4.3.2.(1)(a) 6.1 mm/人算所需净宽，且 ≥ Table 3.4.3.2.-A 的 800 mm；门洞 = 净宽 + 门框约 JAMB。
    单扇门宽超过 adv.doorLeafMax（USER 设定，默认 1 220；NBC / BCBC / VBBL 本身没有单扇上限）就自动分成两扇，每扇 ≥610（3.4.6.11.(5)）。
    adv.doorLeaf 是设计门扇的下限（单扇时实际门扇 = max(所需, 下限)）。 */
+const SWING_SPLIT_MIN_LEAF = 800; // 因摆动侵占通行范围而分扇时，每扇至少这么宽（比 3.4.6.11.(5) 的 610 更实用；Table 3.4.3.2.-A 门口最小也是 800）
 function sizeExitDoor(persons, adv) {
   const leafMax = Number(adv.doorLeafMax) || 1220;
   const minLeaf = Number(adv.doorLeaf) || 0;
@@ -872,8 +873,25 @@ function compute(inp) {
     if (W > maxStairW) warnings.push(t("楼梯 {0}: 最小宽度 {1} mm 超过设定的单梯最大宽度 {2} mm", [k, fmt(W), fmt(maxStairW)]));
     /* 这部楼梯的出口门：按它分担的最不利楼层人数（和梯宽同一个分摊口径）× 6.1 mm/人 */
     const doorPersons = Math.max(...served.map((L) => (perFloor[L - 1].ol || 0) / c[L]));
-    const door = sizeExitDoor(doorPersons, adv);
-    const doorMinK = doorMinFor(door);
+    let door = sizeExitDoor(doorPersons, adv);
+    let doorMinK = doorMinFor(door);
+    /* 门的摆动侵占通行范围：楼梯本身只要平台深 Lf0（折返 = 梯宽；剪刀 = min(梯宽, 1100)），单扇门却要把平台顶到 doorMinK > Lf0 时，
+       试着分成两扇（每扇 ≥ SWING_SPLIT_MIN_LEAF，太窄的两扇不实用就不分）；分完摆动半径减半、平台回到 Lf0 才算成功，否则保持单扇、平台加深。 */
+    const Lf0 = stairType === "dogleg" ? W : Math.min(W, 1100);
+    door.landingBase = Lf0;
+    door.doorMinSingle = doorMinK;
+    if (door.leaves === 1 && doorMinK > Lf0) {
+      const leaf2 = Math.max(610, roundUp(door.openingReq / 2, 10));
+      const door2 = { ...door, leaves: 2, leafW: leaf2, opening: 2 * leaf2, clear: 2 * leaf2 - JAMB, overflow: leaf2 > door.leafMax };
+      const doorMin2 = doorMinFor(door2);
+      door.swingTry = { leafW: leaf2, doorMin: doorMin2 };
+      if (leaf2 >= SWING_SPLIT_MIN_LEAF && doorMin2 <= Lf0) {
+        door = { ...door2, splitReason: "swing", landingBase: Lf0, doorMinSingle: doorMinK, swingTry: door.swingTry };
+        doorMinK = doorMin2;
+      }
+    }
+    if (door.leaves === 2 && !door.splitReason) door.splitReason = "leafMax";
+    door.intrudes = doorMinK > Lf0; // 最终门仍把平台顶深了（没分或分了也不够）
     /* 楼梯实际穿越的各层（自出口层至其终止层下一层）的几何 */
     const storeyLevels = [];
     for (let L = 1; L < top; L++) storeyLevels.push(L);
@@ -1169,6 +1187,13 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
   const landings = [];
   const dividers = [];
   const doors = [];
+  const walkBands = []; // 人行通行范围（门 → 梯段起步）{x1,x2,y1,y2,depth,remain,need,ok}
+  // 门摆动之后通行范围还剩多少：跟计算器 doorMin 的口径一致——贴墙门看门边距踢面（≥300，3.4.6.11.(1)），居中门看门后剩余（≥750，3.4.3.3.(2)），侧墙门看门洞 + 300
+  const walkRemain = (depth, dd) => {
+    const remain = doorPos !== "end" ? depth - dd.opening : doorHinge === "wall" ? depth - (dd.leafW + JAMB) : depth - dd.leafW;
+    const need = doorPos === "end" && doorHinge !== "wall" ? 750 : 300;
+    return { depth, remain, need, ok: remain >= need };
+  };
   const topDims = [];
   const leftDims = [];
   let title = "";
@@ -1213,6 +1238,13 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
     const da = doorAlong(0, innerW, hingeBand === 0 ? "low" : "high", doorHinge, dDoor.opening);
     if (end === 0) doors.push(doorPos === "end" ? { side: "left", along: da.along, hingeEnd: da.hingeEnd, door: dDoor } : { side: "bottom", along: Math.max(0, (depth0 - dDoor.opening - 300) / 2), door: dDoor });
     else doors.push(doorPos === "end" ? { side: "right", along: da.along, hingeEnd: da.hingeEnd, door: dDoor } : { side: "bottom", along: innerL - Math.max(0, (depth0 - dDoor.opening - 300) / 2) - dDoor.opening, door: dDoor });
+    /* 人行通行范围：门所在那条梯段带上、从端墙到梯段起步处的整段楼层平台；标注门摆动之后还剩多少（贴墙门按门边距踢面 ≥300，居中门按 ≥750，侧墙门按门洞 + 300） */
+    {
+      const bandY = hingeBand === 0 ? [0, W] : [innerW - W, innerW];
+      const edge = floorEdge[hingeBand];
+      const [x1, x2] = end === 0 ? [0, edge] : [edge, innerL];
+      walkBands.push({ x1, x2, y1: bandY[0], y2: bandY[1], ...walkRemain(x2 - x1, dDoor) });
+    }
     const xs0 = [f0.startX, f0.endX].sort((a, b2) => a - b2);
     if (end === 0) topDims.push({ x1: 0, x2: xs0[0], label: t("楼层平台 {0}", [fmt(xs0[0])]) }, { x1: xs0[0], x2: xs0[1], label: `${f0.r - 1} × ${run} = ${fmt(xs0[1] - xs0[0])}` }, { x1: xs0[1], x2: innerL, label: t("平台 {0}", [fmt(innerL - xs0[1])]) });
     else topDims.push({ x1: 0, x2: xs0[0], label: t("平台 {0}", [fmt(xs0[0])]) }, { x1: xs0[0], x2: xs0[1], label: `${f0.r - 1} × ${run} = ${fmt(xs0[1] - xs0[0])}` }, { x1: xs0[1], x2: innerL, label: t("楼层平台 {0}", [fmt(innerL - xs0[1])]) });
@@ -1234,6 +1266,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
     const dA = doorOf(a);
     const daA = doorAlong(0, a.W, "low", doorHinge, dA.opening);
     doors.push(doorPos === "end" ? { side: "left", along: daA.along, hingeEnd: daA.hingeEnd, door: dA } : { side: "top", along: Math.max(0, (LendEff - dA.opening - 300) / 2), door: dA });
+    walkBands.push({ x1: 0, x2: LendEff, y1: 0, y2: a.W, ...walkRemain(LendEff, dA) });
     if (b) {
       const layB = layoutFlights(innerL - LendEff, -1, pf.flightRisers, run, geoA.Lmid, 0, 1);
       const yB = a.W + centerWall;
@@ -1245,6 +1278,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
       const dB = doorOf(b);
       const daB = doorAlong(yB, innerW, "high", doorHinge, dB.opening);
       doors.push(doorPos === "end" ? { side: "right", along: daB.along, hingeEnd: daB.hingeEnd, door: dB } : { side: "bottom", along: innerL - Math.max(0, (LendEff - dB.opening - 300) / 2) - dB.opening, door: dB });
+      walkBands.push({ x1: innerL - LendEff, x2: innerL, y1: yB, y2: innerW, ...walkRemain(LendEff, dB) });
       leftDims.push({ y1: 0, y2: a.W, label: t("净宽 {0}", [fmt(a.W)]) }, { y1: a.W, y2: yB, label: t("隔墙 {0}", [fmt(centerWall)]) }, { y1: yB, y2: innerW, label: t("净宽 {0}", [fmt(b.W)]) });
       title = t("剪刀梯（楼梯 {0} + {1}）· L{2} 平面", [a.k, b.k, level]);
     } else {
@@ -1260,7 +1294,25 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
     topDims.push({ x1: innerL - LendEff, x2: innerL, label: t("平台 {0}", [fmt(LendEff)]) });
   }
 
-  /* 门符号：单扇按铰链端画一扇；两扇门（门洞超过单扇上限时自动分的）在门洞两端各一扇，向中间合拢 */
+  /* 人行通行范围：虚线框 + "通行范围 深度（≥750）"，不够 750 标红。门摆动占掉的扇形另外画在门符号里。 */
+  const walkElems = walkBands.map((wb, i) => {
+    if (!(wb.x2 > wb.x1 + 1) || !(wb.y2 > wb.y1 + 1)) return null;
+    const col = wb.ok ? C.ok : C.err;
+    const cx = X((wb.x1 + wb.x2) / 2), cy = Y((wb.y1 + wb.y2) / 2);
+    return (
+      <g key={"walk" + i} pointerEvents="none">
+        <rect x={X(wb.x1)} y={Y(wb.y1)} width={(wb.x2 - wb.x1) * s} height={(wb.y2 - wb.y1) * s} fill={col} fillOpacity={0.07} stroke={col} strokeWidth="1" strokeDasharray="5 3" />
+        <text x={cx} y={cy - 3} fontSize="8.5" fill={col} textAnchor="middle" style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: 2.5 }}>
+          {t("通行范围 {0}", [fmt(wb.depth)])}
+        </text>
+        <text x={cx} y={cy + 8} fontSize="8" fill={col} textAnchor="middle" style={{ paintOrder: "stroke", stroke: C.panel, strokeWidth: 2.5 }}>
+          {t("门后余 {0}", [fmt(wb.remain)])}
+          {wb.ok ? ` ≥${wb.need}` : ` <${wb.need}`}
+        </text>
+      </g>
+    );
+  });
+  /* 门符号：单扇按铰链端画一扇；两扇门（门洞超过单扇上限时自动分的）在门洞两端各一扇，向中间合拢；摆动扇形淡色填充 */
   const doorElems = doors.map((d, i) => {
     const dd = d.door || { opening: doorLeaf, leafW: doorLeaf, leaves: 1 };
     const r = dd.leafW * s; // 一扇的摆动半径
@@ -1278,6 +1330,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
             const sweep = (d.side === "left") !== lf.high ? 0 : 1;
             return (
               <g key={j}>
+                <path d={`M ${xw} ${yh} L ${xw} ${yc} A ${r} ${r} 0 0 ${sweep} ${xw + dirx * r} ${yh} Z`} fill={C.warn} fillOpacity={0.12} stroke="none" />
                 <line x1={xw} y1={yh} x2={xw + dirx * r} y2={yh} stroke={C.ink} strokeWidth="1.4" />
                 <circle cx={xw} cy={yh} r="2" fill={C.ink} />
                 <path d={`M ${xw} ${yc} A ${r} ${r} 0 0 ${sweep} ${xw + dirx * r} ${yh}`} stroke={C.lineSoft} strokeWidth="0.8" fill="none" strokeDasharray="3 2" />
@@ -1299,6 +1352,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
           const sweep = (d.side === "top") !== lf.right ? 1 : 0;
           return (
             <g key={j}>
+              <path d={`M ${xh} ${yw} L ${xh + dx * r} ${yw} A ${r} ${r} 0 0 ${sweep} ${xh} ${yw + diry * r} Z`} fill={C.warn} fillOpacity={0.12} stroke="none" />
               <line x1={xh} y1={yw} x2={xh} y2={yw + diry * r} stroke={C.ink} strokeWidth="1.4" />
               <path d={`M ${xh + dx * r} ${yw} A ${r} ${r} 0 0 ${sweep} ${xh} ${yw + diry * r}`} stroke={C.lineSoft} strokeWidth="0.8" fill="none" strokeDasharray="3 2" />
             </g>
@@ -1379,6 +1433,7 @@ function PlanSVG({ res, inp, shaftIdx, level }) {
           </g>
         );
       })}
+      {walkElems}
       {doorElems}
       {/* 尺寸 */}
       {topDims.map((d, i) => (
@@ -5709,6 +5764,23 @@ export default function StairCoreTool() {
                   ok: !door.overflow,
                 });
                 if (door.leaves === 2) rows.push({ k: "LEAF610", req: t("多扇出口门任一扇 ≥610"), val: t("每扇 {0}", [fmt(leaf)]), ok: leaf >= 610 });
+                if (door.landingBase != null) {
+                  const base = door.landingBase;
+                  rows.push({
+                    k: "DOOR750",
+                    req: t("门的摆动不侵占通行范围：楼梯只需平台 {0}，门不该把它顶得更深（否则分扇）", [fmt(base)]),
+                    val:
+                      door.splitReason === "swing"
+                        ? t("单扇需平台 {0} > {1} → 已分两扇各 {2}，平台回到 {3}", [fmt(door.doorMinSingle), fmt(base), fmt(leaf), fmt(Lf)])
+                        : door.intrudes
+                          ? door.swingTry
+                            ? t("门需平台 {0} > {1}；分两扇每扇只有 {2} < {3} 不实用，保持单扇、平台加深到 {4}", [fmt(door.doorMinSingle), fmt(base), fmt(door.swingTry.leafW), fmt(SWING_SPLIT_MIN_LEAF), fmt(Lf)])
+                            : t("门需平台 {0} > {1}，平台加深到 {2}", [fmt(door.doorMinSingle), fmt(base), fmt(Lf)])
+                          : t("平台 {0} 由楼梯决定，门不侵占", [fmt(Lf)]),
+                    ok: !door.intrudes,
+                    soft: door.intrudes,
+                  });
+                }
                 rows.push({ k: "SWING", req: t("沿疏散方向开启、绕竖轴转动"), val: t("由楼层开入楼梯间平台"), ok: true });
                 rows.push({ k: "LAND", req: t("门开向楼梯处须有平台，深度 ≥ 梯宽"), val: t("平台深 {0} ≥ {1}", [fmt(Lf), fmt(st.W)]), ok: Lf >= st.W });
                 if (isEnd) {
