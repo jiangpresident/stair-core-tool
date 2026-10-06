@@ -49,11 +49,44 @@ test("三维实体：踏步与楼板/平台/其他踏步互不重叠（折返 + 
   }
 });
 
-test("门贴侧墙时平台深度 = max(梯宽, 门扇+50+300)；居中时 = 门扇+750", () => {
+test("出口门按人数 × 6.1 mm 自动算：默认例子单扇 1 070；门贴侧墙时平台深度 = max(梯宽, 门扇+50+300)；居中时 = 门扇+750", () => {
   const a = compute(mk());
-  assert.equal(a.stairs[0].geos[0].Lf, Math.max(a.stairs[0].W, 950 + 50 + 300));
+  const d = a.stairs[0].door;
+  // L2 餐饮 800 m² / 1.2 = 667 人，4 部楼梯各 167 人 × 6.1 = 1 017 → 净宽取整 1 020，门洞 1 070（+门框 50），单扇 ≤ 1 220
+  assert.equal(Math.round(d.persons), 167);
+  assert.equal(d.clearReq, 1020);
+  assert.deepEqual([d.leaves, d.leafW, d.opening], [1, 1070, 1070]);
+  assert.equal(a.stairs[0].geos[0].Lf, Math.max(a.stairs[0].W, d.leafW + 50 + 300));
   const b = compute(mk({ adv: { ...baseAdv, doorHinge: "center" } }));
-  assert.equal(b.stairs[0].geos[0].Lf, 950 + 750);
+  assert.equal(b.stairs[0].geos[0].Lf, b.stairs[0].door.leafW + 750);
+  // 设计下限大于所需时用下限：doorLeaf 1 200 → 单扇 1 200
+  const c = compute(mk({ adv: { ...baseAdv, doorLeaf: 1200 } }));
+  assert.deepEqual([c.stairs[0].door.leaves, c.stairs[0].door.leafW], [1, 1200]);
+});
+
+test("出口门太宽自动分两扇：每扇 ≥610，总门洞仍满足人数；单扇上限可改", () => {
+  // L2 设计人数覆盖成 1 500 人、单梯最大宽 3 000（→ 4 部楼梯）→ 每梯 375 人 × 6.1 = 2 288 → 净宽 2 290、门洞 2 340 > 1 220 → 两扇各 1 170
+  const floors = defaultFloors(5);
+  floors[1] = { ...floors[1], ol: "1500" };
+  const r = compute(mk({ floors, maxStairW: 3000 }));
+  assert.equal(r.c[2], 4);
+  const d = r.stairs[0].door;
+  assert.equal(d.clearReq, 2290);
+  assert.deepEqual([d.leaves, d.leafW, d.opening], [2, 1170, 2340]);
+  assert.ok(d.leafW >= 610 && d.clear >= d.clearReq);
+  // 单扇上限放宽到 2 400 → 又回到单扇
+  const r2 = compute(mk({ floors, maxStairW: 3000, adv: { ...baseAdv, doorLeafMax: 2400 } }));
+  assert.deepEqual([r2.stairs[0].door.leaves, r2.stairs[0].door.leafW, r2.stairs[0].door.overflow], [1, 2340, false]);
+  // 平台深度用一扇的摆动半径：贴墙 = max(W, 1 170 + 50 + 300)
+  assert.equal(r.stairs[0].geos[0].Lf, Math.max(r.stairs[0].W, 1170 + 350));
+  // 两扇仍放不下（每梯 750 人）→ overflow 标记，交给校核表报 ✗
+  const r3 = compute(mk({ floors, maxStairW: 6000 }));
+  assert.equal(r3.c[2], 2);
+  assert.deepEqual([r3.stairs[0].door.leaves, r3.stairs[0].door.overflow], [2, true]);
+  // 两扇门的三维门盒子宽 = 门洞总宽
+  const solids = buildSolids(r, mk({ floors, maxStairW: 3000 }), 0, 1, 1);
+  const doorBox = solids.boxes.find((bx) => bx.kind === "door");
+  assert.ok(doorBox && Math.abs(doorBox.y2 - doorBox.y1 - 2340) < 1, "door box width 2340");
 });
 
 test("单出口判定只在 ≤2 层且人数 ≤60 时成立", () => {

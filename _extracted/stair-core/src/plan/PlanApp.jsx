@@ -7,7 +7,7 @@ import { t } from "../i18n.js";
 
 /* 跟 StairCoreTool 里"确认并计算"按钮生效前的默认草稿完全一致——核心筒计算器从没打开过、
    localStorage 里还没有 inp 时，平面图工具用这份默认值先算一次，不会因为拿不到数据而空白/报错。 */
-const DEFAULT_ADV = { run: 280, maxRise: 180, maxRisers: 10, gap: 150, centerWall: 200, doorLeaf: 950, doorPos: "end", doorHinge: "wall", doorSide: "dn", waist: 180, roundStep: 50 };
+const DEFAULT_ADV = { run: 280, maxRise: 180, maxRisers: 10, gap: 150, centerWall: 200, doorLeaf: 950, doorLeafMax: 1220, doorPos: "end", doorHinge: "wall", doorSide: "dn", waist: 180, roundStep: 50 };
 const DEFAULT_INP = { nFloors: 5, wall: 300, maxStairW: 1500, stairType: "dogleg", includeL1: false, sprinklered: true, buildingArea: 800, adv: DEFAULT_ADV, floors: defaultFloors(5) };
 const DEFAULT_PLAN = PLAN_DEFAULTS; // 跟工程文件保存/打开共用同一份默认值（src/plan/planFile.js），避免两处漂移
 
