@@ -833,4 +833,10 @@ export const EN = {
   "平台 {0} 由楼梯决定，门不侵占": "landing {0} is set by the stair; the door does not intrude",
   "通行范围 {0}": "walking zone {0}",
   "门后余 {0}": "after the door {0}",
+  "① 用项目根目录的「启动 Rhino（带桥接）.bat」打开 Rhino，桥会随 Rhino 自动启动；": "① Open Rhino with “启动 Rhino（带桥接）.bat” in the project root: the bridge starts together with Rhino;",
+  "② 在 Rhino 选项 → 常规 → “每次 Rhino 启动时运行这些命令” 里加一行（点右边复制）：": "② Or add this line under Rhino Options → General → “Run these commands every time Rhino starts” (copy button on the right):",
+  "省事的办法（二选一）：": "To skip the manual step (either one):",
+  "复制命令": "Copy",
+  "<项目文件夹>": "<project folder>",
+  "把 {0} 换成本机的完整路径。": "Replace {0} with the full path of the project folder on this computer.",
 };

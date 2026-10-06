@@ -337,7 +337,35 @@ export default function RhinoPanel({ C, buildModel, shaftLabel, zones, levels = 
       {status && !status.checking && !online && (
         <div className="mt-2" style={{ color: C.muted, fontSize: 11.5 }}>
           {status.error}
-          {status.offline && <div className="mt-1">{t("脚本路径：项目根目录 {0}。它只监听本机 127.0.0.1:8790，不联网；运行一次后一直在后台监听，直到关闭 Rhino。", [RHINO_SCRIPT_PATH])}</div>}
+          {status.offline && (
+            <div className="mt-1 flex flex-col gap-1">
+              <div>{t("脚本路径：项目根目录 {0}。它只监听本机 127.0.0.1:8790，不联网；运行一次后一直在后台监听，直到关闭 Rhino。", [RHINO_SCRIPT_PATH])}</div>
+              <div style={{ fontWeight: 600, color: C.ink }}>{t("省事的办法（二选一）：")}</div>
+              <div>{t("① 用项目根目录的「启动 Rhino（带桥接）.bat」打开 Rhino，桥会随 Rhino 自动启动；")}</div>
+              <div>
+                {t("② 在 Rhino 选项 → 常规 → “每次 Rhino 启动时运行这些命令” 里加一行（点右边复制）：")}
+                <code className="ml-1 px-1" style={{ background: C.tag, fontSize: 11 }} data-testid="rhino-startup-cmd">
+                  _-RunPythonScript "…\{RHINO_SCRIPT_PATH.replace(/\//g, "\\")}"
+                </code>
+                <button
+                  type="button"
+                  className="ml-1 rounded px-2"
+                  style={{ border: `1px solid ${C.rule}`, fontSize: 11 }}
+                  onClick={() => {
+                    const cmd = `_-RunPythonScript "${t("<项目文件夹>")}\\${RHINO_SCRIPT_PATH.replace(/\//g, "\\")}"`;
+                    try {
+                      navigator.clipboard.writeText(cmd);
+                    } catch {
+                      /* 不支持剪贴板就算了 */
+                    }
+                  }}
+                >
+                  {t("复制命令")}
+                </button>
+                <span className="ml-1">{t("把 {0} 换成本机的完整路径。", [t("<项目文件夹>")])}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

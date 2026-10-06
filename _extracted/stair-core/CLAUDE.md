@@ -639,6 +639,15 @@
   - 3.3.1.5 房间/套间出入口数量与到走廊的距离。
 - 项目存盘：JSON（比例、核心筒位置、走廊线、检查设置）+ 底图文件路径；导出 PNG/PDF 报告。
 
+**2026-10-06 第五十轮：Rhino 桥接"连不上"的排查 + 一键启动（`启动 Rhino（带桥接）.bat`）和 Rhino 启动命令两种省事办法（`test:calc` 7 项过、构建过、`i18n:keys` 缺 0；bat 在本机实跑两次，Rhino 8 起来后 8 s 桥在 8790 应答；浏览器里离线提示和「已连接」两种状态都看过）**
+
+- 用户问"为什么我的 tool 连不上 Rhino"。原因不是代码：桥是 `StairCoreBridge.py` 在 **Rhino 进程里**起的 HTTP 服务，用户这次是自己双击打开的 Rhino（PID 4784），没有运行过脚本，8790–8799 一个端口都没人听；之前能连是因为测试用的 Rhino 实例是我用 MCP 开的并跑过脚本（那个实例后来关了）。结论：**每次新开 Rhino 都要重新跑一次脚本**，之前的提示没把这点说清楚。
+- 用户接着问"有什么更方便的方法吗"。做了两样：① 项目根目录新增 `启动 Rhino（带桥接）.bat`：找 Rhino 8（没有就 Rhino 7）的 exe，用 `/nosplash /runscript="-_RunPythonScript ""<脚本完整路径>"""` 启动，Rhino 一开桥就跟着起；② 面板"未连接"时的提示改成三段：脚本路径说明 + "省事的办法（二选一）"：用 bat，或者把 `_-RunPythonScript "<项目文件夹>\rhino\StairCoreBridge.py"` 加到 Rhino 选项 → 常规 → "每次 Rhino 启动时运行这些命令"（旁边一个「复制命令」按钮，`navigator.clipboard.writeText`，`data-testid="rhino-startup-cmd"`）。README 的 Rhino 一节补了同样两种办法。
+- **bat 踩的三个坑**（都是 cmd.exe 的，不是 Rhino 的）：(1) 第一版文件是 UTF-8 且带中文 echo/rem，开头 `chcp 65001` 之后 cmd 按新代码页重读文件、字节偏移错位，整段命令被拆成 `'o' is not recognized`、`'IPT"' is not recognized`……Rhino 根本没启动。**结论：bat 一律只写 ASCII**（英文提示；中文文件名没问题，Explorer 双击靠的是路径不是内容）。(2) `if not exist (...)` 块里 echo 的文字带了半角括号 `(C:\Program Files\...)`，`)` 把块提前关掉 → `. was unexpected at this time`，去掉括号。(3) 在 Git Bash 里用 `cmd.exe /c` 跑带中文文件名的 bat 会拿到乱码 banner，不能用它判断成败；验证改用 PowerShell `cmd /c "<完整路径>"` 并轮询 `/health`。另外直接 `Start-Process Rhino.exe /nosplash /runscript=...` 先验证了 Rhino 这边的参数是对的（新进程 PID 不同、`/health` 返回 `pid` 对得上），再去怀疑 bat 本身——分两步定位省了很多时间。
+- **英文界面两处小错**（浏览器里才看出来）：复制按钮用了已有的 `t("复制")`，它在平面图里译成 "Duplicate"，改成独立键 `复制命令` → "Copy"；复制出来的命令和说明句里的占位符 `<项目文件夹>` 在英文下也是中文，改成 `t("<项目文件夹>")` → "<project folder>"，说明句改成带 `{0}` 的键。词典 +7 −1。
+- **工具链坑（再次）**：Bash 工具会把脚本文本里的 `\\` 吃成 `\`——连 `<<'EOF'` 引号 heredoc 都不能幸免——所以用 Node 往 README 里写 `\rhino\StairCoreBridge.py` 时，`\r` 变成了回车、`\S` 变成了 `S`，README 里出现 `<project folder>` + 孤立 CR + `hinoStairCoreBridge.py`，并且整个文件被转成 CRLF 导致 git diff 显示全文变化。修法：脚本一律用 **Write 工具**落到 scratchpad 再 `node` 跑，反斜杠用 `String.fromCharCode(92)` 拼；写回前把行尾统一成 LF（仓库 autocrlf 开着，索引里是 LF）。
+- 验证：PowerShell 跑 bat → 8 s 后 `GET /health` 返回 `{ok, rhino 8.24, port 8790, pid 29408, doc Untitled}`；网页（后台标签，没动用户正在用的标签）点「连接 Rhino」显示 "● 已连接 Rhino 8.24… · 文档 Untitled · 单位 Meters"，文件行列出最近文件；关掉这个测试实例再点一次 → "● 未连接" + 三段提示全部出现、`rhino-startup-cmd` 文本为 `_-RunPythonScript "…\rhino\StairCoreBridge.py"`。测试用的 Rhino 实例（Untitled、未改动）测完都关了，用户自己的 Rhino（PID 4784）没碰。`npm run test:calc` 7 项过，`npm run build` 过。
+- 没做 / 下一步：bat 里 Rhino 路径写死在默认安装位置，装到别处要手改文件（提示里写了）；没加 "检测到 Rhino 在跑但没有桥" 的更精确提示（网页在浏览器里拿不到本机进程列表，做不到）；曲面墙原生曲线仍按用户要求搁置。
 ## 8. 用户偏好
 
 - 用中文回复；先说结论再说原因；每次改动后说明改了什么、为什么、以及做了哪些验证。
